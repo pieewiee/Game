@@ -122,3 +122,19 @@ These were deliberately left out of the scaffold rather than guessed at.
       protection requires one approving review, and GitHub does not let you
       approve your own PR, so a solo owner cannot merge anything until a second
       person has repo access.
+
+---
+
+## Part 5 — After Milestone 1 (simulation core)
+
+- [ ] **5.1 Open the project** with `6000.0.58f1` and let it import the new
+      `Game.Sim` and `Game.Sim.Tests` assemblies. Confirm both compile
+      (Console clean). Commit the newly generated `.meta` files for
+      `Assets/Scripts/Sim*`, `Assets/StreamingAssets/**`.
+- [ ] **5.2 Run the EditMode tests in the Editor.**
+      *Window > General > Test Runner > EditMode > Run All* — the same 19 tests
+      that run under `dotnet test Tools/SimTests/SimTests.csproj` must pass.
+      If counts differ between Unity and dotnet, stop and report it.
+- [ ] **5.3 Do not add a JSON package.** The tuning format is deliberately
+      flat key=value (`balance.tuning`) so `Game.Sim` needs no dependencies —
+      see the Milestone 1 PR description before changing this.

@@ -61,3 +61,23 @@ something concrete (faster compiles, an enforced boundary, a platform gate).
 A new feature assembly may reference `Game.Runtime`; `Game.Runtime` may not
 reference it back. If you find yourself wanting a cycle, the two assemblies want
 to be one assembly.
+
+## Added in Milestone 1: `Game.Sim` and `Game.Sim.Tests`
+
+Approved via docs/open-questions.md Q13 (architecture.md §2). Two rules extend
+the diagram above:
+
+- **`Game.Sim`** (`Scripts/Sim/`) references **nothing** — not even
+  `Game.Runtime` — and has `"noEngineReferences": true`, so the compiler
+  rejects any UnityEngine type in the simulation. Everything of ours may
+  reference `Game.Sim`; it references nothing of ours back, ever.
+- **`Game.Sim.Tests`** (`Scripts/Sim.Tests/`) is Editor-only, references
+  `Game.Sim` + the test runners, and holds the bulk of the test suite. The
+  same test sources also run outside Unity via `Tools/SimTests`
+  (`dotnet test Tools/SimTests/SimTests.csproj`), which compiles the identical
+  files — Unity and dotnet must never see different code.
+
+`Tools/SimRunner` is the headless year runner
+(`dotnet run --project Tools/SimRunner -- --balance ... --scenario ...`).
+Balance constants live in `Assets/StreamingAssets/Tuning/balance.tuning`;
+scenarios in `Assets/StreamingAssets/Scenarios/`.
