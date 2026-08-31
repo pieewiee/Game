@@ -1,0 +1,155 @@
+# EditorConfig -- https://editorconfig.org
+# Applies in Rider, Visual Studio, VS Code (with the C# extension) and most
+# other editors. Keeps formatting identical across Windows and macOS machines.
+root = true
+
+# ---------------------------------------------------------------------------
+# Defaults for every file
+# ---------------------------------------------------------------------------
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{yml,yaml,json,md}]
+indent_size = 2
+
+[*.md]
+# Two trailing spaces are a hard line break in Markdown.
+trim_trailing_whitespace = false
+
+[*.{bat,cmd,ps1}]
+end_of_line = crlf
+
+# Unity-generated files: never reformat, they are machine-owned.
+[*.{meta,unity,prefab,asset,mat,anim,controller,asmdef,asmref}]
+trim_trailing_whitespace = false
+insert_final_newline = false
+
+# ---------------------------------------------------------------------------
+# C#
+# ---------------------------------------------------------------------------
+[*.cs]
+indent_size = 4
+end_of_line = lf
+
+# --- using directives ---
+csharp_using_directive_placement = outside_namespace:warning
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+# --- braces and newlines (Allman, the Unity/Microsoft default) ---
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_new_line_between_query_expression_clauses = true
+csharp_prefer_braces = true:warning
+
+# --- indentation ---
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+csharp_indent_labels = one_less_than_current
+csharp_indent_block_contents = true
+csharp_indent_braces = false
+
+# --- spacing ---
+csharp_space_after_cast = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+csharp_space_between_method_call_parameter_list_parentheses = false
+csharp_space_between_parentheses = false
+csharp_space_before_colon_in_inheritance_clause = true
+csharp_space_after_colon_in_inheritance_clause = true
+csharp_space_around_binary_operators = before_and_after
+csharp_space_before_comma = false
+csharp_space_after_comma = true
+csharp_space_before_semicolon_in_for_statement = false
+csharp_space_after_semicolon_in_for_statement = true
+
+# --- wrapping ---
+csharp_preserve_single_line_statements = false
+csharp_preserve_single_line_blocks = true
+
+# --- language style: 'this.' is not used in Unity codebases ---
+dotnet_style_qualification_for_field = false:warning
+dotnet_style_qualification_for_property = false:warning
+dotnet_style_qualification_for_method = false:warning
+dotnet_style_qualification_for_event = false:warning
+
+# --- language style: prefer the language keyword over the BCL type name ---
+dotnet_style_predefined_type_for_locals_parameters_members = true:warning
+dotnet_style_predefined_type_for_member_access = true:warning
+
+# --- modifiers ---
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:warning
+csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async:warning
+dotnet_style_readonly_field = true:suggestion
+
+# --- expression preferences ---
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = false:suggestion
+csharp_style_expression_bodied_methods = false:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
+csharp_style_expression_bodied_accessors = true:suggestion
+dotnet_style_object_initializer = true:suggestion
+dotnet_style_collection_initializer = true:suggestion
+dotnet_style_null_propagation = false:suggestion
+dotnet_style_coalesce_expression = false:suggestion
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
+csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
+csharp_style_throw_expression = true:suggestion
+csharp_style_inlined_variable_declaration = true:suggestion
+
+# --- naming: PascalCase for types and methods ---
+dotnet_naming_rule.types_and_methods_pascal.severity = warning
+dotnet_naming_rule.types_and_methods_pascal.symbols = types_and_methods
+dotnet_naming_rule.types_and_methods_pascal.style = pascal_case
+dotnet_naming_symbols.types_and_methods.applicable_kinds = namespace,class,struct,interface,enum,delegate,method,property,event,local_function
+dotnet_naming_symbols.types_and_methods.applicable_accessibilities = *
+
+# --- naming: interfaces prefixed with I ---
+dotnet_naming_rule.interfaces_prefixed_with_i.severity = warning
+dotnet_naming_rule.interfaces_prefixed_with_i.symbols = interfaces
+dotnet_naming_rule.interfaces_prefixed_with_i.style = i_prefixed_pascal
+dotnet_naming_symbols.interfaces.applicable_kinds = interface
+
+# --- naming: private fields camelCase, no underscore prefix (Unity convention,
+#     because serialized private fields show up in the Inspector by name) ---
+dotnet_naming_rule.private_fields_camel.severity = warning
+dotnet_naming_rule.private_fields_camel.symbols = private_fields
+dotnet_naming_rule.private_fields_camel.style = camel_case
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private,protected,private_protected
+
+# --- naming: constants PascalCase ---
+dotnet_naming_rule.constants_pascal.severity = warning
+dotnet_naming_rule.constants_pascal.symbols = constants
+dotnet_naming_rule.constants_pascal.style = pascal_case
+dotnet_naming_symbols.constants.applicable_kinds = field,local
+dotnet_naming_symbols.constants.required_modifiers = const
+
+# --- naming: parameters and locals camelCase ---
+dotnet_naming_rule.parameters_camel.severity = suggestion
+dotnet_naming_rule.parameters_camel.symbols = parameters_and_locals
+dotnet_naming_rule.parameters_camel.style = camel_case
+dotnet_naming_symbols.parameters_and_locals.applicable_kinds = parameter,local
+
+# --- naming styles ---
+dotnet_naming_style.pascal_case.capitalization = pascal_case
+dotnet_naming_style.camel_case.capitalization = camel_case
+dotnet_naming_style.i_prefixed_pascal.capitalization = pascal_case
+dotnet_naming_style.i_prefixed_pascal.required_prefix = I
+
+# --- diagnostics that are noise in Unity code ---
+# Unity calls Awake/Start/Update via reflection, so "unused private member"
+# and "member can be made static" fire constantly on correct code.
+dotnet_diagnostic.IDE0051.severity = none
+dotnet_diagnostic.IDE0044.severity = none
+dotnet_diagnostic.CA1822.severity = none

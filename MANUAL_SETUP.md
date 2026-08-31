@@ -1,0 +1,124 @@
+# Manual setup checklist
+
+Everything in this file requires the Unity Editor GUI and therefore could not be
+scripted into the scaffold. **One person** should work through Part 1 once and
+commit the result; everyone else only needs Part 3.
+
+---
+
+## Part 1 — First open of the project (do this once, then commit)
+
+- [ ] **1.1 Open the project** from the Unity Hub with **`6000.0.58f1`**.
+      If the Hub does not offer that exact patch version, install it — or change
+      the version in *all three* places and tell the team:
+      `ProjectSettings/ProjectVersion.txt`,
+      `.github/workflows/tests.yml` (`unityVersion:`), and the SmartMerge paths
+      in `README.md`.
+
+- [ ] **1.2 Let the first import finish.** It takes several minutes and
+      generates `Library/` (git-ignored), every `.meta` file, the rest of
+      `ProjectSettings/`, and `Packages/packages-lock.json`.
+
+- [ ] **1.3 Verify the packages resolved.** *Window > Package Manager >
+      In Project*. Expect: Input System, Netcode for GameObjects, Unity
+      Transport, Test Framework. If a version pinned in `Packages/manifest.json`
+      does not exist for this editor, Package Manager substitutes the nearest
+      valid one — that is fine, but commit the resulting
+      `Packages/packages-lock.json`, which is the real lockfile.
+
+- [ ] **1.4 Accept the Input System backend prompt.** Installing the Input
+      System package prompts to enable the new input backends and restart the
+      Editor. Say yes. This writes `activeInputHandler` into
+      `ProjectSettings/ProjectSettings.asset`.
+
+- [ ] **1.5 Set version control and serialization mode.**
+      *Edit > Project Settings > Editor*:
+      - *Version Control > Mode* = **Visible Meta Files**
+      - *Asset Serialization > Mode* = **Force Text**
+
+      Both are the default in Unity 6 — confirm rather than assume. Without
+      them, `.meta` files are hidden from git and assets serialize as binary,
+      which makes merge conflicts unresolvable and makes SmartMerge useless.
+
+- [ ] **1.6 Create a first scene.** *File > New Scene*, save as
+      `Assets/Scenes/Main.unity`, then add it to the scene list in
+      *File > Build Profiles*. (A scene file is Unity YAML full of generated
+      GUIDs; hand-writing one is a good way to produce a subtly broken project,
+      which is why the scaffold ships none.)
+
+- [ ] **1.7 Set Product Name and Company Name.**
+      *Edit > Project Settings > Player*. These determine the persistent data
+      path, so changing them later moves everyone's save files.
+
+- [ ] **1.8 Confirm the build targets.** *File > Build Profiles*: confirm
+      **Windows** (x86_64) and add **macOS**. Each needs its Build Support
+      module installed through the Unity Hub.
+
+- [ ] **1.9 Run the smoke test in the Editor.**
+      *Window > General > Test Runner > EditMode > Run All*.
+      `SmokeTest.TestPipeline_Runs` must pass. If the EditMode tab is empty the
+      assembly definitions did not compile — check the Console.
+
+- [ ] **1.10 Commit the generated files.**
+
+      ```bash
+      git switch -c chore/unity-first-import
+      git add -A
+      git status     # expect: many .meta files, ProjectSettings/, packages-lock.json
+      git commit -m "chore(unity): generate meta files and project settings on first import"
+      ```
+
+      **`Library/` must not appear in `git status`.** If it does, stop and fix
+      `.gitignore` before committing. Then open a PR — `main` is protected.
+
+---
+
+## Part 2 — Decisions still open (nobody has made these yet)
+
+These were deliberately left out of the scaffold rather than guessed at.
+
+- [ ] **2.1 Render pipeline.** No render pipeline package (URP/HDRP) is
+      installed, so the project is on the Built-in pipeline. Switching later
+      means re-authoring every material, so decide early. URP would mean adding
+      `com.unity.render-pipelines.universal` to `Packages/manifest.json`.
+
+- [ ] **2.2 `com.unity.ide.visualstudio`.** Not installed, because it was not in
+      the agreed package list. Without it Unity generates no `.csproj`/`.sln`,
+      so **VS Code and Visual Studio cannot resolve `UnityEngine` types** — you
+      get red squiggles on correct code. The committed `.vscode/` config assumes
+      it is present. Install it via Package Manager if anyone uses VS Code or
+      Visual Studio. Rider users want `com.unity.ide.rider` instead.
+
+- [ ] **2.3 uGUI.** `com.unity.ugui` is not in the manifest. If you want classic
+      Canvas-based UI, add it.
+
+- [ ] **2.4 A PlayMode test.** `Game.Tests.PlayMode` exists as an assembly but
+      contains no tests, so the `test (playmode)` CI job runs zero tests. It
+      should still report success — if it instead errors with "no tests were
+      executed", add one trivial PlayMode test mirroring
+      `Assets/Scripts/Tests/EditMode/SmokeTest.cs`.
+
+---
+
+## Part 3 — Per-developer, per-machine (everyone does this)
+
+- [ ] **3.1 `git lfs install`** — once per machine, not per repo.
+- [ ] **3.2 Register Unity SmartMerge** in your local `.git/config`. The exact
+      commands are in [`README.md`](README.md). This *cannot* be committed: git
+      refuses to take merge-driver commands from a repository.
+- [ ] **3.3 Install Unity `6000.0.58f1`** with Windows + Mac Build Support.
+- [ ] **3.4 Install the recommended editor extensions** — VS Code offers them
+      from `.vscode/extensions.json` on first open.
+
+---
+
+## Part 4 — Repository administration (owner)
+
+- [ ] **4.1 Add the CI secrets**: `UNITY_LICENSE`, `UNITY_EMAIL`,
+      `UNITY_PASSWORD`. The activation flow is described in
+      [`README.md`](README.md). **CI cannot pass until these exist** — every run
+      fails at the Unity activation step.
+- [ ] **4.2 Invite collaborators** — *Settings > Collaborators*. Branch
+      protection requires one approving review, and GitHub does not let you
+      approve your own PR, so a solo owner cannot merge anything until a second
+      person has repo access.

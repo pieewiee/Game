@@ -1,0 +1,71 @@
+{
+  // Unity regenerates these constantly and they are git-ignored; hiding them
+  // keeps the Explorer and search results readable.
+  "files.exclude": {
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/*.meta": true,
+    "**/*.csproj": true,
+    "**/*.sln": true,
+    "Library/": true,
+    "Temp/": true,
+    "Obj/": true,
+    "Logs/": true,
+    "UserSettings/": true,
+    "Build/": true,
+    "Builds/": true
+  },
+  "search.exclude": {
+    "Library/": true,
+    "Temp/": true,
+    "Obj/": true,
+    "Logs/": true,
+    "Build/": true,
+    "Builds/": true,
+    "**/*.meta": true
+  },
+  "files.watcherExclude": {
+    "**/Library/**": true,
+    "**/Temp/**": true,
+    "**/Obj/**": true,
+    "**/Logs/**": true,
+    "**/Build/**": true,
+    "**/Builds/**": true
+  },
+
+  // .editorconfig is the single source of truth for formatting.
+  "editor.formatOnSave": true,
+  "editor.insertSpaces": true,
+  "editor.tabSize": 4,
+  "files.eol": "\n",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+
+  "[csharp]": {
+    "editor.defaultFormatter": "ms-dotnettools.csharp",
+    "editor.tabSize": 4
+  },
+  "[json]": { "editor.tabSize": 2 },
+  "[jsonc]": { "editor.tabSize": 2 },
+  "[yaml]": { "editor.tabSize": 2 },
+  "[markdown]": { "files.trimTrailingWhitespace": false },
+
+  // Treat Unity asset formats as YAML rather than plain text.
+  "files.associations": {
+    "*.asmdef": "json",
+    "*.asmref": "json",
+    "*.unity": "yaml",
+    "*.prefab": "yaml",
+    "*.asset": "yaml",
+    "*.mat": "yaml",
+    "*.anim": "yaml",
+    "*.controller": "yaml",
+    "*.meta": "yaml"
+  },
+
+  // The C# extension needs a generated .sln/.csproj to resolve UnityEngine.
+  // Unity only generates those when the "Visual Studio Editor" package is
+  // installed -- see MANUAL_SETUP.md.
+  "omnisharp.useModernNet": true,
+  "dotnet.defaultSolution": "Game.sln"
+}
