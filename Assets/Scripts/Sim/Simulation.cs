@@ -191,6 +191,11 @@ namespace Game.Sim
                         EndTick = deadline,
                         BaseKw = cmd.A,
                         RateEurPerKwhIt = B.RateTraining,
+                        // compute-contracts.md 2.2 writes required = block x term,
+                        // but with CHECKPOINT_OVERHEAD = 3% max attainable progress
+                        // is 0.97 x block x term: the doc formula is uncompletable
+                        // as written (flagged in the M1 report). The frac leaves
+                        // headroom for the overhead plus brief throttles.
                         RequiredKwh = cmd.A * (cmd.B * SimClock.TicksPerDay) * B.TrainingRequiredFrac,
                         LastCheckpointTick = s.Tick
                     };
@@ -255,6 +260,13 @@ namespace Game.Sim
                     s.Gni.ToString("0.0", ci) + " below gate " + gate.ToString("0", ci));
                 return;
             }
+            if (target == 4 && s.ReferendumsWon < 1)
+            {
+                // power.md 2 tier table: T4 is "75 + referendum" - the utility
+                // will not connect 50 MW to a town that has not voted for it.
+                s.Log("permit", "Tier 4 application rejected: requires a WON community consultation event");
+                return;
+            }
             s.CashEur -= capex;
             _capexThisTick += capex;
             s.Permit = new PendingPermit
@@ -289,7 +301,8 @@ namespace Game.Sim
                 if (s.Permit.RemainingLeadTicks <= 0.0)
                 {
                     double gate = B.TierSentimentGate[s.Permit.TargetTier];
-                    if (s.Gni >= gate)
+                    bool referendumOk = s.Permit.TargetTier != 4 || s.ReferendumsWon >= 1;
+                    if (s.Gni >= gate && referendumOk)
                     {
                         s.GridTier = s.Permit.TargetTier;
                         s.Log("permit", "Grid tier " + s.GridTier + " GRANTED (GNI " +

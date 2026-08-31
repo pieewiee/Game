@@ -52,6 +52,7 @@ namespace Game.Sim
         public long ReferendumVoteTick = -1;  // -1 = none scheduled
         public double GniAtPetitionTrigger;
         public bool ReferendumHeld;
+        public int ReferendumsWon;
         public double SabotageExposureTicks;  // cumulative ticks spent in the Sabotage band
         public long FibreCutUntilTick = -1;   // sabotage effect: no delivery until this tick
         public double LocalFte;               // goodwill source (scenario-set in M1)

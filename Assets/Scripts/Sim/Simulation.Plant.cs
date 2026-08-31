@@ -57,7 +57,10 @@ namespace Game.Sim
             if (c.DroughtActive && wue > 0.0)
             {
                 double allowanceLh = B.TownWaterDemandM3Day * 1000.0 * B.DroughtAllowanceFrac / 24.0;
-                double evapByWater = allowanceLh / wue; // kW_th removable within the allowance
+                // L/h divided by (L per kWh_IT) = kWh_IT/h; HEAT_FRACTION converts
+                // that IT-equivalent energy into removable heat in kW_th (the
+                // exact inverse of the water-draw formula further down).
+                double evapByWater = allowanceLh / wue * B.HeatFraction;
                 if (evapByWater < evapCap) evapCap = evapByWater;
             }
 
@@ -79,7 +82,27 @@ namespace Game.Sim
             double windPotential = s.WindKw * c.WindCf;
             double gridCap = B.TierCapKw[s.GridTier];
             double battDischargeMax = Math.Min(s.BatteryKw, s.BatterySocKwh * Math.Sqrt(B.BatteryRte));
-            double dieselMax = s.Diesel == DieselPolicy.Never ? 0.0 : s.DieselKw;
+
+            // Diesel policy: Never = 0. ProtectSla = only as much as the
+            // CONTRACTED load (training + inference, never spot) needs beyond
+            // every other source, so the generator cannot run for uncontracted
+            // spot work. Always = full rating for any shortfall.
+            double dieselMax;
+            if (s.Diesel == DieselPolicy.Never) dieselMax = 0.0;
+            else if (s.Diesel == DieselPolicy.Always) dieselMax = s.DieselKw;
+            else
+            {
+                double uContracted = capacityKw > 0
+                    ? (clippedTraining + clippedInference) / capacityKw * thetaCool : 0.0;
+                double pItContracted = n * (idleKw + (peak - idleKw) * uContracted);
+                double qContracted = pItContracted * B.HeatFraction;
+                double pCoolContracted = CoolingPower(qContracted, freecoolCap, evapCap, evapCop, chillerCop,
+                                                      out _, out _, out _, out _);
+                double demandContracted = pItContracted + pCoolContracted
+                                        + B.AuxBaseKw + B.AuxFracOfIt * pItContracted;
+                double supplyNoDiesel = solarPotential + windPotential + gridCap + battDischargeMax;
+                dieselMax = Math.Max(0.0, Math.Min(s.DieselKw, demandContracted - supplyNoDiesel));
+            }
 
             double demand1 = pIt1 + pCool1 + pAux;
             double supplyMax = solarPotential + windPotential + gridCap + battDischargeMax + dieselMax;
@@ -184,7 +207,7 @@ namespace Game.Sim
             double pSeason = B.GridPriceSeason.Evaluate(doy);
             double pDiurnalMult = B.GridPriceDiurnal.Evaluate(hour);
             double pPre = pSeason * pDiurnalMult * c.ScarcityMult;
-            r.PBaseEurKwh = pSeason;
+            r.PBaseEurKwh = pSeason * pDiurnalMult; // power.md 3: p_base = seasonal x diurnal
 
             double remaining = demandKw;
 
@@ -197,7 +220,11 @@ namespace Game.Sim
             //    discharge into expensive hours, charge in cheap ones.
             double eta = Math.Sqrt(B.BatteryRte);
             double charge = 0.0, discharge = 0.0;
-            double headroom = s.BatteryKwhCap - s.BatterySocKwh;
+            // Headroom against the cycle-faded capacity: filling nominal space
+            // the fade has destroyed would buy grid energy the SOC clamp then
+            // silently discards (audit finding, power.md 4.3).
+            double effCapNow = EffectiveBatteryCap();
+            double headroom = Math.Max(0.0, effCapNow - s.BatterySocKwh);
             if (surplus > 0 && headroom > 0)
             {
                 charge = Math.Min(Math.Min(surplus, s.BatteryKw), headroom / eta);
@@ -240,8 +267,7 @@ namespace Game.Sim
             // Battery bookkeeping: equivalent full cycles wear capacity.
             s.BatterySocKwh += charge * eta - discharge / eta;
             if (s.BatterySocKwh < 0) s.BatterySocKwh = 0;
-            double effCap = EffectiveBatteryCap();
-            if (s.BatterySocKwh > effCap) s.BatterySocKwh = effCap;
+            if (s.BatterySocKwh > effCapNow) s.BatterySocKwh = effCapNow;
             if (s.BatteryKwhCap > 0)
                 s.BatteryCycles += (charge + discharge) / (2.0 * s.BatteryKwhCap);
 
@@ -268,10 +294,10 @@ namespace Game.Sim
 
         private double EffectiveBatteryCap()
         {
-            // Linear fade to 80 % at BATTERY_CYCLE_LIFE cycles, continuing beyond.
-            double fade = 0.2 * (State.BatteryCycles / B.BatteryCycleLife);
-            double frac = 1.0 - fade;
-            if (frac < 0.5) frac = 0.5;
+            // Linear fade to 80 % at BATTERY_CYCLE_LIFE cycles, continuing
+            // unbounded toward zero, exactly as power.md 4.3 writes it.
+            double frac = 1.0 - 0.2 * (State.BatteryCycles / B.BatteryCycleLife);
+            if (frac < 0.0) frac = 0.0;
             return State.BatteryKwhCap * frac;
         }
 
@@ -314,7 +340,12 @@ namespace Game.Sim
                         ct.TotalRevenueEur += pay;
                         r.RevenueEur += pay;
                         ct.Status = ContractStatus.FailedDeadline;
-                        s.Reputation = Math.Max(0.0, s.Reputation - B.ReputationLossBreach * 2.0);
+                        // Severity scales with the undelivered fraction. The docs
+                        // give no deadline-severity formula (the SLA one does not
+                        // apply); interpretation flagged in the M1 report.
+                        double undone = ct.RequiredKwh > 0 ? 1.0 - ct.ProgressKwh / ct.RequiredKwh : 1.0;
+                        double sev = Math.Max(0.5, Math.Min(3.0, 3.0 * undone));
+                        s.Reputation = Math.Max(0.0, s.Reputation - B.ReputationLossBreach * sev);
                         s.Log("contract", "Training #" + ct.Id + " MISSED its deadline at " +
                             (100.0 * ct.ProgressKwh / ct.RequiredKwh).ToString("0.0", ci) +
                             "% — paid the " + (B.TrainingFailPayoutFrac * 100).ToString("0", ci) + "% kill fee");
@@ -348,7 +379,10 @@ namespace Game.Sim
                         ct.TotalRevenueEur += pay;
                         r.RevenueEur += pay;
                         ct.Status = ContractStatus.Completed;
-                        s.Reputation = Math.Min(100.0, s.Reputation + B.ReputationGainMonth * 2.0);
+                        // compute-contracts.md 2.5: +REPUTATION_GAIN_MONTH per
+                        // contract-month met - a run earns the worth of its term.
+                        double termMonths = (ct.EndTick - ct.StartTick) / (double)(SimClock.TicksPerYear / 12);
+                        s.Reputation = Math.Min(100.0, s.Reputation + B.ReputationGainMonth * termMonths);
                         s.Log("contract", "Training #" + ct.Id + " COMPLETED — EUR " +
                             pay.ToString("0", ci) + " lump sum");
                         continue;

@@ -54,7 +54,7 @@ namespace Game.Sim
     public sealed class ClimateModel
     {
         private const ulong ChTemp = 1, ChWindSpd = 2, ChWindDir = 3,
-                            ChCloud = 4, ChPrecip = 5, ChWindCf = 6;
+                            ChCloud = 4, ChPrecip = 5;
 
         private readonly Balance _b;
         private readonly ulong _seed;
@@ -89,8 +89,10 @@ namespace Game.Sim
             // Seasonal: minimum in mid-January (doy≈19 shifted), max mid-July.
             double seasonal = _b.TempSeasonalMeanC
                 - _b.TempSeasonalAmpC * Math.Cos(2.0 * Math.PI * (doy - 19) / (double)SimClock.DaysPerYear);
-            // Diurnal: min ~05:00, max ~15:00.
-            double diurnal = -_b.TempDiurnalAmpC * Math.Cos(2.0 * Math.PI * (hour - 15) / 24.0);
+            // Diurnal: max ~15:00, min ~03:00 (+cos anchors the maximum at
+            // the anchor hour; the seasonal term above uses -cos to anchor its
+            // minimum at mid-January).
+            double diurnal = _b.TempDiurnalAmpC * Math.Cos(2.0 * Math.PI * (hour - 15) / 24.0);
             // Multi-day weather waves (~4-day period).
             double wave = _b.TempNoiseAmpC * SimRandom.SmoothNoise(_seed, ChTemp, tick / 96.0);
             return seasonal + diurnal + wave;
@@ -117,8 +119,10 @@ namespace Game.Sim
 
         private double RawWindModifier(long tick)
         {
-            // Correlated with speed noise; cubed-ish to mimic the power curve.
-            double n = 0.5 + 0.5 * SimRandom.SmoothNoise(_seed, ChWindCf, tick / 36.0);
+            // Same noise channel as WindSpeed so the capacity factor genuinely
+            // co-varies with the audible wind, per power.md §4.2 cf(month, speed);
+            // squared-ish to mimic the turbine power curve.
+            double n = 0.5 + 0.5 * SimRandom.SmoothNoise(_seed, ChWindSpd, tick / 36.0);
             return 0.15 + 1.7 * n * n;
         }
 

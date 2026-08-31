@@ -90,6 +90,8 @@ namespace Game.Sim
         public readonly double NoiseFanRefKw;          // fan power that counts as "1" in the log term
         public readonly double NoiseChillerWeight;     // relative loudness of chillers
         public readonly double NoiseDieselWeight;      // relative loudness of a genset
+        public readonly double NoiseTurbineWeight;     // loudness per wind turbine
+        public readonly double TurbineUnitKw;          // kW per modelled turbine, for the count
         public readonly double NoiseScale;             // channel pts per relative dB
         public readonly double AirEmissionFactor;      // channel pts per MWh diesel
         public readonly double DroughtNuisanceMultMax; // × on water channel under restriction
@@ -221,6 +223,8 @@ namespace Game.Sim
             NoiseFanRefKw = D("NOISE_FAN_REF_KW");
             NoiseChillerWeight = D("NOISE_CHILLER_WEIGHT");
             NoiseDieselWeight = D("NOISE_DIESEL_WEIGHT");
+            NoiseTurbineWeight = D("NOISE_TURBINE_WEIGHT");
+            TurbineUnitKw = D("TURBINE_UNIT_KW");
             NoiseScale = D("NOISE_SCALE");
             AirEmissionFactor = D("AIR_EMISSION_FACTOR");
             DroughtNuisanceMultMax = D("DROUGHT_NUISANCE_MULT_MAX");

@@ -145,3 +145,5 @@ DUNKELFLAUTE_IRRADIANCE = 0.02
 DROUGHT_DRY_DAYS = 28
 DROUGHT_RECOVER_DAYS = 6
 PRECIP_WET_PROBABILITY = 0.45
+NOISE_TURBINE_WEIGHT = 1.2         # loudness per turbine (nuisance.md par.1)
+TURBINE_UNIT_KW = 3300             # one modelled onshore turbine

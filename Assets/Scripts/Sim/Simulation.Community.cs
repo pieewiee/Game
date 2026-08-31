@@ -21,10 +21,15 @@ namespace Game.Sim
             double fanKw = r.QFreecoolKwTh / Math.Max(B.FreecoolCop, 1e-6)
                          + r.QEvapKwTh / Math.Max(B.EvapCop.Evaluate(c.TwbC), 1e-6);
             double chillerKw = r.QChillerKwTh / Math.Max(B.ChillerCop.Evaluate(c.TdbC), 1e-6);
+            double turbineCount = B.TurbineUnitKw > 0 ? s.WindKw / B.TurbineUnitKw : 0.0;
             double loudness = fanKw / B.NoiseFanRefKw
                             + B.NoiseChillerWeight * chillerKw / B.NoiseFanRefKw
-                            + (r.DieselKwh > 1e-6 ? B.NoiseDieselWeight : 0.0);
-            double nNoise = B.NoiseScale * 10.0 * Math.Log10(1.0 + loudness);
+                            + (r.DieselKwh > 1e-6 ? B.NoiseDieselWeight : 0.0)
+                            + B.NoiseTurbineWeight * turbineCount;
+            // nuisance.md §1: L = 10·log10(Σ sources), negative dB floors at 0 —
+            // a site quieter than the fan reference is inaudible, not negative.
+            double lSite = loudness > 1e-9 ? 10.0 * Math.Log10(loudness) : -100.0;
+            double nNoise = B.NoiseScale * Math.Max(0.0, lSite);
             if (SimClock.IsNight(s.Tick)) nNoise *= B.NightNoiseMult;
             nNoise = Clamp01x100(nNoise);
 
@@ -41,9 +46,13 @@ namespace Game.Sim
             double rel = s.PriceBaselineEurKwh > 1e-9
                 ? (r.PResidentEurKwh - s.PriceBaselineEurKwh) / s.PriceBaselineEurKwh : 0.0;
             double nPrice = Clamp01x100(B.PriceSensitivity * 100.0 * Math.Max(0.0, rel));
-            // The remembered price drifts slowly toward what people actually pay.
+            // The remembered price drifts with the NATIONAL trend only
+            // (nuisance.md §4: the operator is not blamed for inflation they did
+            // not cause — and, critically, their congestion must never be
+            // absorbed into the baseline and thereby forgiven).
+            double nationalResident = B.GridPriceSeason.Evaluate(SimClock.DayOfYear(s.Tick)) * B.RetailMarkup;
             s.PriceBaselineEurKwh += (B.PriceBaselineAdaptPerDay / 24.0)
-                                   * (r.PResidentEurKwh - s.PriceBaselineEurKwh);
+                                   * (nationalResident - s.PriceBaselineEurKwh);
             r.PBaselineEurKwh = s.PriceBaselineEurKwh;
 
             // Visual: scenario-set fortification in M1 (structures arrive in M3+).
@@ -122,6 +131,7 @@ namespace Game.Sim
                 if (keepScore >= B.ReferendumKeepThreshold)
                 {
                     s.PetitionSignatures = 0.0;
+                    s.ReferendumsWon++;      // power.md §2: T4 requires a WON referendum
                     s.ReferendumHeld = false; // a future petition can trigger another
                     s.Log("referendum", "Community consultation event: the site SURVIVES (keep score " +
                         keepScore.ToString("0.0", ci) + ")");
