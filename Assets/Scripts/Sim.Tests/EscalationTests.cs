@@ -43,6 +43,34 @@ namespace Game.Sim.Tests
         }
 
         [Test]
+        public void ExactBandBoundariesUseStrictLessThan()
+        {
+            // Pinned per the audit. Convention (now fixed by this test):
+            // ENTRY is strict '<' at the band edge — GNI exactly AT the edge
+            // stays in the better stage. EXIT happens AT edge + 5 (>=) — one
+            // stage up exactly at the hysteresis line, staying put just below.
+            Simulation sim = NewSim();
+            // entry edges: exactly at the band stays put
+            Assert.That(sim.NextStage(EscalationStage.Content, 70.0), Is.EqualTo(EscalationStage.Content));
+            Assert.That(sim.NextStage(EscalationStage.Complaints, 55.0), Is.EqualTo(EscalationStage.Complaints));
+            Assert.That(sim.NextStage(EscalationStage.Petition, 40.0), Is.EqualTo(EscalationStage.Petition));
+            Assert.That(sim.NextStage(EscalationStage.Protest, 25.0), Is.EqualTo(EscalationStage.Protest));
+            Assert.That(sim.NextStage(EscalationStage.Injunction, 15.0), Is.EqualTo(EscalationStage.Injunction));
+            // exit edges: exactly at band+5 exits one stage up
+            Assert.That(sim.NextStage(EscalationStage.Complaints, 75.0), Is.EqualTo(EscalationStage.Content));
+            Assert.That(sim.NextStage(EscalationStage.Petition, 60.0), Is.EqualTo(EscalationStage.Complaints));
+            Assert.That(sim.NextStage(EscalationStage.Protest, 45.0), Is.EqualTo(EscalationStage.Petition));
+            Assert.That(sim.NextStage(EscalationStage.Injunction, 30.0), Is.EqualTo(EscalationStage.Protest));
+            Assert.That(sim.NextStage(EscalationStage.Sabotage, 20.0), Is.EqualTo(EscalationStage.Injunction));
+            // just below the exit edge: the worse stage persists
+            Assert.That(sim.NextStage(EscalationStage.Complaints, 74.99), Is.EqualTo(EscalationStage.Complaints));
+            Assert.That(sim.NextStage(EscalationStage.Petition, 59.99), Is.EqualTo(EscalationStage.Petition));
+            Assert.That(sim.NextStage(EscalationStage.Protest, 44.99), Is.EqualTo(EscalationStage.Protest));
+            Assert.That(sim.NextStage(EscalationStage.Injunction, 29.99), Is.EqualTo(EscalationStage.Injunction));
+            Assert.That(sim.NextStage(EscalationStage.Sabotage, 19.99), Is.EqualTo(EscalationStage.Sabotage));
+        }
+
+        [Test]
         public void StagesExitOnlyWithHysteresis()
         {
             Simulation sim = NewSim();
