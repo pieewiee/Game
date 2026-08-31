@@ -1,0 +1,130 @@
+# ---------------------------------------------------------------------------
+# Line endings
+#
+# Everything is stored LF in the repository and checked out LF on disk, on
+# Windows and macOS alike. This keeps diffs clean across the team regardless of
+# anyone's core.autocrlf setting. Windows-only script types are the exception.
+# ---------------------------------------------------------------------------
+* text=auto eol=lf
+
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
+
+# ---------------------------------------------------------------------------
+# Unity YAML: text, diffable, and merged with Unity's SmartMerge tool.
+#
+# `merge=unityyamlmerge` only works once each developer has registered the
+# driver in their own .git/config -- see "SmartMerge" in README.md. Without it
+# git falls back to a normal (noisy but non-destructive) text merge.
+# ---------------------------------------------------------------------------
+*.unity        text merge=unityyamlmerge diff
+*.prefab       text merge=unityyamlmerge diff
+*.asset        text merge=unityyamlmerge diff
+*.mat          text merge=unityyamlmerge diff
+*.anim         text merge=unityyamlmerge diff
+*.controller   text merge=unityyamlmerge diff
+*.overrideController text merge=unityyamlmerge diff
+*.physicMaterial     text merge=unityyamlmerge diff
+*.physicsMaterial2D  text merge=unityyamlmerge diff
+*.playable     text merge=unityyamlmerge diff
+*.mask         text merge=unityyamlmerge diff
+*.brush        text merge=unityyamlmerge diff
+*.flare        text merge=unityyamlmerge diff
+*.fontsettings text merge=unityyamlmerge diff
+*.guiskin      text merge=unityyamlmerge diff
+*.giparams     text merge=unityyamlmerge diff
+*.renderTexture      text merge=unityyamlmerge diff
+*.lighting     text merge=unityyamlmerge diff
+*.mixer        text merge=unityyamlmerge diff
+*.shadervariants     text merge=unityyamlmerge diff
+*.spriteatlas  text merge=unityyamlmerge diff
+*.terrainlayer text merge=unityyamlmerge diff
+*.signal       text merge=unityyamlmerge diff
+*.meta         text merge=unityyamlmerge diff
+
+# Source and config: plain diffable text
+*.cs           text diff=csharp
+*.shader       text
+*.cginc        text
+*.hlsl         text
+*.compute      text
+*.asmdef       text
+*.asmref       text
+*.json         text
+*.md           text
+*.yml          text
+*.yaml         text
+*.xml          text
+*.txt          text
+
+# ---------------------------------------------------------------------------
+# Git LFS: binary assets
+#
+# Anything matched here is stored as an LFS pointer. Add new binary extensions
+# HERE (not with `git lfs track`, which appends unsorted lines) and commit the
+# change BEFORE committing the first file of that type -- files added earlier
+# stay in normal git history until they are migrated.
+# ---------------------------------------------------------------------------
+
+# 3D models
+*.fbx    filter=lfs diff=lfs merge=lfs -text
+*.FBX    filter=lfs diff=lfs merge=lfs -text
+*.obj    filter=lfs diff=lfs merge=lfs -text
+*.blend  filter=lfs diff=lfs merge=lfs -text
+*.blend1 filter=lfs diff=lfs merge=lfs -text
+*.dae    filter=lfs diff=lfs merge=lfs -text
+*.3ds    filter=lfs diff=lfs merge=lfs -text
+*.max    filter=lfs diff=lfs merge=lfs -text
+*.ma     filter=lfs diff=lfs merge=lfs -text
+*.mb     filter=lfs diff=lfs merge=lfs -text
+*.c4d    filter=lfs diff=lfs merge=lfs -text
+*.glb    filter=lfs diff=lfs merge=lfs -text
+*.gltf   filter=lfs diff=lfs merge=lfs -text
+
+# Textures & images
+*.png    filter=lfs diff=lfs merge=lfs -text
+*.jpg    filter=lfs diff=lfs merge=lfs -text
+*.jpeg   filter=lfs diff=lfs merge=lfs -text
+*.gif    filter=lfs diff=lfs merge=lfs -text
+*.bmp    filter=lfs diff=lfs merge=lfs -text
+*.tga    filter=lfs diff=lfs merge=lfs -text
+*.tif    filter=lfs diff=lfs merge=lfs -text
+*.tiff   filter=lfs diff=lfs merge=lfs -text
+*.psd    filter=lfs diff=lfs merge=lfs -text
+*.exr    filter=lfs diff=lfs merge=lfs -text
+*.hdr    filter=lfs diff=lfs merge=lfs -text
+*.iff    filter=lfs diff=lfs merge=lfs -text
+*.pict   filter=lfs diff=lfs merge=lfs -text
+*.cubemap filter=lfs diff=lfs merge=lfs -text
+
+# Audio
+*.wav    filter=lfs diff=lfs merge=lfs -text
+*.mp3    filter=lfs diff=lfs merge=lfs -text
+*.ogg    filter=lfs diff=lfs merge=lfs -text
+*.aif    filter=lfs diff=lfs merge=lfs -text
+*.aiff   filter=lfs diff=lfs merge=lfs -text
+*.flac   filter=lfs diff=lfs merge=lfs -text
+*.m4a    filter=lfs diff=lfs merge=lfs -text
+
+# Video
+*.mp4    filter=lfs diff=lfs merge=lfs -text
+*.mov    filter=lfs diff=lfs merge=lfs -text
+*.webm   filter=lfs diff=lfs merge=lfs -text
+*.avi    filter=lfs diff=lfs merge=lfs -text
+*.mpg    filter=lfs diff=lfs merge=lfs -text
+*.mpeg   filter=lfs diff=lfs merge=lfs -text
+
+# Fonts
+*.ttf    filter=lfs diff=lfs merge=lfs -text
+*.otf    filter=lfs diff=lfs merge=lfs -text
+
+# Misc binaries that occasionally land in Unity projects
+*.dll    filter=lfs diff=lfs merge=lfs -text
+*.so     filter=lfs diff=lfs merge=lfs -text
+*.dylib  filter=lfs diff=lfs merge=lfs -text
+*.bundle filter=lfs diff=lfs merge=lfs -text
+*.a      filter=lfs diff=lfs merge=lfs -text
+*.pdf    filter=lfs diff=lfs merge=lfs -text
+*.zip    filter=lfs diff=lfs merge=lfs -text
+*.7z     filter=lfs diff=lfs merge=lfs -text

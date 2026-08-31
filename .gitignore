@@ -1,0 +1,93 @@
+# ---------------------------------------------------------------------------
+# Unity project .gitignore
+#
+# Rule of thumb: everything under Assets/, Packages/ and ProjectSettings/ is
+# source and IS committed (including every .meta file). Everything Unity or
+# your IDE regenerates is not.
+# ---------------------------------------------------------------------------
+
+# --- Unity generated directories -------------------------------------------
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# Nested variants (e.g. a package sandbox or a secondary project folder)
+**/[Ll]ibrary/
+**/[Tt]emp/
+**/[Oo]bj/
+**/[Ll]ogs/
+
+# Addressables build cache
+/[Aa]ssets/[Ss]treamingAssets/aa.meta
+/[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# Asset meta data for files that no longer exist is auto-pruned by Unity,
+# but never ignore .meta files themselves:
+!*.meta
+
+# --- Generated C# project files --------------------------------------------
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# --- IDE noise --------------------------------------------------------------
+# Visual Studio
+.vs/
+# Rider / JetBrains
+.idea/
+/[Rr]ider*/
+*.sln.iml
+# Visual Studio Code: keep the two files we deliberately share, drop the rest
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# --- Build output & packaged artifacts -------------------------------------
+*.apk
+*.aab
+*.ipa
+*.app
+*.unitypackage
+*.unitypackage.meta
+ExportedObj/
+crashlytics-build.properties
+sysinfo.txt
+
+# --- OS noise ---------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# --- Secrets / licences: NEVER commit these --------------------------------
+# Unity licence files and activation artifacts
+*.ulf
+*.alf
+Unity_v*.alf
+Unity_lic.ulf
+# Generic secret containers
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
