@@ -127,6 +127,36 @@ These were deliberately left out of the scaffold rather than guessed at.
 
 ## Part 5 — After Milestone 1 (simulation core)
 
+- [ ] **5.0 Sign in to the Unity Hub first — without an account token the
+      editor refuses to start.** Symptom: *"No valid Unity Editor license
+      found"*, while *Hub > Settings > Licenses* still lists an old Personal
+      entry (which is a stale local record, not proof of a working licence).
+
+      How to confirm it is the sign-in and not the project — two logs under
+      `%LOCALAPPDATA%\Unity\`:
+
+      - `Unity.Licensing.Client.log` →
+        `[Code: 401] Token not found in cache`, followed by
+        `ulf update failed. Details: No ULF license found.`
+      - `Unity.Entitlements.Audit.log` → every request, e.g.
+        `com.unity.editor.ui`, comes back `granted: False`.
+
+      A stale Personal record cannot be refreshed while no account token
+      exists, so the editor is granted zero entitlements.
+
+      **Fix:** Hub → account icon (top left) → *Sign in* → then
+      *Settings > Licenses* → remove the old Personal entry →
+      *Add license* → *Get a free personal license*.
+
+      This Hub is the **MSIX build**, so its config lives under
+      `%LOCALAPPDATA%\Packages\UnityTechnologies.UnityHub_2vrhnee42bhxm\`
+      and **not** `%APPDATA%\UnityHub\`. If a sign-in does not survive a Hub
+      restart, install the classic (non-MSIX) Hub from unity.com instead.
+
+      **Never paste `.ulf` contents into a chat, an issue or a commit.**
+      The same file is the `UNITY_LICENSE` CI secret (Part 4.1) — once the
+      sign-in works, generating it is the next unblocked step.
+
 - [ ] **5.1 Open the project** with `6000.0.58f1` and let it import the new
       `Game.Sim` and `Game.Sim.Tests` assemblies. Confirm both compile
       (Console clean). Commit the newly generated `.meta` files for
