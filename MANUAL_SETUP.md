@@ -198,7 +198,12 @@ delete that file. `Temp/` is git-ignored; nothing to commit.
       `Assets/Scripts/Runtime/Game3D/` and `Assets/Art/` (same routine as 6.3).
       Nothing else needs wiring: press **Play** in any scene and the whole site
       builds itself at runtime.
-- [ ] **7.2 Controls.** Mouse look, **WASD** move, **E** interact (hold for
+- [ ] **7.2 The game boots into `00-first-shift`** — the teaching start: two
+      racks, one contract paying the bills, empty slots inviting construction,
+      and nothing scripted after tick 0. A hands-off year verifiably survives
+      (no penalties, town content) — every disaster is player-built. The
+      scripted balance-test year is `baseline-year` (Scenario tab in F1).
+      **Controls.** Mouse look, **WASD** move, **E** interact (hold for
       hold-controls: diesel lever, holding a door shut), **Q** drop what you
       carry, **Esc** frees the cursor, **F1** debug console, **F2** network
       panel, **F5/F9** save/load (host only). Placement: **1–7** choose

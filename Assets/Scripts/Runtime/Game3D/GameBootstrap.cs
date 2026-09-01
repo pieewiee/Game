@@ -80,6 +80,11 @@ namespace Game.Runtime.World
 
             NewsFeed.Post("A new operator has taken over the old barn site. " +
                 "The Good Neighbor Program welcomes the community's continued partnership.");
+            NewsFeed.Post("ORIENTATION: the operations terminal is F1 — contracts, money and " +
+                "the town's mood live there. The desk in the office publishes press releases; " +
+                "the Program recommends restraint.");
+            NewsFeed.Post("SITE NOTE: every control on this site can be operated by anyone " +
+                "at any time, an arrangement the Program describes as \"empowerment\".");
         }
 
         /// <summary>Every player-caused sim mutation goes through here — the
