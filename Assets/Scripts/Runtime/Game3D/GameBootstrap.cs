@@ -55,6 +55,7 @@ namespace Game.Runtime.World
                 if (BulletinEditor.Instance != null && BulletinEditor.Instance.IsOpen) return true;
                 if (ContractEditor.Instance != null && ContractEditor.Instance.IsOpen) return true;
                 if (PlayerOptions.Instance != null && PlayerOptions.Instance.IsOpen) return true;
+                if (DebugTools.DebugConsole.IsOpen) return true;
                 return Net != null && Net.PanelOpen;
             }
         }

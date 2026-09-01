@@ -24,9 +24,12 @@ namespace Game.Runtime.World
         public static float BobScale = 1f;   // 1 = the calm default
         public static float MachineryVolume = 0.8f;
         public static float MasterVolume = 1f;
+        public static float UiScale = 1f;
+        public static float ConsoleOpacity = 0.92f;
+        public static bool HudVisible = true;
 
         public bool IsOpen { get; private set; }
-        private Rect _win = new Rect(60, 60, 340, 250);
+        private Rect _win = new Rect(60, 60, 360, 330);
 
         private void Awake()
         {
@@ -37,6 +40,9 @@ namespace Game.Runtime.World
             BobScale = PlayerPrefs.GetFloat("gnp.bob", 1f);
             MachineryVolume = PlayerPrefs.GetFloat("gnp.machinery", 0.8f);
             MasterVolume = PlayerPrefs.GetFloat("gnp.volume", 1f);
+            UiScale = PlayerPrefs.GetFloat("gnp.uiscale", 1f);
+            ConsoleOpacity = PlayerPrefs.GetFloat("gnp.consoleop", 0.92f);
+            HudVisible = PlayerPrefs.GetInt("gnp.hud", 1) == 1;
             AudioListener.volume = MasterVolume;
         }
 
@@ -48,6 +54,9 @@ namespace Game.Runtime.World
             PlayerPrefs.SetFloat("gnp.bob", BobScale);
             PlayerPrefs.SetFloat("gnp.machinery", MachineryVolume);
             PlayerPrefs.SetFloat("gnp.volume", MasterVolume);
+            PlayerPrefs.SetFloat("gnp.uiscale", UiScale);
+            PlayerPrefs.SetFloat("gnp.consoleop", ConsoleOpacity);
+            PlayerPrefs.SetInt("gnp.hud", HudVisible ? 1 : 0);
             PlayerPrefs.Save();
         }
 
@@ -87,7 +96,9 @@ namespace Game.Runtime.World
         private void OnGUI()
         {
             if (!IsOpen) return;
+            UiScaler.Begin();
             _win = GUILayout.Window(915, _win, DrawWindow, "OPTIONS (F3)");
+            UiScaler.End();
         }
 
         private static float Row(string label, float value, float lo, float hi, string fmt)
@@ -109,6 +120,12 @@ namespace Game.Runtime.World
             MachineryVolume = Row("Machinery", MachineryVolume, 0f, 1f, "0.00");
             MasterVolume = Row("Master volume", MasterVolume, 0f, 1f, "0.00");
 
+            GUILayout.Space(6);
+            GUILayout.Label("— interface —");
+            UiScale = Row("UI scale", UiScale, 0.7f, 2.0f, "0.00");
+            ConsoleOpacity = Row("Console opacity", ConsoleOpacity, 0.3f, 1f, "0.00");
+            HudVisible = GUILayout.Toggle(HudVisible, " show the site HUD (clock, GNI, wind)");
+
             GUILayout.Space(8);
             GUILayout.Label("Comfort settings are per machine and are NOT part of\n" +
                             "the shared simulation — they never affect a session.");
@@ -118,6 +135,7 @@ namespace Game.Runtime.World
             {
                 Sensitivity = 0.08f; InvertY = false; Fov = 68f;
                 BobScale = 1f; MachineryVolume = 0.8f; MasterVolume = 1f;
+                UiScale = 1f; ConsoleOpacity = 0.92f; HudVisible = true;
             }
             GUILayout.EndHorizontal();
             GUI.DragWindow();

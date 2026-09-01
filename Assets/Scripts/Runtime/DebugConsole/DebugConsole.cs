@@ -47,26 +47,79 @@ namespace Game.Runtime.DebugTools
             _seedText = _driver.Seed.ToString(CultureInfo.InvariantCulture);
         }
 
+        /// <summary>The console is modal: it owns the cursor while it is open,
+        /// because its whole point is clicking sliders and buttons. Without
+        /// this the cursor stayed locked to the crosshair and every click
+        /// landed in the middle of the screen.</summary>
+        public static bool IsOpen { get; private set; }
+
         private void Update()
         {
             Keyboard kb = Keyboard.current;
-            if (kb != null && kb.f1Key.wasPressedThisFrame) _visible = !_visible;
+            if (kb == null) return;
+            if (kb.f1Key.wasPressedThisFrame) SetVisible(!_visible);
+            else if (_visible && kb.escapeKey.wasPressedThisFrame)
+            {
+                SetVisible(false);
+                Game.Runtime.World.GameBootstrap.EscConsumedFrame = Time.frameCount;
+            }
         }
+
+        private void SetVisible(bool on)
+        {
+            _visible = on;
+            IsOpen = on;
+            if (on)
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
+            else if (!Game.Runtime.World.GameBootstrap.UiWantsCursor)
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
+        }
+
+        private void OnDisable() { IsOpen = false; }
+
+        private Rect _win = new Rect(20, 20, 1040, 620);
+        private bool _sized;
 
         private void OnGUI()
         {
-            if (!_visible)
+            Game.Runtime.World.UiScaler.Begin();
+            try
             {
-                GUI.Label(new Rect(8, 8, 400, 24), "[GNP] F1: debug console");
-                return;
+                if (!_visible)
+                {
+                    GUI.Label(new Rect(8, 8, 400, 24), "[GNP] F1: debug console");
+                    return;
+                }
+                if (_driver.Sim == null)
+                {
+                    GUI.Label(new Rect(8, 8, 900, 24), "[GNP] no simulation — balance.tuning or the scenario failed to load (see Console log)");
+                    return;
+                }
+                if (!_sized)
+                {
+                    // First open: a large but not total window, inside the view.
+                    _sized = true;
+                    float w = Mathf.Min(1040f, Game.Runtime.World.UiScaler.W - 40f);
+                    float h = Mathf.Min(620f, Game.Runtime.World.UiScaler.H - 40f);
+                    _win = new Rect(20, 20, w, h);
+                }
+                Color prev = GUI.color;
+                GUI.color = new Color(1f, 1f, 1f, Game.Runtime.World.PlayerOptions.ConsoleOpacity);
+                _win = GUILayout.Window(910, _win, DrawWindow,
+                    "GNP debug console — F1 closes, drag to move, corner to resize");
+                GUI.color = prev;
             }
-            if (_driver.Sim == null)
-            {
-                GUI.Label(new Rect(8, 8, 900, 24), "[GNP] no simulation — balance.tuning or the scenario failed to load (see Console log)");
-                return;
-            }
+            finally { Game.Runtime.World.UiScaler.End(); }
+        }
 
-            GUILayout.BeginArea(new Rect(8, 8, Screen.width - 16, Screen.height - 16), GUI.skin.box);
+        private void DrawWindow(int id)
+        {
             DrawTopBar();
             _tab = GUILayout.Toolbar(_tab, TabNames, GUILayout.Height(26));
             GUILayout.Space(4);
@@ -80,7 +133,17 @@ namespace Game.Runtime.DebugTools
                 case 5: DrawEvents(); break;
                 case 6: DrawScenario(); break;
             }
-            GUILayout.EndArea();
+
+            // Resize grip: drag the bottom-right corner.
+            var grip = new Rect(_win.width - 18, _win.height - 18, 16, 16);
+            GUI.Box(grip, "◢");
+            if (Event.current.type == EventType.MouseDrag && grip.Contains(Event.current.mousePosition))
+            {
+                _win.width = Mathf.Max(520f, _win.width + Event.current.delta.x);
+                _win.height = Mathf.Max(320f, _win.height + Event.current.delta.y);
+                Event.current.Use();
+            }
+            GUI.DragWindow(new Rect(0, 0, _win.width, 20));
         }
 
         // ------------------------------------------------------------------

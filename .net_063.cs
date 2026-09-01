@@ -911,19 +911,13 @@ namespace Game.Runtime.Net
 
         private void OnGUI()
         {
-            World.UiScaler.Begin();
-            try { DrawPanel(); } finally { World.UiScaler.End(); }
-        }
-
-        private void DrawPanel()
-        {
             if (!_panelOpen)
             {
-                GUI.Label(new Rect(World.UiScaler.W - 200, World.UiScaler.H - 24, 196, 22),
+                GUI.Label(new Rect(Screen.width - 200, Screen.height - 24, 196, 22),
                     Active ? (IsHost ? "hosting (F2)" : "client (F2)") : "F2: multiplayer");
                 return;
             }
-            GUILayout.BeginArea(new Rect(World.UiScaler.W - 280, World.UiScaler.H - 220, 272, 212), GUI.skin.box);
+            GUILayout.BeginArea(new Rect(Screen.width - 280, Screen.height - 220, 272, 212), GUI.skin.box);
             GUILayout.Label("— session —");
             if (!Active)
             {

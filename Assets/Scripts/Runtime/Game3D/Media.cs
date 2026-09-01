@@ -82,7 +82,7 @@ namespace Game.Runtime.Media
             if (_current.Length == 0 && _queue.Count > 0)
             {
                 _current = _queue.Dequeue();
-                _offset = Screen.width;
+                _offset = World.UiScaler.W;
             }
             if (_current.Length > 0)
             {
@@ -111,13 +111,15 @@ namespace Game.Runtime.Media
         private void OnGUI()
         {
             if (_current.Length == 0) return;
+            World.UiScaler.Begin();
             var style = new GUIStyle(GUI.skin.label);
             style.fontSize = 16;
             GUI.color = Color.black;
-            GUI.Label(new Rect(0, Screen.height - 30, 4000, 26), "", GUI.skin.box);
+            GUI.Label(new Rect(0, World.UiScaler.H - 30, 4000, 26), "", GUI.skin.box);
             GUI.color = Palette();
-            GUI.Label(new Rect(_offset, Screen.height - 28, 4000, 26), _current, style);
+            GUI.Label(new Rect(_offset, World.UiScaler.H - 28, 4000, 26), _current, style);
             GUI.color = Color.white;
+            World.UiScaler.End();
         }
 
         private static Color Palette() { return new Color(0.98f, 0.92f, 0.75f); }
@@ -163,7 +165,9 @@ namespace Game.Runtime.Media
             if (!IsOpen) return;
             // GUILayout.Window, not GUI.Window: the window body uses GUILayout
             // controls, which need the layouting window variant.
+            World.UiScaler.Begin();
             _win = GUILayout.Window(913, _win, DrawWindow, "PROGRAM BULLETIN — draft");
+            World.UiScaler.End();
         }
 
         private void DrawWindow(int id)
@@ -262,7 +266,9 @@ namespace Game.Runtime.Media
         private void OnGUI()
         {
             if (!IsOpen) return;
+            World.UiScaler.Begin();
             _win = GUILayout.Window(914, _win, DrawWindow, "COMPUTE CONTRACTS — standard terms");
+            World.UiScaler.End();
         }
 
         private void Sign(CommandKind kind, double kw, double days, string desc)
