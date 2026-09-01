@@ -255,6 +255,20 @@ namespace Game.Sim
         public double FibreCutDurationH { get { return S("FIBRE_CUT_DURATION_H"); } }
         public double LocalHireGniPerFte { get { return S("LOCAL_HIRE_GNI_PER_FTE"); } }
 
+        // Media & hazards (M5)
+        public double BulletinBaseEffect { get { return S("BULLETIN_BASE_EFFECT"); } }
+        public double BulletinBackfire { get { return S("BULLETIN_BACKFIRE"); } }
+        public double CredibilityLossPerUse { get { return S("CREDIBILITY_LOSS_PER_USE"); } }
+        public double CredibilityRecoveryPerWeek { get { return S("CREDIBILITY_RECOVERY_PER_WEEK"); } }
+        public double CredibilityMockeryThreshold { get { return S("CREDIBILITY_MOCKERY_THRESHOLD"); } }
+        public double NamingGniEffect { get { return S("NAMING_GNI_EFFECT"); } }
+        public double NamingDecay { get { return S("NAMING_DECAY"); } }
+        public double AccidentGniPenalty { get { return S("ACCIDENT_GNI_PENALTY"); } }
+        public double AccidentHalflifeDays { get { return S("ACCIDENT_HALFLIFE_DAYS"); } }
+        public double SuppressionDriveLoss { get { return S("SUPPRESSION_DRIVE_LOSS"); } }
+        public double RouteLossPctPer100M { get { return S("ROUTE_LOSS_PCT_PER_100M"); } }
+        public double EpoOutageHours { get { return S("EPO_OUTAGE_HOURS"); } }
+
         // Climate
         public double TownBearingDeg { get { return S("TOWN_BEARING_DEG"); } }
         public double TownSectorHalfDeg { get { return S("TOWN_SECTOR_HALF_DEG"); } }
@@ -320,6 +334,11 @@ namespace Game.Sim
             "PETITION_RATE_PER_TICK", "PETITION_THRESHOLD",
             "REFERENDUM_DELAY_DAYS", "REFERENDUM_KEEP_THRESHOLD", "REFERENDUM_DELTA_WEIGHT",
             "SABOTAGE_TRIGGER_HOURS", "FIBRE_CUT_DURATION_H", "LOCAL_HIRE_GNI_PER_FTE",
+            "BULLETIN_BASE_EFFECT", "BULLETIN_BACKFIRE", "CREDIBILITY_LOSS_PER_USE",
+            "CREDIBILITY_RECOVERY_PER_WEEK", "CREDIBILITY_MOCKERY_THRESHOLD",
+            "NAMING_GNI_EFFECT", "NAMING_DECAY",
+            "ACCIDENT_GNI_PENALTY", "ACCIDENT_HALFLIFE_DAYS",
+            "SUPPRESSION_DRIVE_LOSS", "ROUTE_LOSS_PCT_PER_100M", "EPO_OUTAGE_HOURS",
             "TOWN_BEARING_DEG", "TOWN_SECTOR_HALF_DEG",
             "TEMP_SEASONAL_MEAN", "TEMP_SEASONAL_AMP", "TEMP_DIURNAL_AMP", "TEMP_NOISE_AMP",
             "WIND_DIR_NOISE_DEG", "HEATWAVE_THRESHOLD",

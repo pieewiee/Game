@@ -147,3 +147,17 @@ DROUGHT_RECOVER_DAYS = 6
 PRECIP_WET_PROBABILITY = 0.45
 NOISE_TURBINE_WEIGHT = 1.2         # loudness per turbine (nuisance.md par.1)
 TURBINE_UNIT_KW = 3300             # one modelled onshore turbine
+
+# --- Media & hazards (M5) — sentiment.md par.5, workplace-accidents.md, all UNVERIFIED
+BULLETIN_BASE_EFFECT = 3.0         # GNI pts at full credibility
+BULLETIN_BACKFIRE = -1.5           # GNI pts per bulletin below the mockery line
+CREDIBILITY_LOSS_PER_USE = 0.15
+CREDIBILITY_RECOVERY_PER_WEEK = 0.02
+CREDIBILITY_MOCKERY_THRESHOLD = 0.2
+NAMING_GNI_EFFECT = 4.0            # naming a responsible employee
+NAMING_DECAY = 0.55                # x per subsequent naming
+ACCIDENT_GNI_PENALTY = 6.0         # per recordable incident, decaying
+ACCIDENT_HALFLIFE_DAYS = 60
+SUPPRESSION_DRIVE_LOSS = 0.55      # fraction of the room's nodes lost on discharge
+ROUTE_LOSS_PCT_PER_100M = 1.0      # % of served power lost per 100 m of run
+EPO_OUTAGE_HOURS = 1               # sim-tick granularity of the 8-14 min restart

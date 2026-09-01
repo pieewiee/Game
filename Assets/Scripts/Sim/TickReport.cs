@@ -46,6 +46,9 @@ namespace Game.Sim
         public double NNoise, NAir, NWater, NPrice, NVisual;
         public double MNoise, MAir, MWater, MPrice, MVisual;
 
+        // media & facility (M3-M5)
+        public double Credibility, AccidentScore, RouteLossKw, OutageFrac, CoolingDerateMult;
+
         // community
         public double GniTarget, Gni;
         public EscalationStage Stage;
@@ -72,6 +75,7 @@ namespace Game.Sim
             "p_base_eur,p_grid_eur,p_resident_eur,p_baseline_eur,load_ratio,congestion_mult," +
             "n_noise,n_air,n_water,n_price,n_visual," +
             "m_noise,m_air,m_water,m_price,m_visual," +
+            "credibility,accident_score,route_loss_kw,outage_frac,cooling_derate," +
             "gni_target,gni,stage,petition_signatures,reputation," +
             "revenue_eur,energy_cost_eur,water_cost_eur,penalty_eur,capex_eur,cash_eur," +
             "active_contracts,training_progress_frac";
@@ -95,6 +99,7 @@ namespace Game.Sim
             D(PBaseEurKwh); D(PGridEurKwh); D(PResidentEurKwh); D(PBaselineEurKwh); D(LoadRatio); D(CongestionMult);
             D(NNoise); D(NAir); D(NWater); D(NPrice); D(NVisual);
             D(MNoise); D(MAir); D(MWater); D(MPrice); D(MVisual);
+            D(Credibility); D(AccidentScore); D(RouteLossKw); D(OutageFrac); D(CoolingDerateMult);
             D(GniTarget); D(Gni);
             sb.Append(Stage.ToString()); sb.Append(',');
             D(PetitionSignatures); D(Reputation);

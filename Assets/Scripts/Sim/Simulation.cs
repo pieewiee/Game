@@ -229,6 +229,91 @@ namespace Game.Sim
                 case CommandKind.SetVisualPoints:
                     s.VisualPoints = cmd.A;
                     break;
+
+                // --- Milestones 3-5 -----------------------------------------
+                case CommandKind.SetPlant:
+                {
+                    var kind = (PlantKind)(int)cmd.A;
+                    double v = Math.Max(0.0, cmd.B);
+                    switch (kind)
+                    {
+                        case PlantKind.FreecoolKwTh: s.FreecoolKwTh = v; break;
+                        case PlantKind.EvapKwTh: s.EvapKwTh = v; break;
+                        case PlantKind.ChillerKwTh: s.ChillerKwTh = v; break;
+                        case PlantKind.SolarKwp: s.SolarKwp = v; break;
+                        case PlantKind.WindKw: s.WindKw = v; break;
+                        case PlantKind.BatteryKwh: s.BatteryKwhCap = v; break;
+                        case PlantKind.BatteryKw: s.BatteryKw = v; break;
+                        case PlantKind.DieselKw: s.DieselKw = v; break;
+                    }
+                    s.Log("facility", kind + " set to " + v.ToString("0", CultureInfo.InvariantCulture));
+                    break;
+                }
+                case CommandKind.SetRouteLossKw:
+                    s.RouteLossKw = Math.Max(0.0, cmd.A);
+                    break;
+                case CommandKind.DestroyNodes:
+                {
+                    int destroy = Math.Min((int)cmd.A, s.NodesInstalled);
+                    if (destroy <= 0) break;
+                    s.NodesInstalled -= destroy;
+                    s.Log("facility", destroy + " nodes destroyed, fleet now " + s.NodesInstalled);
+                    break;
+                }
+                case CommandKind.EpoTrip:
+                {
+                    s.OutageFrac = Math.Max(0.0, Math.Min(1.0, cmd.A));
+                    s.OutageUntilTick = s.Tick + Math.Max(1L, (long)cmd.B);
+                    s.Log("facility", "EPO: " + (s.OutageFrac * 100).ToString("0", CultureInfo.InvariantCulture) +
+                        "% of load de-energised for " + Math.Max(1L, (long)cmd.B) + " h");
+                    break;
+                }
+                case CommandKind.SetCoolingDerate:
+                    s.CoolingDerateMult = Math.Max(0.0, Math.Min(1.0, cmd.A));
+                    break;
+                case CommandKind.SetWaterValve:
+                    s.WaterValveFrac = Math.Max(0.0, Math.Min(1.0, cmd.A));
+                    break;
+                case CommandKind.SetSetpoint:
+                    s.SetpointC = cmd.A;
+                    break;
+                case CommandKind.SetDieselManual:
+                    s.DieselManualOn = cmd.A >= 0.5;
+                    s.Log("power", s.DieselManualOn ? "Diesel lever: MANUAL RUN" : "Diesel lever released");
+                    break;
+                case CommandKind.IssueBulletin:
+                {
+                    bool named = cmd.A >= 0.5;
+                    double effect;
+                    if (s.Credibility < B.CredibilityMockeryThreshold)
+                    {
+                        // Below the mockery line, bulletins COST goodwill.
+                        effect = B.BulletinBackfire;
+                    }
+                    else
+                    {
+                        effect = B.BulletinBaseEffect * s.Credibility;
+                        if (named)
+                        {
+                            effect += B.NamingGniEffect * Math.Pow(B.NamingDecay, s.NamingCount);
+                            s.NamingCount++;
+                        }
+                    }
+                    s.Gni = Math.Max(0.0, Math.Min(100.0, s.Gni + effect));
+                    s.Credibility = Math.Max(0.0, s.Credibility - B.CredibilityLossPerUse);
+                    s.BulletinCount++;
+                    s.Log("media", "Program bulletin #" + s.BulletinCount +
+                        (named ? " (responsible employee named)" : "") +
+                        ": GNI " + (effect >= 0 ? "+" : "") + effect.ToString("0.0", CultureInfo.InvariantCulture) +
+                        ", credibility now " + s.Credibility.ToString("0.00", CultureInfo.InvariantCulture));
+                    break;
+                }
+                case CommandKind.ReportAccident:
+                    s.TotalAccidents++;
+                    s.AccidentScore += B.AccidentGniPenalty;
+                    s.Log("media", "Recordable incident #" + s.TotalAccidents +
+                        " — the public accident statistics have been updated");
+                    break;
             }
         }
 

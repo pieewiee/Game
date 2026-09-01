@@ -70,8 +70,14 @@ namespace Game.Sim
             r.MWater = s.ChannelMemory[2]; r.MPrice = s.ChannelMemory[3];
             r.MVisual = s.ChannelMemory[4];
 
+            // Credibility recovers slowly (sentiment.md §5); accidents decay
+            // out of the public memory with their own half-life.
+            s.Credibility = Math.Min(1.0, s.Credibility + B.CredibilityRecoveryPerWeek / (7.0 * SimClock.TicksPerDay));
+            double accLambda = 1.0 - Math.Pow(0.5, 1.0 / (B.AccidentHalflifeDays * SimClock.TicksPerDay));
+            s.AccidentScore *= 1.0 - accLambda;
+
             // ---- 8. GNI ----------------------------------------------------
-            double goodwill = B.LocalHireGniPerFte * s.LocalFte;
+            double goodwill = B.LocalHireGniPerFte * s.LocalFte - s.AccidentScore;
             double target = 100.0
                 - (B.WNoise * s.ChannelMemory[0] + B.WAir * s.ChannelMemory[1]
                  + B.WWater * s.ChannelMemory[2] + B.WPrice * s.ChannelMemory[3]
@@ -81,6 +87,11 @@ namespace Game.Sim
             if (target < 0.0) target = 0.0;
             s.Gni += B.GniAdjustRate * (target - s.Gni);
             r.GniTarget = target; r.Gni = s.Gni;
+            r.Credibility = s.Credibility;
+            r.AccidentScore = s.AccidentScore;
+            r.RouteLossKw = s.RouteLossKw;
+            r.OutageFrac = s.OutageUntilTick > s.Tick ? s.OutageFrac : 0.0;
+            r.CoolingDerateMult = s.CoolingDerateMult;
 
             // ---- Escalation ladder with hysteresis -------------------------
             EscalationStage before = s.Stage;

@@ -65,6 +65,22 @@ namespace Game.Sim
         public int WetStreakDays;
         public long LastProcessedDay = -1;
 
+        // --- Facility & hazards (M3-M5) --------------------------------------
+        public double RouteLossKw;            // conductor/pump loss of routed runs
+        public double CoolingDerateMult = 1.0;// airflow quality (blanking panels...)
+        public double WaterValveFrac = 1.0;   // physical inlet valve position
+        public double SetpointC = 18.0;       // supply air setpoint (presentation reads it too)
+        public bool DieselManualOn;           // the lever in the yard
+        public double OutageFrac;             // EPO: fraction of load cut...
+        public long OutageUntilTick = -1;     // ...until this tick
+
+        // --- Media & accidents (M5) ------------------------------------------
+        public double Credibility = 1.0;      // bulletin credibility 0..1
+        public int BulletinCount;
+        public int NamingCount;               // responsible-employee namings so far
+        public int TotalAccidents;
+        public double AccidentScore;          // decaying GNI penalty from accidents
+
         // --- Money ---------------------------------------------------------
         public double CashEur;
 

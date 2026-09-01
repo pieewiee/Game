@@ -5,6 +5,13 @@ namespace Game.Sim
 {
     public enum ContractType { Inference, Training, Spot }
 
+    /// <summary>Targets for the SetPlant command (facility placement, M3).</summary>
+    public enum PlantKind
+    {
+        FreecoolKwTh, EvapKwTh, ChillerKwTh,
+        SolarKwp, WindKw, BatteryKwh, BatteryKw, DieselKw
+    }
+
     public enum ContractStatus { Active, Completed, FailedDeadline, Terminated }
 
     public enum DieselPolicy
