@@ -27,6 +27,11 @@ namespace Game.Runtime.World
         public static NetSession Net { get; private set; }
         public static readonly List<string> Ledger = new List<string>();
 
+        /// <summary>The frame on which a modal window consumed Escape to close
+        /// itself — the player rig must not ALSO toggle the cursor that frame
+        /// (script execution order would otherwise decide the outcome).</summary>
+        public static int EscConsumedFrame = -1;
+
         /// <summary>The report every presentation system reads: the replicated
         /// snapshot on a client (whose own sim is paused and stale), the live
         /// sim's latest tick otherwise. HUD, audio, VFX, freeze, media — all

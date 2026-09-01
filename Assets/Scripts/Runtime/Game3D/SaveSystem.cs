@@ -120,10 +120,19 @@ namespace Game.Runtime.World
                 driver.CommandLog.AddRange(data.commands);
                 driver.Paused = true;
 
-                if (GameBootstrap.Facility != null && !string.IsNullOrEmpty(data.facilityJson))
+                try
                 {
-                    GameBootstrap.Facility.ApplyJson(data.facilityJson);
-                    GameBootstrap.Facility.SyncFromSim(false);
+                    if (GameBootstrap.Facility != null && !string.IsNullOrEmpty(data.facilityJson))
+                    {
+                        GameBootstrap.Facility.ApplyJson(data.facilityJson);
+                        GameBootstrap.Facility.SyncFromSim(false);
+                    }
+                }
+                catch (Exception fe)
+                {
+                    // The SIM restored fine; only the visual layout blob broke.
+                    Debug.LogError("[GNP] facility layout restore failed: " + fe.Message);
+                    NewsFeed.Post("Site state restored; the layout drawing was unreadable and was rebuilt from the sim.");
                 }
                 NewsFeed.Post("Site state restored to day " + SimClock.DayIndex(data.tick) +
                     " by deterministic replay. The town remembers everything; so does the save file.");

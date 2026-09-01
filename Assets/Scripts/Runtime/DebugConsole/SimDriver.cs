@@ -153,6 +153,7 @@ namespace Game.Runtime.DebugTools
 
         public void ReloadBalanceFromFileAndRestart()
         {
+            Balance oldBalance = Balance;
             try
             {
                 Balance = Balance.Parse(File.ReadAllText(BalancePath));
@@ -164,7 +165,14 @@ namespace Game.Runtime.DebugTools
                 LastFileOpMessage = "RELOAD FAILED: " + e.Message;
                 return;
             }
-            Restart(ScenarioName, Seed);
+            if (!Restart(ScenarioName, Seed))
+            {
+                // The running sim survives a failed restart — it must keep the
+                // balance it was actually built with, or the next save embeds
+                // values the replayed world never used.
+                Balance = oldBalance;
+                BalanceGeneration++;
+            }
         }
 
         /// <summary>Writes the current in-memory values over the tuning file,

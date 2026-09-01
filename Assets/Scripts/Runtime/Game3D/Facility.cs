@@ -61,7 +61,8 @@ namespace Game.Runtime.World
         private string _placeKind;
         private RoutePath _draftRoute;
         private GameObject _draftGo;
-        private int _lastSyncedNodes = -1;
+        private Aggregates _lastSynced;
+        private bool _syncDirty = true;
         public string PlacementHint { get; private set; } = "";
 
         private static readonly string[] PlaceKinds =
@@ -112,9 +113,19 @@ namespace Game.Runtime.World
 
         public int CurrentNodes() { return CurrentAggregates().Nodes; }
 
+        private static bool AggregatesEqual(in Aggregates x, in Aggregates y)
+        {
+            return x.Nodes == y.Nodes && x.EvapKwTh == y.EvapKwTh &&
+                   x.ChillerKwTh == y.ChillerKwTh && x.FreecoolKwTh == y.FreecoolKwTh &&
+                   x.SolarKwp == y.SolarKwp && x.BatteryKwhCap == y.BatteryKwhCap;
+        }
+
         private void Update()
         {
-            if (CurrentNodes() != _lastSyncedNodes) SyncFromSim(false);
+            // Watch EVERY aggregate, not just nodes: a placed chiller changes
+            // no node count but must still appear when its delta lands.
+            Aggregates a = CurrentAggregates();
+            if (_syncDirty || !AggregatesEqual(a, _lastSynced)) SyncFromSim(false);
             HandlePlacementInput();
         }
 
@@ -126,7 +137,8 @@ namespace Game.Runtime.World
         {
             if (Site == null) return;
             Aggregates s = CurrentAggregates();
-            _lastSyncedNodes = s.Nodes;
+            _lastSynced = s;
+            _syncDirty = false;
             int nodeCount = s.Nodes;
 
             foreach (GameObject go in _rackGos) if (go != null) Destroy(go);
@@ -157,10 +169,27 @@ namespace Game.Runtime.World
             // Restore missing-panel state SILENTLY: rebuilt panels default to
             // Mounted, but the hazard must survive a rack resync (and a load).
             // No command is sent — the sim's derate is already correct (replay
-            // or live), only the visuals needed rebuilding.
-            int restore = Mathf.Min(State.missingPanels, _panels.Count);
-            for (int i = 0; i < restore; i++) _panels[i].SetMissingSilently();
-            State.missingPanels = restore;
+            // or live), only the visuals needed rebuilding. With zero panels
+            // (client before its first snapshot) the replicated count survives
+            // untouched instead of being clobbered to 0.
+            if (_panels.Count > 0)
+            {
+                State.missingPanels = Mathf.Min(State.missingPanels, _panels.Count);
+                ApplyMissingVisuals();
+            }
+        }
+
+        /// <summary>First-N rule: the count is the replicated truth, the first
+        /// State.missingPanels slot panels render as pulled.</summary>
+        private void ApplyMissingVisuals()
+        {
+            for (int i = 0; i < _panels.Count; i++)
+            {
+                bool missing = i < State.missingPanels;
+                if (_panels[i] == null) continue;
+                _panels[i].Mounted = !missing;
+                _panels[i].gameObject.SetActive(!missing);
+            }
         }
 
         private GameObject BuildRack(Vector3 pos, int index)
@@ -202,45 +231,68 @@ namespace Game.Runtime.World
         // Blanking panels → cooling derate
         // ------------------------------------------------------------------
 
-        public bool HasMissingPanel
+        public bool HasMissingPanel { get { return State.missingPanels > 0; } }
+
+        /// <summary>A panel was physically pulled here: hide this machine's
+        /// slot immediately, hand the player a loose panel, and route the
+        /// COUNT change to the single authority (the host's State).</summary>
+        public void OnPanelPulled(BlankingPanel slot, PlayerRig player)
         {
-            get
+            slot.Mounted = false;
+            slot.gameObject.SetActive(false);
+            if (player.Carried == null)
             {
-                foreach (BlankingPanel p in _panels) if (p != null && !p.Mounted) return true;
-                return false;
+                GameObject loose = SpawnLoosePanel(slot.transform.position + Vector3.up * 0.2f);
+                player.PickUp(loose.GetComponent<LoosePanel>());
             }
+            RequestPanelDelta(1, player.PlayerName, "pulled a blanking panel");
         }
 
-        /// <summary>Remount a carried panel into the first empty slot: the
-        /// carried object is consumed, the hidden slot panel reappears, and the
-        /// derate command goes out through the normal interaction path.</summary>
+        /// <summary>Remount a carried loose panel: consume it, reveal a slot
+        /// locally for instant feedback, and route the count change.</summary>
         public void RemountPanel(PlayerRig player)
         {
-            foreach (BlankingPanel p in _panels)
-            {
-                if (p == null || p.Mounted) continue;
-                p.Mounted = true;
-                p.gameObject.SetActive(true);
-                player.ConsumeCarried();
-                OnPanelChanged();
-                return;
-            }
+            if (!(player.Carried is LoosePanel) || State.missingPanels <= 0) return;
+            player.ConsumeCarried();
+            RequestPanelDelta(-1, player.PlayerName, "remounted a blanking panel");
         }
 
-        /// <summary>Called from ACTUAL panel interactions only (pull/remount) —
-        /// never from visual resyncs, which must not write into the sim.</summary>
-        public void OnPanelChanged()
+        /// <summary>Panel-count changes are host-authoritative like hazards:
+        /// each machine's pulls are per-view, but ONE count drives the derate
+        /// (a client-local absolute would erase the host's own pulls).</summary>
+        private void RequestPanelDelta(int delta, string actorName, string action)
+        {
+            var net = GameBootstrap.Net;
+            if (net != null && net.IsClient)
+            {
+                net.SendPanelDelta(delta);
+                return;
+            }
+            ApplyPanelDelta(delta, actorName, action);
+        }
+
+        /// <summary>HOST/solo only: mutate the one true count, refresh visuals,
+        /// and push the derived derate into the sim. The facility broadcast
+        /// then converges every client's panels onto the first-N rule.</summary>
+        public void ApplyPanelDelta(int delta, string actorName, string action = null)
         {
             int total = Mathf.Max(1, _panels.Count);
-            int missing = 0;
-            foreach (BlankingPanel p in _panels) if (p != null && !p.Mounted) missing++;
-            State.missingPanels = missing;
-            // Presentation heuristic (flagged in the report): airflow quality
-            // falls to 50 % with every panel missing. The sim only sees the
-            // resulting derate, per the command contract.
-            double derate = 1.0 - 0.5 * missing / total;
-            GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.SetCoolingDerate, A = derate },
-                missing + " blanking panel(s) missing");
+            State.missingPanels = Mathf.Clamp(State.missingPanels + delta, 0, _panels.Count);
+            ApplyMissingVisuals();
+            double derate = 1.0 - 0.5 * State.missingPanels / total;
+            GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.SetCoolingDerate, A = derate }, null);
+            GameBootstrap.AddLedger(actorName,
+                (action ?? "changed blanking panels") + " (" + State.missingPanels + " missing)");
+        }
+
+        /// <summary>The physical panel object a player carries around.</summary>
+        public static GameObject SpawnLoosePanel(Vector3 pos)
+        {
+            var pm = new ProcMesh();
+            pm.Box(Vector3.zero, new Vector3(0.05f, 0.5f, 0.9f), Palette.ProgramBlue);
+            var go = MatLib.Spawn("LoosePanel", pm.Build("panel"), null, pos);
+            go.AddComponent<LoosePanel>();
+            return go;
         }
 
         // ------------------------------------------------------------------
@@ -266,7 +318,11 @@ namespace Game.Runtime.World
         {
             Keyboard kb = Keyboard.current;
             Mouse mouse = Mouse.current;
-            if (kb == null || GameBootstrap.UiWantsCursor) return;
+            // A locked cursor means the player is IN the world. With the
+            // cursor Esc-freed for the debug console, digits typed into its
+            // text fields must not arm placement modes.
+            if (kb == null || GameBootstrap.UiWantsCursor ||
+                Cursor.lockState != CursorLockMode.Locked) return;
 
             for (int i = 0; i < PlaceKinds.Length; i++)
             {
@@ -314,6 +370,12 @@ namespace Game.Runtime.World
 
         private void PlaceNext(string kind)
         {
+            var netc = GameBootstrap.Net;
+            if (netc != null && netc.IsClient && netc.RemoteTick == 0)
+            {
+                PlacementHint = "waiting for host state...";
+                return;
+            }
             Aggregates s = CurrentAggregates();
             switch (kind)
             {
@@ -352,8 +414,6 @@ namespace Game.Runtime.World
                     break;
             }
             State.items.Add(new PlacedItem { kind = kind, slot = State.items.Count });
-            // Racks/plant re-derive from authoritative state on the next Update.
-            _lastSyncedNodes = -1;
         }
 
         private bool PlantSlotsFull(Aggregates s)
@@ -395,9 +455,20 @@ namespace Game.Runtime.World
         {
             if (_draftRoute != null && _draftRoute.xs.Count >= 2)
             {
-                State.routes.Add(_draftRoute);
-                _routeGos.Add(BuildRouteMesh(_draftRoute, false));
-                SendRouteLoss(_draftRoute);
+                var net = GameBootstrap.Net;
+                if (net != null && net.IsClient)
+                {
+                    // The HOST owns the route list: geometry travels there, the
+                    // host recomputes the loss itself (never trusting a client
+                    // kW) and the facility broadcast brings the run back.
+                    net.SendRoute(JsonUtility.ToJson(_draftRoute));
+                }
+                else
+                {
+                    State.routes.Add(_draftRoute);
+                    _routeGos.Add(BuildRouteMesh(_draftRoute, false));
+                    SendRouteLoss(_draftRoute);
+                }
             }
             if (_draftGo != null) Destroy(_draftGo);
             _draftGo = null;
@@ -451,16 +522,38 @@ namespace Game.Runtime.World
         /// runs lose nothing. Sent as a DELTA for the one just-finished run,
         /// so several players routing at once (and clients with a paused local
         /// sim) compose correctly in the host's ledger.</summary>
-        private void SendRouteLoss(RoutePath route)
+        private double RouteLoss(RoutePath route)
         {
             var d = GameBootstrap.Driver;
-            if (d == null) return;
+            if (d == null) return 0;
             double pct = d.Balance.RouteLossPctPer100M / 100.0;
             double per100 = RouteLengthM(route) / 100.0;
-            double loss = route.kind == "power" ? per100 * pct * 100.0
-                        : route.kind == "cooling" ? per100 * pct * 50.0 : 0.0;
+            return route.kind == "power" ? per100 * pct * 100.0
+                 : route.kind == "cooling" ? per100 * pct * 50.0 : 0.0;
+        }
+
+        private void SendRouteLoss(RoutePath route)
+        {
+            double loss = RouteLoss(route);
             if (loss <= 0) return;
             GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.AddRouteLossKw, A = loss },
+                "routed a " + RouteLengthM(route).ToString("0", CultureInfo.InvariantCulture) + " m " +
+                route.kind + " run (+" + loss.ToString("0.0", CultureInfo.InvariantCulture) + " kW loss)");
+        }
+
+        /// <summary>HOST: a client-drawn route arrives — validate, own it,
+        /// price it, ledger it under the sender's name.</summary>
+        public void AddRouteFromNet(RoutePath route, string actorName)
+        {
+            if (route == null || route.xs == null || route.zs == null) return;
+            if (route.xs.Count < 2 || route.xs.Count != route.zs.Count || route.xs.Count > 64) return;
+            if (route.kind != "power" && route.kind != "cooling" && route.kind != "network") return;
+            State.routes.Add(route);
+            _routeGos.Add(BuildRouteMesh(route, false));
+            double loss = RouteLoss(route);
+            if (loss > 0)
+                GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.AddRouteLossKw, A = loss }, null);
+            GameBootstrap.AddLedger(actorName,
                 "routed a " + RouteLengthM(route).ToString("0", CultureInfo.InvariantCulture) + " m " +
                 route.kind + " run (+" + loss.ToString("0.0", CultureInfo.InvariantCulture) + " kW loss)");
         }
@@ -477,7 +570,7 @@ namespace Game.Runtime.World
             foreach (GameObject go in _routeGos) if (go != null) Destroy(go);
             _routeGos.Clear();
             foreach (RoutePath r in State.routes) _routeGos.Add(BuildRouteMesh(r, false));
-            _lastSyncedNodes = -1; // racks/plant resync from sim
+            _syncDirty = true; // racks/plant/panel visuals resync from state
         }
     }
 }

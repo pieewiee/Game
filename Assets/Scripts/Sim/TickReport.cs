@@ -49,7 +49,7 @@ namespace Game.Sim
         // media & facility (M3-M5)
         public double Credibility, AccidentScore, RouteLossKw, OutageFrac, CoolingDerateMult;
         public double SetpointC, WaterValveFrac;
-        public int NodesInstalled;
+        public int NodesInstalled, GridTier;
         public double EvapKwTh, ChillerKwTh, FreecoolKwTh, SolarKwp, BatteryKwhCap, DieselKw;
 
         // community
@@ -79,7 +79,7 @@ namespace Game.Sim
             "n_noise,n_air,n_water,n_price,n_visual," +
             "m_noise,m_air,m_water,m_price,m_visual," +
             "credibility,accident_score,route_loss_kw,outage_frac,cooling_derate," +
-            "setpoint_c,water_valve_frac,nodes_installed," +
+            "setpoint_c,water_valve_frac,nodes_installed,grid_tier," +
             "evap_kwth,chiller_kwth,freecool_kwth,solar_kwp,battery_kwh_cap,diesel_kw," +
             "gni_target,gni,stage,petition_signatures,reputation," +
             "revenue_eur,energy_cost_eur,water_cost_eur,penalty_eur,capex_eur,cash_eur," +
@@ -105,7 +105,7 @@ namespace Game.Sim
             D(NNoise); D(NAir); D(NWater); D(NPrice); D(NVisual);
             D(MNoise); D(MAir); D(MWater); D(MPrice); D(MVisual);
             D(Credibility); D(AccidentScore); D(RouteLossKw); D(OutageFrac); D(CoolingDerateMult);
-            D(SetpointC); D(WaterValveFrac); I(NodesInstalled);
+            D(SetpointC); D(WaterValveFrac); I(NodesInstalled); I(GridTier);
             D(EvapKwTh); D(ChillerKwTh); D(FreecoolKwTh); D(SolarKwp); D(BatteryKwhCap); D(DieselKw);
             D(GniTarget); D(Gni);
             sb.Append(Stage.ToString()); sb.Append(',');

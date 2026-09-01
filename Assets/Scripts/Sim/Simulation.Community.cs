@@ -95,6 +95,7 @@ namespace Game.Sim
             r.SetpointC = s.SetpointC;
             r.WaterValveFrac = s.WaterValveFrac;
             r.NodesInstalled = s.NodesInstalled;
+            r.GridTier = s.GridTier;
             r.EvapKwTh = s.EvapKwTh; r.ChillerKwTh = s.ChillerKwTh; r.FreecoolKwTh = s.FreecoolKwTh;
             r.SolarKwp = s.SolarKwp; r.BatteryKwhCap = s.BatteryKwhCap; r.DieselKw = s.DieselKw;
 

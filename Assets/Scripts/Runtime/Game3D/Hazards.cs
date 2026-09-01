@@ -209,6 +209,18 @@ namespace Game.Runtime.World
             }
         }
 
+        /// <summary>Late-join sync: adopt the host's REAL station state,
+        /// including the true remaining countdown (a fresh 30 s would promise
+        /// a doomed joiner time they do not have).</summary>
+        public void ForceState(bool sealCut, bool countingDown, float remaining)
+        {
+            SealCut = sealCut || countingDown;
+            if (countingDown && !CountingDown)
+                SiteAudio.PlaySiren(transform.position, Mathf.Max(1f, remaining));
+            CountingDown = countingDown;
+            Remaining = remaining;
+        }
+
         private void Update()
         {
             if (!CountingDown) return;
@@ -237,9 +249,13 @@ namespace Game.Runtime.World
                     "\"a scheduled validation of the Program's life-safety readiness\".");
             }
 
-            // Local consequences happen everywhere: your own body, your own view.
+            // Deaths are adjudicated ONCE: by the host (via MsgKill for
+            // clients, locally for its own rig) or by a solo machine. A client
+            // running its cosmetic countdown must not kill its own rig too —
+            // its respawned temp worker would catch the host's MsgKill.
             var player = GameBootstrap.LocalPlayer;
-            if (player != null && !player.IsDead && Room.Contains(player.transform.position))
+            if (authoritative && player != null && !player.IsDead &&
+                Room.Contains(player.transform.position))
                 player.Die("inert-gas discharge in " + Room.Name);
 
             var pm = new ProcMesh();

@@ -79,7 +79,8 @@ namespace Game.Runtime.World
             // again to play on). Never re-lock by click: clicking a console
             // slider must not yank the camera. Modal windows own their own
             // Escape, so it is ignored while one is open.
-            if (kb.escapeKey.wasPressedThisFrame && !GameBootstrap.UiWantsCursor)
+            if (kb.escapeKey.wasPressedThisFrame && !GameBootstrap.UiWantsCursor &&
+                GameBootstrap.EscConsumedFrame != Time.frameCount)
             {
                 bool locking = Cursor.lockState != CursorLockMode.Locked;
                 Cursor.lockState = locking ? CursorLockMode.Locked : CursorLockMode.None;
@@ -127,6 +128,15 @@ namespace Game.Runtime.World
             // hold-controls (door, diesel lever) disambiguate on release: a
             // tap (< 0.35 s) is Interact, anything longer was a hold.
             IInteractable target = CurrentTarget(out _);
+            // Looking away (or walking out of range) breaks a hold: a door is
+            // held shut by a BODY at the door, not by a keypress from across
+            // the yard. The physical-controls contract depends on this.
+            if (_pendingHold != null && !ReferenceEquals(target, _pendingHold))
+            {
+                if (_holding != null) _holding.InteractRelease(this);
+                _holding = null;
+                _pendingHold = null;
+            }
             if (kb.eKey.wasPressedThisFrame && target != null)
             {
                 if (target is IHoldInteractable armed)

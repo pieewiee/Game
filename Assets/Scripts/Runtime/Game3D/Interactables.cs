@@ -75,26 +75,18 @@ namespace Game.Runtime.World
 
         public override void Interact(PlayerRig player)
         {
-            if (Mounted)
-            {
-                Mounted = false;
-                transform.SetParent(null, true);
-                if (Facility != null) Facility.OnPanelChanged();
-                if (player.Carried == null) player.PickUp(this);
-                return;
-            }
-            base.Interact(player);
+            // Slot panels never leave the rack: pulling one hides the slot and
+            // hands the player a LOOSE panel object instead, so a later rack
+            // rebuild cannot duplicate it and a remount cannot destroy it.
+            if (Mounted && Facility != null) Facility.OnPanelPulled(this, player);
         }
+    }
 
-        /// <summary>Visual-resync path: the sim's derate already reflects this
-        /// panel being gone; mark and hide it without sending any command. The
-        /// physical panel object someone pulled is still lying around (or being
-        /// carried) — this slot just stays visibly empty.</summary>
-        public void SetMissingSilently()
-        {
-            Mounted = false;
-            gameObject.SetActive(false);
-        }
+    /// <summary>The carryable panel object itself — what you hold, drop, lose
+    /// behind the chillers, and eventually remount at any rack.</summary>
+    public sealed class LoosePanel : Carryable
+    {
+        private void Awake() { DisplayName = "blanking panel"; }
     }
 
     /// <summary>Lives on each rack: remounting point for a carried blanking
@@ -105,13 +97,13 @@ namespace Game.Runtime.World
 
         public string Prompt(PlayerRig player)
         {
-            if (Facility == null || !(player.Carried is BlankingPanel)) return null;
+            if (Facility == null || !(player.Carried is LoosePanel)) return null;
             return Facility.HasMissingPanel ? "E: remount blanking panel" : null;
         }
 
         public void Interact(PlayerRig player)
         {
-            if (Facility != null && player.Carried is BlankingPanel)
+            if (Facility != null && player.Carried is LoosePanel)
                 Facility.RemountPanel(player);
         }
     }

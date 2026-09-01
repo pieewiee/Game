@@ -31,10 +31,10 @@ namespace Game.Runtime.Net
     public sealed class NetSession : MonoBehaviour
     {
         private const byte MsgHello = 1, MsgCmd = 2, MsgAvatar = 3, MsgTime = 4, MsgNamed = 5,
-                           MsgHazard = 6;
+                           MsgHazard = 6, MsgPanel = 7, MsgRoute = 8;
         private const byte MsgSnapshot = 20, MsgLedger = 21, MsgRoster = 22,
                            MsgFacility = 23, MsgKill = 24, MsgNews = 25, MsgStanding = 26,
-                           MsgAvatars = 27, MsgHazardEvent = 28;
+                           MsgAvatars = 27, MsgHazardEvent = 28, MsgHazardState = 29;
         private const string Channel = "GNP";
         private const double StandingLossNamed = 14.0;   // coop-griefing.md §4
         private const double StandingStart = 50.0;
@@ -45,7 +45,10 @@ namespace Game.Runtime.Net
         public string LocalPlayerName = "Operator";
         public TickReport RemoteReport;
         public long RemoteTick;
+        public bool RemoteTimePaused = true;
+        public float RemoteTps = 24f;
         public bool PanelOpen { get { return _panelOpen; } }
+        private bool _cursorWasLockedBeforePanel;
 
         private NetworkManager _nm;
         private UnityTransport _transport;
@@ -87,6 +90,8 @@ namespace Game.Runtime.Net
             if (!_nm.StartHost()) { NewsFeed.Post("Hosting failed — see log."); return; }
             Active = true; IsHost = true; IsClient = false;
             LocalPlayerName = "Host";
+            if (GameBootstrap.LocalPlayer != null)
+                GameBootstrap.LocalPlayer.PlayerName = LocalPlayerName;
             _standings[LocalPlayerName] = StandingStart;
             _nm.CustomMessagingManager.RegisterNamedMessageHandler(Channel, OnMessage);
             // -= before += : a re-hosted session must not stack stale handlers.
@@ -153,6 +158,12 @@ namespace Game.Runtime.Net
             _avatars.Clear();
             _avatarPos.Clear();
             _roster.Clear();
+            _standings.Clear();
+            RemoteReport = default;
+            RemoteTick = 0;
+            RemoteTimePaused = true;
+            RemoteTps = 24f;
+            _lastFacilityJson = "";
         }
 
         private void OnClientConnected(ulong id)
@@ -161,6 +172,19 @@ namespace Game.Runtime.Net
             // Late joiner: full state — roster, facility, standings arrive with
             // the next broadcast; the ledger tail says where they walked in.
             SendFacility(id, force: true);
+            // Armed or counting pull stations, with the REAL remaining clock:
+            // a joiner walking into a 5 s countdown deserves the siren.
+            for (int i = 0; i < World.PullStation.All.Count; i++)
+            {
+                var st = World.PullStation.All[i];
+                if (!st.SealCut && !st.CountingDown) continue;
+                using var w = BeginMsg(MsgHazardState);
+                w.WriteValueSafe(i);
+                w.WriteValueSafe(st.SealCut);
+                w.WriteValueSafe(st.CountingDown);
+                w.WriteValueSafe(st.Remaining);
+                Send(w, id);
+            }
             GameBootstrap.AddLedger("system", "player " + id + " connected");
         }
 
@@ -276,16 +300,59 @@ namespace Game.Runtime.Net
                 }
                 case MsgAvatars when IsClient:
                 {
+                    // The list is a COMPLETE mirror: anyone absent from it has
+                    // left, so their avatar is torn down (no ghost bodies).
                     reader.ReadValueSafe(out int count);
+                    var seen = new HashSet<ulong>();
                     for (int i = 0; i < count; i++)
                     {
                         reader.ReadValueSafe(out ulong id);
                         reader.ReadValueSafe(out Vector3 pos);
                         reader.ReadValueSafe(out float yaw);
+                        seen.Add(id);
                         if (id == _nm.LocalClientId) continue; // that one is me
                         _avatarPos[id] = pos;
                         UpdateAvatar(id, pos, yaw);
                     }
+                    var stale = new List<ulong>();
+                    foreach (var id in _avatars.Keys) if (!seen.Contains(id)) stale.Add(id);
+                    foreach (ulong id in stale)
+                    {
+                        if (_avatars[id] != null) Destroy(_avatars[id]);
+                        _avatars.Remove(id);
+                        _avatarPos.Remove(id);
+                    }
+                    break;
+                }
+                case MsgHazardState when IsClient:
+                {
+                    reader.ReadValueSafe(out int index);
+                    reader.ReadValueSafe(out bool sealCut);
+                    reader.ReadValueSafe(out bool counting);
+                    reader.ReadValueSafe(out float remaining);
+                    if (index >= 0 && index < World.PullStation.All.Count)
+                        World.PullStation.All[index].ForceState(sealCut, counting, remaining);
+                    break;
+                }
+                case MsgPanel when IsHost:
+                {
+                    reader.ReadValueSafe(out int delta);
+                    if (delta != 1 && delta != -1) break;
+                    string actor = _roster.TryGetValue(sender, out string pn)
+                        ? pn : "P" + sender.ToString(CultureInfo.InvariantCulture);
+                    if (GameBootstrap.Facility != null)
+                        GameBootstrap.Facility.ApplyPanelDelta(delta, actor);
+                    break;
+                }
+                case MsgRoute when IsHost:
+                {
+                    reader.ReadValueSafe(out string json);
+                    World.RoutePath route = null;
+                    try { route = JsonUtility.FromJson<World.RoutePath>(json); } catch { }
+                    string actor2 = _roster.TryGetValue(sender, out string rn)
+                        ? rn : "P" + sender.ToString(CultureInfo.InvariantCulture);
+                    if (route != null && GameBootstrap.Facility != null)
+                        GameBootstrap.Facility.AddRouteFromNet(route, actor2);
                     break;
                 }
                 case MsgNamed when IsHost:
@@ -323,10 +390,14 @@ namespace Game.Runtime.Net
                     reader.ReadValueSafe(out int len);
                     var bytes = new byte[len];
                     reader.ReadBytesSafe(ref bytes, len);
+                    reader.ReadValueSafe(out bool hostPaused);
+                    reader.ReadValueSafe(out float hostTps);
                     if (ReportFromBytes(bytes, out TickReport report))
                     {
                         RemoteTick = tick;
                         RemoteReport = report;
+                        RemoteTimePaused = hostPaused;
+                        RemoteTps = hostTps;
                     }
                     break;
                 }
@@ -448,8 +519,20 @@ namespace Game.Runtime.Net
             if (kb != null && kb.f2Key.wasPressedThisFrame)
             {
                 _panelOpen = !_panelOpen;
-                Cursor.lockState = _panelOpen ? CursorLockMode.None : CursorLockMode.Locked;
-                Cursor.visible = _panelOpen;
+                if (_panelOpen)
+                {
+                    _cursorWasLockedBeforePanel = Cursor.lockState == CursorLockMode.Locked;
+                    Cursor.lockState = CursorLockMode.None;
+                    Cursor.visible = true;
+                }
+                else
+                {
+                    // Restore what the player had, and never steal the cursor
+                    // from a modal that still owns it (bulletin editor).
+                    bool wantFree = GameBootstrap.UiWantsCursor || !_cursorWasLockedBeforePanel;
+                    Cursor.lockState = wantFree ? CursorLockMode.None : CursorLockMode.Locked;
+                    Cursor.visible = wantFree;
+                }
             }
 
             if (!Active || _nm == null) return;
@@ -470,6 +553,8 @@ namespace Game.Runtime.Net
                     byte[] bytes = ReportToBytes(driver.Latest);
                     w.WriteValueSafe(bytes.Length);
                     w.WriteBytesSafe(bytes);
+                    w.WriteValueSafe(driver.Paused);
+                    w.WriteValueSafe(driver.TicksPerSecond);
                     Broadcast(w);
                 }
                 SendFacility(0, force: false);
@@ -511,6 +596,22 @@ namespace Game.Runtime.Net
                     Send(w, NetworkManager.ServerClientId);
                 }
             }
+        }
+
+        public void SendPanelDelta(int delta)
+        {
+            if (!IsClient) return;
+            using var w = BeginMsg(MsgPanel);
+            w.WriteValueSafe(delta);
+            Send(w, NetworkManager.ServerClientId);
+        }
+
+        public void SendRoute(string routeJson)
+        {
+            if (!IsClient) return;
+            using var w = BeginMsg(MsgRoute);
+            w.WriteValueSafe(routeJson);
+            Send(w, NetworkManager.ServerClientId);
         }
 
         public void SendHazard(int stationIndex, byte action)
@@ -555,9 +656,10 @@ namespace Game.Runtime.Net
             if (GameBootstrap.Facility == null) return;
             string json = GameBootstrap.Facility.ToJson();
             if (!force && json == _lastFacilityJson) return;
-            // WriteValueSafe throws past the writer's 64 KB ceiling; a site
-            // with that much routing keeps its last replicated layout instead.
-            if (System.Text.Encoding.UTF8.GetByteCount(json) > 60000)
+            // Guard with NGO's OWN wire size (4-byte length + 2 bytes/char) --
+            // WriteValueSafe throws past the writer's 64 KB ceiling, and a
+            // UTF-8 count disagrees with it by a factor of two for ASCII.
+            if (FastBufferWriter.GetWriteSize(json) > 60000)
             {
                 if (_lastFacilityJson != "OVERSIZE")
                 {
@@ -566,11 +668,19 @@ namespace Game.Runtime.Net
                 }
                 return;
             }
-            _lastFacilityJson = json;
             using var w = BeginMsg(MsgFacility);
             w.WriteValueSafe(json);
-            if (force && specificClient != 0) Send(w, specificClient);
-            else Broadcast(w);
+            if (force && specificClient != 0)
+            {
+                // Targeted late-joiner send: do NOT mark broadcast, or the
+                // clients who were already here never receive this change.
+                Send(w, specificClient);
+            }
+            else
+            {
+                _lastFacilityJson = json;
+                Broadcast(w);
+            }
         }
 
         private void BroadcastRoster()

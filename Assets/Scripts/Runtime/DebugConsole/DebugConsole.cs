@@ -99,10 +99,15 @@ namespace Game.Runtime.DebugTools
                 "  M" + SimClock.Month(tick),
                 GUILayout.Width(150));
 
-            if (GUILayout.Button(_driver.Paused ? "▶ run" : "▮▮ pause", GUILayout.Width(70)))
-                SetTime(!_driver.Paused, _driver.TicksPerSecond);
-            bool isNetClient = Game.Runtime.World.GameBootstrap.Net != null
-                            && Game.Runtime.World.GameBootstrap.Net.IsClient;
+            // On a client the LOCAL driver is architecturally frozen — the
+            // button label and the intent both come from the HOST's replicated
+            // time state, or pausing would instead stomp the host's speed.
+            var netForTime = Game.Runtime.World.GameBootstrap.Net;
+            bool isNetClient = netForTime != null && netForTime.IsClient;
+            bool shownPaused = isNetClient ? netForTime.RemoteTimePaused : _driver.Paused;
+            float shownTps = isNetClient ? netForTime.RemoteTps : _driver.TicksPerSecond;
+            if (GUILayout.Button(shownPaused ? "▶ run" : "▮▮ pause", GUILayout.Width(70)))
+                SetTime(!shownPaused, shownTps);
             if (!isNetClient)
             {
                 if (GUILayout.Button("+1h", GUILayout.Width(40))) _driver.Step(1);
@@ -136,7 +141,11 @@ namespace Game.Runtime.DebugTools
 
         private void DrawSpeedButton(string label, float tps)
         {
-            bool active = !_driver.Paused && Mathf.Approximately(_driver.TicksPerSecond, tps);
+            var net = Game.Runtime.World.GameBootstrap.Net;
+            bool client = net != null && net.IsClient;
+            bool paused = client ? net.RemoteTimePaused : _driver.Paused;
+            float cur = client ? net.RemoteTps : _driver.TicksPerSecond;
+            bool active = !paused && Mathf.Approximately(cur, tps);
             if (GUILayout.Toggle(active, label, GUI.skin.button, GUILayout.Width(56)) && !active)
                 SetTime(false, tps);
         }
@@ -241,7 +250,14 @@ namespace Game.Runtime.DebugTools
                 Game.Runtime.World.GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.SetSpot, A = 1 }, null);
             if (GUILayout.Button("SPOT off", GUILayout.Width(90)))
                 Game.Runtime.World.GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.SetSpot, A = 0 }, null);
-            int nextTier = _driver.Sim.State.GridTier + 1;
+            // The tier button computes "next" from the AUTHORITATIVE tier — on
+            // a client the local sim is frozen at the join-time value, which
+            // would make the netted ApplyTier a permanent no-op.
+            var tierNet = Game.Runtime.World.GameBootstrap.Net;
+            int curTier = tierNet != null && tierNet.IsClient
+                ? Game.Runtime.World.GameBootstrap.CurrentReport.GridTier
+                : _driver.Sim.State.GridTier;
+            int nextTier = curTier + 1;
             if (nextTier <= 4 && GUILayout.Button("APPLY_TIER " + nextTier, GUILayout.Width(110)))
                 Game.Runtime.World.GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.ApplyTier, A = nextTier }, null);
             GUILayout.Label("diesel:", GUILayout.Width(44));

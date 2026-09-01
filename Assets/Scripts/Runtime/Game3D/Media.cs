@@ -150,7 +150,12 @@ namespace Game.Runtime.Media
         private void Update()
         {
             if (IsOpen && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            {
                 IsOpen = false;
+                // This Escape belongs to the editor — the player rig must not
+                // also toggle the cursor with it this frame.
+                World.GameBootstrap.EscConsumedFrame = Time.frameCount;
+            }
         }
 
         private void OnGUI()
