@@ -2,6 +2,7 @@
     "name": "Game.Runtime",
     "rootNamespace": "Game",
     "references": [
+        "Game.Sim",
         "Unity.InputSystem",
         "Unity.Netcode.Runtime",
         "Unity.Networking.Transport"

@@ -37,7 +37,6 @@ namespace Game.Sim
 
             var s = new SimState();
             s.Rng = new SimRandom(scenario.Seed);
-            s.SetNodeSpec(balance.GpuNodePeakKw);
             s.NodesInstalled = scenario.Nodes;
             s.FreecoolKwTh = scenario.FreecoolKwTh;
             s.EvapKwTh = scenario.EvapKwTh;

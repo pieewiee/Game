@@ -76,8 +76,5 @@ namespace Game.Sim
             Events.Add(new SimEvent(Tick, category, message));
         }
 
-        public double MaxBillableKw { get { return NodesInstalled * _peakKw; } }
-        private double _peakKw;
-        public void SetNodeSpec(double peakKw) { _peakKw = peakKw; }
     }
 }

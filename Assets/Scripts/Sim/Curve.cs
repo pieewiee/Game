@@ -15,6 +15,18 @@ namespace Game.Sim
         private readonly double[] _xs;
         private readonly double[] _ys;
 
+        /// <summary>Read access to the points, for the tuning UI and save path.</summary>
+        public IReadOnlyList<double> Xs { get { return _xs; } }
+        public IReadOnlyList<double> Ys { get { return _ys; } }
+
+        /// <summary>A copy of this curve with one Y value replaced (X fixed).</summary>
+        public Curve WithY(int index, double y)
+        {
+            var ys = (double[])_ys.Clone();
+            ys[index] = y;
+            return new Curve((double[])_xs.Clone(), ys);
+        }
+
         public Curve(double[] xs, double[] ys)
         {
             if (xs == null || ys == null || xs.Length != ys.Length || xs.Length < 1)
@@ -60,8 +72,10 @@ namespace Game.Sim
                 int colon = p.IndexOf(':');
                 if (colon <= 0)
                     throw new FormatException("Curve pair '" + p + "' is not in x:y form.");
-                xs.Add(double.Parse(p.Substring(0, colon), CultureInfo.InvariantCulture));
-                ys.Add(double.Parse(p.Substring(colon + 1), CultureInfo.InvariantCulture));
+                // NumberStyles.Float: the default AllowThousands silently eats
+                // comma-typos ("1,5" -> 15) instead of erroring.
+                xs.Add(double.Parse(p.Substring(0, colon), NumberStyles.Float, CultureInfo.InvariantCulture));
+                ys.Add(double.Parse(p.Substring(colon + 1), NumberStyles.Float, CultureInfo.InvariantCulture));
             }
             return new Curve(xs.ToArray(), ys.ToArray());
         }
