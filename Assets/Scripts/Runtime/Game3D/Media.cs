@@ -227,4 +227,94 @@ namespace Game.Runtime.Media
             if (BulletinEditor.Instance != null) BulletinEditor.Instance.Open();
         }
     }
+
+    /// <summary>
+    /// The contract desk (compute-contracts.md, at slice depth): signing moves
+    /// from the debug console into the world, because "the group signs a
+    /// training deadline and then the summer happens" IS the core loop and
+    /// deserves a physical place. Standard terms only — no offer market yet.
+    /// Anyone can sign anything; the ledger records who did.
+    /// </summary>
+    public sealed class ContractEditor : MonoBehaviour
+    {
+        public static ContractEditor Instance { get; private set; }
+        public bool IsOpen { get; private set; }
+        private Rect _win = new Rect(240, 100, 520, 300);
+
+        private void Awake() { Instance = this; }
+
+        public void Open()
+        {
+            IsOpen = true;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+
+        private void Update()
+        {
+            if (IsOpen && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            {
+                IsOpen = false;
+                World.GameBootstrap.EscConsumedFrame = Time.frameCount;
+            }
+        }
+
+        private void OnGUI()
+        {
+            if (!IsOpen) return;
+            _win = GUILayout.Window(914, _win, DrawWindow, "COMPUTE CONTRACTS — standard terms");
+        }
+
+        private void Sign(CommandKind kind, double kw, double days, string desc)
+        {
+            World.GameBootstrap.SendCommand(new SimCommand { Kind = kind, A = kw, B = days }, desc);
+            NewsFeed.Post("The Program has signed " + desc.Substring(desc.IndexOf(' ') + 1) +
+                ". Capacity planning is described as \"an evolving conversation\".");
+        }
+
+        private void DrawWindow(int id)
+        {
+            var ci = CultureInfo.InvariantCulture;
+            TickReport r = World.GameBootstrap.CurrentReport;
+            GUILayout.Label("Site: " + r.NodesInstalled + " nodes (" +
+                (r.NodesInstalled * 10).ToString(ci) + " kW ceiling)   contracts active: " + r.ActiveContracts +
+                "   requested now: " + r.RequestedBillableKw.ToString("0", ci) + " kW" +
+                "   reputation: " + r.Reputation.ToString("0.0", ci));
+            GUILayout.Space(6);
+
+            GUILayout.Label("Inference floors — steady pay, modest rate:");
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("100 kW · 6 months"))
+                Sign(CommandKind.SignInference, 100, 180, "signed a 100 kW inference floor (180 days)");
+            if (GUILayout.Button("200 kW · 6 months"))
+                Sign(CommandKind.SignInference, 200, 180, "signed a 200 kW inference floor (180 days)");
+            if (GUILayout.Button("300 kW · 1 year"))
+                Sign(CommandKind.SignInference, 300, 350, "signed a 300 kW inference floor (350 days)");
+            GUILayout.EndHorizontal();
+            GUILayout.Space(6);
+
+            GUILayout.Label("Training blocks — deadline pay, SLA teeth:");
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("200 kW · 14 days"))
+                Sign(CommandKind.SignTraining, 200, 14, "signed a 200 kW training block (14-day deadline)");
+            if (GUILayout.Button("400 kW · 18 days"))
+                Sign(CommandKind.SignTraining, 400, 18, "signed a 400 kW training block (18-day deadline)");
+            GUILayout.EndHorizontal();
+            GUILayout.Space(10);
+
+            GUILayout.Label("Nothing on this desk checks whether the site can deliver.\nThat is your job. The penalty clause is theirs.");
+            if (GUILayout.Button("close", GUILayout.Width(90))) IsOpen = false;
+            GUI.DragWindow();
+        }
+    }
+
+    /// <summary>The physical contract desk in the office.</summary>
+    public sealed class ContractTerminal : MonoBehaviour, World.IInteractable
+    {
+        public string Prompt(World.PlayerRig player) { return "E: review compute contracts"; }
+        public void Interact(World.PlayerRig player)
+        {
+            if (ContractEditor.Instance != null) ContractEditor.Instance.Open();
+        }
+    }
 }

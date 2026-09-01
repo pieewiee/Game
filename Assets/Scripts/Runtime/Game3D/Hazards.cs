@@ -41,6 +41,18 @@ namespace Game.Runtime.World
             MatLib.Spawn("DeskMesh", dpm.Build("desk"), desk.transform, Vector3.zero);
             desk.AddComponent<Game.Runtime.Media.BulletinTerminal>();
 
+            // The contract desk beside it (compute-contracts.md at slice
+            // depth): the core loop's signature moment gets a physical place.
+            var cdesk = new GameObject("ContractTerminal");
+            cdesk.transform.SetParent(site.Root, false);
+            cdesk.transform.position = new Vector3(35f, 0f, 11f);
+            var cpm2 = new ProcMesh();
+            cpm2.Box(new Vector3(0, 0.75f, 0), new Vector3(1.4f, 0.08f, 0.7f), Palette.Earth);
+            cpm2.Box(new Vector3(0, 0.4f, 0), new Vector3(0.1f, 0.8f, 0.6f), Palette.Earth);
+            cpm2.Box(new Vector3(0, 1.05f, -0.1f), new Vector3(0.5f, 0.4f, 0.06f), Palette.Field);
+            MatLib.Spawn("ContractDeskMesh", cpm2.Build("cdesk"), cdesk.transform, Vector3.zero);
+            cdesk.AddComponent<Game.Runtime.Media.ContractTerminal>();
+
             // Freezing is a systemic hazard, not an object.
             var freeze = new GameObject("FreezeSystem");
             freeze.transform.SetParent(site.Root, false);

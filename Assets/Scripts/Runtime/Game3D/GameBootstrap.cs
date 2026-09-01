@@ -53,6 +53,7 @@ namespace Game.Runtime.World
             get
             {
                 if (BulletinEditor.Instance != null && BulletinEditor.Instance.IsOpen) return true;
+                if (ContractEditor.Instance != null && ContractEditor.Instance.IsOpen) return true;
                 return Net != null && Net.PanelOpen;
             }
         }
@@ -72,6 +73,7 @@ namespace Game.Runtime.World
             gameObject.AddComponent<SiteAudio>();
             gameObject.AddComponent<NewsTicker>();
             gameObject.AddComponent<BulletinEditor>();
+            gameObject.AddComponent<ContractEditor>();
             gameObject.AddComponent<Hud>();
             Net = gameObject.AddComponent<NetSession>();
             gameObject.AddComponent<SaveSystem>();
