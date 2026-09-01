@@ -191,3 +191,32 @@ These were deliberately left out of the scaffold rather than guessed at.
 Unity running:** a crashed or force-closed editor leaves a stale
 `Temp/UnityLockfile`. Verify no `Unity.exe` process exists (Task-Manager), then
 delete that file. `Temp/` is git-ignored; nothing to commit.
+
+## Part 7 — After Milestones 3–6 (the playable slice)
+
+- [ ] **7.1 Let Unity import, then commit the new `.meta` files** for
+      `Assets/Scripts/Runtime/Game3D/` and `Assets/Art/` (same routine as 6.3).
+      Nothing else needs wiring: press **Play** in any scene and the whole site
+      builds itself at runtime.
+- [ ] **7.2 Controls.** Mouse look, **WASD** move, **E** interact (hold for
+      hold-controls: diesel lever, holding a door shut), **Q** drop what you
+      carry, **Esc** frees the cursor, **F1** debug console, **F2** network
+      panel, **F5/F9** save/load (host only). Placement: **1–7** choose
+      rack/evap/chiller/freecool/solar/battery/diesel, click a highlighted
+      slot; **8/9/0** route power/cooling/network runs (left-click waypoints,
+      right-click finishes — length becomes electrical loss).
+- [ ] **7.3 The 5-player test needs standalone builds** (one project folder
+      cannot be opened by five editors, and no third-party clone tool was added
+      without asking). *File → Build Profiles → Windows → Build* into e.g.
+      `Builds/` (git-ignored). Start the editor as **Host** (F2 → Host), start
+      four built players (F2 → address `127.0.0.1` → Join). For remote friends,
+      forward UDP **7777** or use a VPN such as Tailscale/Hamachi — no relay
+      service is wired up.
+- [ ] **7.4 Saves** live at `%USERPROFILE%\AppData\LocalLow\DefaultCompany\Game\gnp-save.json`
+      (Unity's `persistentDataPath`) — plain JSON: the balance text, scenario,
+      seed and the full command log. Loading replays the log; a save made with
+      live-tuned (unsaved) balance values restores THOSE values, so the file is
+      self-contained.
+- [ ] **7.5 Player settings worth setting once** (Edit → Project Settings):
+      *Player → Resolution* windowed default helps the multi-client test;
+      *Company/Product name* changes the save path above if you touch it.
