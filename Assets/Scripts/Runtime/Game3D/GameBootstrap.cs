@@ -54,6 +54,7 @@ namespace Game.Runtime.World
             {
                 if (BulletinEditor.Instance != null && BulletinEditor.Instance.IsOpen) return true;
                 if (ContractEditor.Instance != null && ContractEditor.Instance.IsOpen) return true;
+                if (PlayerOptions.Instance != null && PlayerOptions.Instance.IsOpen) return true;
                 return Net != null && Net.PanelOpen;
             }
         }
@@ -75,6 +76,7 @@ namespace Game.Runtime.World
             gameObject.AddComponent<BulletinEditor>();
             gameObject.AddComponent<ContractEditor>();
             gameObject.AddComponent<Hud>();
+            gameObject.AddComponent<PlayerOptions>();
             Net = gameObject.AddComponent<NetSession>();
             gameObject.AddComponent<SaveSystem>();
 

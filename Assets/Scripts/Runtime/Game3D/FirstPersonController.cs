@@ -38,8 +38,6 @@ namespace Game.Runtime.World
         public const int PlayerLayer = 8;
         private const int WorldMask = ~(1 << PlayerLayer);
 
-        public static float MouseSensitivity = 0.08f;
-
         public Camera Cam { get; private set; }
         public Carryable Carried { get; private set; }
         public bool ShiftHeld { get; private set; }
@@ -113,7 +111,7 @@ namespace Game.Runtime.World
             Cam = camGo.AddComponent<Camera>();
             Cam.nearClipPlane = 0.08f;
             Cam.farClipPlane = 600f;
-            Cam.fieldOfView = 68f;
+            Cam.fieldOfView = PlayerOptions.Fov;
             camGo.AddComponent<AudioListener>();
 
             _foley = camGo.AddComponent<AudioSource>();
@@ -181,9 +179,9 @@ namespace Game.Runtime.World
             if (mouse == null) return;
             // Mouse delta is already per-frame movement: multiplying by
             // deltaTime here would make sensitivity depend on frame rate.
-            Vector2 d = mouse.delta.ReadValue() * MouseSensitivity;
+            Vector2 d = mouse.delta.ReadValue() * PlayerOptions.Sensitivity;
             _yaw += d.x;
-            _pitch = Mathf.Clamp(_pitch - d.y, -88f, 88f);
+            _pitch = Mathf.Clamp(_pitch + (PlayerOptions.InvertY ? d.y : -d.y), -88f, 88f);
             transform.rotation = Quaternion.Euler(0, _yaw, 0);
         }
 
@@ -358,7 +356,7 @@ namespace Game.Runtime.World
 
             if (_foley != null)
             {
-                float v = Mathf.Clamp01(0.15f + drop * 0.18f);
+                float v = Mathf.Clamp01(0.15f + drop * 0.18f) * PlayerOptions.FoleyVolume;
                 _foley.pitch = 1f - Mathf.Clamp01(drop / FatalFallM) * 0.25f;
                 _foley.PlayOneShot(SiteAudio.LandClip(), v);
             }
@@ -398,7 +396,7 @@ namespace Game.Runtime.World
                 _lastStepParity = parity;
                 if (_foley != null)
                 {
-                    float v = IsCrouched ? 0.1f : ShiftHeld ? 0.32f : 0.2f;
+                    float v = (IsCrouched ? 0.1f : ShiftHeld ? 0.32f : 0.2f) * PlayerOptions.FoleyVolume;
                     _foley.pitch = 0.92f + (parity % 2 == 0 ? 0.06f : -0.05f);
                     _foley.PlayOneShot(SiteAudio.StepClip(), v);
                 }
@@ -416,15 +414,16 @@ namespace Game.Runtime.World
 
             _viewDip = Mathf.SmoothDamp(_viewDip, 0f, ref _viewDipVel, 0.16f);
 
-            float bobY = Mathf.Sin(_bobPhase * 2f * Mathf.PI) * _bobAmount;
-            float bobX = Mathf.Sin(_bobPhase * Mathf.PI) * _bobAmount * 0.6f;
+            float bob = _bobAmount * PlayerOptions.BobScale;
+            float bobY = Mathf.Sin(_bobPhase * 2f * Mathf.PI) * bob;
+            float bobX = Mathf.Sin(_bobPhase * Mathf.PI) * bob * 0.6f;
             Cam.transform.localPosition = new Vector3(bobX, _eye + bobY - _viewDip, 0f);
 
             // Sprinting widens the view a little — cheap, and the only speed
             // cue that reads at a glance while carrying something.
             float wantKick = ShiftHeld && IsGrounded && Speed > RunSpeed * 0.6f ? 6f : 0f;
             _fovKick = Mathf.MoveTowards(_fovKick, wantKick, 22f * dt);
-            Cam.fieldOfView = 68f + _fovKick;
+            Cam.fieldOfView = PlayerOptions.Fov + _fovKick;
 
             // Pitch on the camera; yaw stays on the body so the capsule turns.
             Cam.transform.localRotation = Quaternion.Euler(_pitch + _viewDip * 22f, 0f, 0f);
