@@ -53,6 +53,8 @@ namespace Game.Runtime.World
         public Forklift Driving;
 
         private const float HoldThreshold = 0.35f;
+        private const float HoldGrace = 0.4f;      // aim may wander this long
+        private const float UseBufferTime = 0.15f; // same courtesy as the jump
 
         private CharacterController _cc;
         private Transform _carryAnchor;
@@ -77,6 +79,7 @@ namespace Game.Runtime.World
         private IHoldInteractable _holding;
         private IHoldInteractable _pendingHold;
         private float _pendingTime;
+        private float _holdLost, _usePress;
         private int _targetFrame = -1;
         private IInteractable _cachedTarget;
         private string _cachedPrompt;
@@ -493,18 +496,33 @@ namespace Game.Runtime.World
             // Looking away (or walking out of range) breaks a hold: a door is
             // held shut by a BODY at the door, not by a keypress from across
             // the yard. The physical-controls contract depends on this.
-            if (_pendingHold != null && !ReferenceEquals(target, _pendingHold))
+            // Losing the target for a FRAME must not end a 30 s door hold — a
+            // mouse twitch is not letting go. Aim has to be off for a while.
+            if (_pendingHold != null)
             {
-                if (_holding != null) _holding.InteractRelease(this);
-                _holding = null;
-                _pendingHold = null;
+                if (ReferenceEquals(target, _pendingHold)) _holdLost = 0f;
+                else _holdLost += dt;
+                if (_holdLost > HoldGrace)
+                {
+                    if (_holding != null) _holding.InteractRelease(this);
+                    _holding = null;
+                    _pendingHold = null;
+                    _holdLost = 0f;
+                }
             }
-            if (kb.eKey.wasPressedThisFrame && target != null)
+            // E is buffered like the jump: a press one frame early on approach
+            // should not be thrown away.
+            if (kb.eKey.wasPressedThisFrame) _usePress = UseBufferTime;
+            else _usePress = Mathf.Max(0f, _usePress - dt);
+
+            if (_usePress > 0f && target != null && _pendingHold == null)
             {
+                _usePress = 0f;
                 if (target is IHoldInteractable armed)
                 {
                     _pendingHold = armed;
                     _pendingTime = 0f;
+                    _holdLost = 0f;
                 }
                 else { target.Interact(this); _targetFrame = -1; }
             }
@@ -551,6 +569,10 @@ namespace Game.Runtime.World
             return _cachedTarget;
         }
 
+        /// <summary>The NEAREST thing under the cursor that actually has
+        /// something to say. Stopping at the first collider meant a rack face,
+        /// an emptied cabinet or a doorway trigger became a dead target that
+        /// ate the press and hid the control behind it.</summary>
         private IInteractable Probe(out string prompt)
         {
             prompt = null;
@@ -558,17 +580,35 @@ namespace Game.Runtime.World
             Vector3 origin = Cam.transform.position;
             Vector3 dir = Cam.transform.forward;
 
-            IInteractable found = null;
-            if (Physics.Raycast(origin, dir, out RaycastHit hit, InteractRange,
-                    WorldMask, QueryTriggerInteraction.Collide))
-                found = FromCollider(hit.collider);
-            if (found == null &&
-                Physics.SphereCast(origin, InteractRadius, dir, out RaycastHit soft,
-                    InteractRange, WorldMask, QueryTriggerInteraction.Collide))
-                found = FromCollider(soft.collider);
+            IInteractable best = null;
+            string bestPrompt = null;
+            float bestDist = float.MaxValue;
 
-            if (found != null) prompt = found.Prompt(this);
-            return found;
+            void Consider(RaycastHit[] hits)
+            {
+                if (hits == null) return;
+                foreach (RaycastHit h in hits)
+                {
+                    if (h.distance >= bestDist) continue;
+                    IInteractable cand = FromCollider(h.collider);
+                    if (cand == null) continue;
+                    string p = cand.Prompt(this);
+                    if (string.IsNullOrEmpty(p)) continue;   // nothing to do here
+                    best = cand;
+                    bestPrompt = p;
+                    bestDist = h.distance;
+                }
+            }
+
+            Consider(Physics.RaycastAll(origin, dir, InteractRange, WorldMask,
+                QueryTriggerInteraction.Collide));
+            // The forgiving pass runs regardless, so a small control beside a
+            // big one is still reachable without pixel-perfect aim.
+            Consider(Physics.SphereCastAll(origin, InteractRadius, dir, InteractRange,
+                WorldMask, QueryTriggerInteraction.Collide));
+
+            prompt = bestPrompt;
+            return best;
         }
 
         private static IInteractable FromCollider(Collider col)

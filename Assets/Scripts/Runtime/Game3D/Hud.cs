@@ -86,7 +86,10 @@ namespace Game.Runtime.World
             if (player != null && !player.IsDead && inWorld)
             {
                 player.CurrentTarget(out string prompt);
-                bool aimed = !string.IsNullOrEmpty(prompt);
+                // Amber means "E does something here". A prompt that merely
+                // explains why you cannot must not look like an offer.
+                bool aimed = !string.IsNullOrEmpty(prompt) &&
+                             prompt.StartsWith("E", System.StringComparison.Ordinal);
                 if (aimed)
                     GUI.Label(new Rect(UiScaler.W / 2f - 300, UiScaler.H * 0.62f, 600, 26), prompt, _centre);
                 var fac = GameBootstrap.Facility;

@@ -210,6 +210,19 @@ delete that file. `Temp/` is git-ignored; nothing to commit.
       panel, **F3** options (sensitivity, FOV, head bob, volume), **F5/F9**
       save/load (host only). The fence gate (amber post caps) is at the
       south-west corner by the car park.
+- [ ] **7.2a The site.** Three levels. **Ground floor**: goods receiving (the
+      delivery door and the dock), **Hall A** and **Hall 2** (the compute
+      halls), the plant room, the **LV switch room (NSHV)** with the main
+      breaker, the **UPS and battery room** with the hydrogen vent fan and the
+      eyewash station, the workshop, the meet-me room, the suppression cylinder
+      room, and the office. **Basement** (stairs down in the west core): cable
+      basement, diesel tank room, water treatment. **First floor** (stairs up):
+      Hall 3 as a shell, and the air-handling deck. Cooling towers and chillers
+      stand OUTDOORS in the yard, because that is where they live.
+      Two fences: an outer site boundary (solar field and turbine inside, the
+      visitor car park outside, gate on the west) and an inner compound fence
+      around the datacentre itself (gate on the south, by the guard post).
+      Both gates are marked with amber post caps.
 - [ ] **7.2b Controls (forklift).** **E** get in and out, **WASD** drive
       (rear-wheel steering — it only turns while rolling, and the tail swings
       wide), **Space/R** raise the mast, **Ctrl/F** lower it, **L** headlights,

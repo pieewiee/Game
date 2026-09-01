@@ -329,15 +329,30 @@ namespace Game.Runtime.World
         // Room queries for hazards
         // ------------------------------------------------------------------
 
+        /// <summary>Nodes standing in one compartment. Racks fill the slot list
+        /// in order, so a hall owns the slots that fall inside its bounds.</summary>
         public int RoomNodeCount(Room room)
         {
-            // Slice: all racks live in Hall A.
-            return room == Site.HallA ? CurrentNodes() : 0;
+            if (room == null || Site == null || !room.IsComputeHall) return 0;
+            int nodes = CurrentNodes();
+            int racks = (nodes + NodesPerRack - 1) / NodesPerRack;
+            int inRoom = 0;
+            for (int i = 0; i < racks && i < Site.RackSlots.Count; i++)
+                if (room.Contains(Site.RackSlots[i] + Vector3.up)) inRoom++;
+            // The last rack may be part-filled; count what is actually there.
+            int counted = Mathf.Min(inRoom * NodesPerRack, nodes);
+            return counted;
         }
 
+        /// <summary>Share of site load a compartment carries — what an EPO in
+        /// that room actually cuts.</summary>
         public double RoomLoadFraction(Room room)
         {
-            return room == Site.HallA ? 1.0 : 0.15; // plant/office carry aux only
+            if (room == null) return 0.0;
+            if (!room.IsComputeHall) return 0.12;   // aux only
+            int nodes = CurrentNodes();
+            if (nodes <= 0) return 0.0;
+            return (double)RoomNodeCount(room) / nodes;
         }
 
         // ------------------------------------------------------------------

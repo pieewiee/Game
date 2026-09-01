@@ -28,10 +28,14 @@ namespace Game.Runtime.World
             _instance = this;
             var site = GameBootstrap.Site;
 
-            _fans = MakeSource("FanNoise", site != null
-                ? site.Plant.Bounds.center : new Vector3(25, 2, 10), NoiseLoop(), 28f);
+            // The towers and chillers stand in the yard, so that is where the
+            // noise the town hears comes from.
+            Vector3 coolYard = site != null && site.PlantSlots.Count > 0
+                ? site.PlantSlots[site.PlantSlots.Count / 2] + Vector3.up * 2f
+                : new Vector3(20, 2, -10);
+            _fans = MakeSource("FanNoise", coolYard, NoiseLoop(), 40f);
             _diesel = MakeSource("DieselNoise", site != null
-                ? new Vector3(46, 1.5f, 14) : Vector3.zero, DieselLoop(), 45f);
+                ? site.GensetPos + Vector3.up * 1.5f : Vector3.zero, DieselLoop(), 55f);
         }
 
         private static AudioSource MakeSource(string name, Vector3 pos, AudioClip clip, float maxDist)
