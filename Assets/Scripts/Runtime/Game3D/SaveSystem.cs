@@ -82,11 +82,24 @@ namespace Game.Runtime.World
                 var data = JsonUtility.FromJson<SaveData>(File.ReadAllText(SavePath));
                 ulong seed = ulong.Parse(data.seed, CultureInfo.InvariantCulture);
 
-                // 1. The exact balance of the saved session.
+                // 1. The exact balance of the saved session. Keep the old one
+                // at hand: if the restart fails the running sim survives and
+                // must keep the balance it was built with.
+                Balance oldBalance = driver.Balance;
                 driver.ReplaceBalance(Balance.Parse(data.balanceText));
-                // 2. Fresh deterministic run of the same scenario+seed...
-                driver.Restart(data.scenario, seed);
+                // 2. Fresh deterministic run of the same scenario+seed — a
+                // failure here (scenario file renamed since the save) must NOT
+                // fall through to replaying commands into the stale sim.
+                string scen = string.IsNullOrEmpty(data.scenario) ? null : data.scenario;
+                if (!driver.Restart(scen, seed))
+                {
+                    driver.ReplaceBalance(oldBalance);
+                    throw new Exception(driver.LastFileOpMessage);
+                }
                 // 3. ...replayed with every recorded command at its tick.
+                // Commands recorded AT the save tick were enqueued but not yet
+                // applied; re-enqueue them after the loop so they fire exactly
+                // like they would have.
                 int next = 0;
                 var sim = driver.Sim;
                 while (sim.State.Tick < data.tick)
@@ -97,6 +110,11 @@ namespace Game.Runtime.World
                         sim.Enqueue(new SimCommand { Kind = (CommandKind)rc.kind, A = rc.a, B = rc.b });
                     }
                     driver.Step(1);
+                }
+                for (; next < data.commands.Count && data.commands[next].tick == data.tick; next++)
+                {
+                    var rc = data.commands[next];
+                    sim.Enqueue(new SimCommand { Kind = (CommandKind)rc.kind, A = rc.a, B = rc.b });
                 }
                 driver.CommandLog.Clear();
                 driver.CommandLog.AddRange(data.commands);

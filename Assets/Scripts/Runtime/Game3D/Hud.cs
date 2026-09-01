@@ -54,8 +54,10 @@ namespace Game.Runtime.World
             GUI.Label(new Rect(16, 56, 320, 22),
                 "Cash € " + r.CashEur.ToString("N0", ci) +
                 "   Water " + (r.WaterLPerH * 24.0 / 1000.0).ToString("0.0", ci) + " m³/d", _big);
-            GUI.Label(new Rect(16, 76, 320, 20),
-                "F1 console · F5 save · F9 load · E interact · Q drop · 1-7 build · 8-0 route");
+            bool isClient = GameBootstrap.Net != null && GameBootstrap.Net.IsClient;
+            GUI.Label(new Rect(16, 76, 320, 20), isClient
+                ? "Esc cursor · F1 console · F2 net · E/Q · 1-7 build · 8-0 route"
+                : "Esc cursor · F1 console · F2 net · F5/F9 save/load · E/Q · 1-7 · 8-0");
 
             // --- wind arrow -------------------------------------------------
             DrawWindArrow(new Vector2(Screen.width - 70, 70), r);

@@ -107,8 +107,10 @@ namespace Game.Runtime.DebugTools
         }
 
         /// <summary>Recreates the simulation with the CURRENT (possibly live-tuned)
-        /// Balance — the core balancing loop is tune → restart → compare.</summary>
-        public void Restart(string scenarioName, ulong seed)
+        /// Balance — the core balancing loop is tune → restart → compare.
+        /// Returns false (leaving the running sim untouched) when the scenario
+        /// cannot be read: callers replaying a save MUST abort on that.</summary>
+        public bool Restart(string scenarioName, ulong seed)
         {
             Scenario sc;
             if (scenarioName != null)
@@ -122,7 +124,7 @@ namespace Game.Runtime.DebugTools
                 {
                     Debug.LogError("[GNP] Failed to load scenario '" + scenarioName + "': " + e.Message);
                     LastFileOpMessage = "SCENARIO LOAD FAILED: " + e.Message;
-                    return;
+                    return false;
                 }
             }
             else
@@ -138,6 +140,7 @@ namespace Game.Runtime.DebugTools
             _histHead = 0;
             _accum = 0;
             HistoryVersion++;
+            return true;
         }
 
         /// <summary>Save/load path: swap in an exact Balance (parsed from the
@@ -217,9 +220,10 @@ namespace Game.Runtime.DebugTools
 
         /// <summary>Every player-caused command with the tick it applies at.
         /// With a deterministic sim, {balance text, scenario, seed, this log}
-        /// IS the save file (SaveSystem, M6). The debug console's direct
-        /// Sim.Enqueue pokes stay unrecorded on purpose - console pokes are
-        /// experiments, not history.</summary>
+        /// IS the save file (SaveSystem, M6). EVERY mutation path must come
+        /// through EnqueueRecorded — the debug console included: contracts are
+        /// currently signed there, and an unrecorded command means the replay
+        /// lands in a different world than the one that was saved.</summary>
         public readonly System.Collections.Generic.List<RecordedCommand> CommandLog =
             new System.Collections.Generic.List<RecordedCommand>();
 

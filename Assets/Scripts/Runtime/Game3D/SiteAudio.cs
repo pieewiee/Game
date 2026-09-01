@@ -59,7 +59,9 @@ namespace Game.Runtime.World
             float fanLoad = (float)(r.PCoolKw / Math.Max(1.0, refKw));
             if (_fans != null)
             {
-                _fans.volume = Mathf.Clamp01(0.12f + 0.35f * fanLoad);
+                // Zero cooling plant is SILENT — the fans-off contrast after an
+                // EPO is half the fun; the floor applies only while running.
+                _fans.volume = fanLoad <= 0.001f ? 0f : Mathf.Clamp01(0.12f + 0.35f * fanLoad);
                 _fans.pitch = 0.8f + Mathf.Clamp01(fanLoad) * 0.5f;
             }
             if (_diesel != null)
@@ -95,10 +97,18 @@ namespace Game.Runtime.World
             for (int i = 0; i < data.Length; i++)
             {
                 seed = seed * 1664525u + 1013904223u;
-                float white = (seed >> 9) / 8388608f - 1f;
+                // 23 random bits mapped onto [-1, 1) — halving the divisor of
+                // the naive version, whose output was always negative and
+                // integrated straight into a silent DC rail.
+                float white = (seed >> 9) / 4194304f - 1f;
                 brown = Mathf.Clamp(brown + white * 0.04f, -1f, 1f) * 0.998f;
                 data[i] = brown * 0.8f;
             }
+            // Kill the loop-seam click: tilt the whole buffer so the last
+            // sample lands where the first one starts.
+            float offset = data[data.Length - 1] - data[0];
+            for (int i = 0; i < data.Length; i++)
+                data[i] -= offset * i / (data.Length - 1);
             _noiseLoop = AudioClip.Create("fanNoise", data.Length, 1, rate, false);
             _noiseLoop.SetData(data, 0);
             return _noiseLoop;

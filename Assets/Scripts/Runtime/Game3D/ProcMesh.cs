@@ -18,12 +18,16 @@ namespace Game.Runtime.World
 
         public void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Color color)
         {
-            Vector3 n = Vector3.Cross(b - a, c - a).normalized;
+            // Unity is left-handed: with vertices a→b→c→d ordered counter-
+            // clockwise as seen from OUTSIDE, the front face needs the
+            // REVERSED triangle winding and the cross product flipped —
+            // the naive version rendered the whole world inside-out.
+            Vector3 n = Vector3.Cross(c - a, b - a).normalized;
             int i = _verts.Count;
             _verts.Add(a); _verts.Add(b); _verts.Add(c); _verts.Add(d);
             for (int k = 0; k < 4; k++) { _normals.Add(n); _colors.Add(color); }
-            _tris.Add(i); _tris.Add(i + 1); _tris.Add(i + 2);
-            _tris.Add(i); _tris.Add(i + 2); _tris.Add(i + 3);
+            _tris.Add(i); _tris.Add(i + 2); _tris.Add(i + 1);
+            _tris.Add(i); _tris.Add(i + 3); _tris.Add(i + 2);
         }
 
         /// <summary>Axis-aligned box; centre + full size. Top face slightly lighter,

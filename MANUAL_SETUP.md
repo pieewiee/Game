@@ -207,16 +207,25 @@ delete that file. `Temp/` is git-ignored; nothing to commit.
       right-click finishes — length becomes electrical loss).
 - [ ] **7.3 The 5-player test needs standalone builds** (one project folder
       cannot be opened by five editors, and no third-party clone tool was added
-      without asking). *File → Build Profiles → Windows → Build* into e.g.
-      `Builds/` (git-ignored). Start the editor as **Host** (F2 → Host), start
-      four built players (F2 → address `127.0.0.1` → Join). For remote friends,
-      forward UDP **7777** or use a VPN such as Tailscale/Hamachi — no relay
-      service is wired up.
+      without asking). FIRST add both game shaders to *Project Settings →
+      Graphics → Always Included Shaders* (`GNP/VertexColor` and
+      `GNP/VertexColorTransparent`) — the game finds them via `Shader.Find` at
+      runtime, and a build strips unreferenced shaders, which would render the
+      whole world hot pink. Then *File → Build Profiles → Windows → Build* into
+      e.g. `Builds/` (git-ignored). Start the editor as **Host** (F2 → Host),
+      start four built players (F2 → address `127.0.0.1` → Join). For remote
+      friends, forward UDP **7777** or use a VPN such as Tailscale/Hamachi — no
+      relay service is wired up. Host and clients must run the SAME build state
+      (the snapshot crosses the wire as raw struct bytes).
 - [ ] **7.4 Saves** live at `%USERPROFILE%\AppData\LocalLow\DefaultCompany\Game\gnp-save.json`
       (Unity's `persistentDataPath`) — plain JSON: the balance text, scenario,
       seed and the full command log. Loading replays the log; a save made with
       live-tuned (unsaved) balance values restores THOSE values, so the file is
-      self-contained.
+      self-contained. Two honest limitations: values tuned live MID-run replay
+      as if set from tick 0 (for a reproducible run: save tuning to file, then
+      restart); and the save references the scenario by NAME — editing or
+      deleting the `.scenario` file afterwards changes or blocks the replay
+      (a changed file replays cleanly but lands in a different world).
 - [ ] **7.5 Player settings worth setting once** (Edit → Project Settings):
       *Player → Resolution* windowed default helps the multi-client test;
       *Company/Product name* changes the save path above if you touch it.

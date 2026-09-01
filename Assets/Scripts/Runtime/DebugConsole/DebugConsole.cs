@@ -100,10 +100,15 @@ namespace Game.Runtime.DebugTools
                 GUILayout.Width(150));
 
             if (GUILayout.Button(_driver.Paused ? "▶ run" : "▮▮ pause", GUILayout.Width(70)))
-                _driver.Paused = !_driver.Paused;
-            if (GUILayout.Button("+1h", GUILayout.Width(40))) _driver.Step(1);
-            if (GUILayout.Button("+1d", GUILayout.Width(40))) _driver.Step(24);
-            if (GUILayout.Button("+30d", GUILayout.Width(48))) _driver.Step(24 * 30);
+                SetTime(!_driver.Paused, _driver.TicksPerSecond);
+            bool isNetClient = Game.Runtime.World.GameBootstrap.Net != null
+                            && Game.Runtime.World.GameBootstrap.Net.IsClient;
+            if (!isNetClient)
+            {
+                if (GUILayout.Button("+1h", GUILayout.Width(40))) _driver.Step(1);
+                if (GUILayout.Button("+1d", GUILayout.Width(40))) _driver.Step(24);
+                if (GUILayout.Button("+30d", GUILayout.Width(48))) _driver.Step(24 * 30);
+            }
 
             GUILayout.Label("speed:", GUILayout.Width(44));
             DrawSpeedButton("1 h/s", 1f);
@@ -133,10 +138,25 @@ namespace Game.Runtime.DebugTools
         {
             bool active = !_driver.Paused && Mathf.Approximately(_driver.TicksPerSecond, tps);
             if (GUILayout.Toggle(active, label, GUI.skin.button, GUILayout.Width(56)) && !active)
+                SetTime(false, tps);
+        }
+
+        /// <summary>Time control is an intent: on a client it travels to the
+        /// host (whose ledger names the sender) and the LOCAL sim stays
+        /// paused; everywhere else it applies directly.</summary>
+        private void SetTime(bool paused, float tps)
+        {
+            var net = Game.Runtime.World.GameBootstrap.Net;
+            if (net != null && net.IsClient)
             {
-                _driver.TicksPerSecond = tps;
-                _driver.Paused = false;
+                net.SendTimeControl(paused, tps);
+                return;
             }
+            _driver.TicksPerSecond = tps;
+            _driver.Paused = paused;
+            Game.Runtime.World.GameBootstrap.AddLedger(
+                net != null && net.IsHost ? net.LocalPlayerName : "operator",
+                paused ? "paused the clock" : "set speed " + tps.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + " t/s");
         }
 
         // ------------------------------------------------------------------
@@ -218,12 +238,12 @@ namespace Game.Runtime.DebugTools
 
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("SPOT on", GUILayout.Width(90)))
-                _driver.Sim.Enqueue(new SimCommand { Kind = CommandKind.SetSpot, A = 1 });
+                Game.Runtime.World.GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.SetSpot, A = 1 }, null);
             if (GUILayout.Button("SPOT off", GUILayout.Width(90)))
-                _driver.Sim.Enqueue(new SimCommand { Kind = CommandKind.SetSpot, A = 0 });
+                Game.Runtime.World.GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.SetSpot, A = 0 }, null);
             int nextTier = _driver.Sim.State.GridTier + 1;
             if (nextTier <= 4 && GUILayout.Button("APPLY_TIER " + nextTier, GUILayout.Width(110)))
-                _driver.Sim.Enqueue(new SimCommand { Kind = CommandKind.ApplyTier, A = nextTier });
+                Game.Runtime.World.GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.ApplyTier, A = nextTier }, null);
             GUILayout.Label("diesel:", GUILayout.Width(44));
             DrawDieselButton("Never", DieselPolicy.Never);
             DrawDieselButton("ProtectSla", DieselPolicy.ProtectSla);
@@ -250,7 +270,7 @@ namespace Game.Runtime.DebugTools
         {
             bool active = _driver.Sim.State.Diesel == policy;
             if (GUILayout.Toggle(active, label, GUI.skin.button, GUILayout.Width(80)) && !active)
-                _driver.Sim.Enqueue(new SimCommand { Kind = CommandKind.SetDieselPolicy, A = (int)policy });
+                Game.Runtime.World.GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.SetDieselPolicy, A = (int)policy }, null);
         }
 
         private void Enqueue(CommandKind kind, string aText, string bText)
@@ -259,7 +279,9 @@ namespace Game.Runtime.DebugTools
             double a = 0, b = 0;
             if (aText != null && !double.TryParse(aText, NumberStyles.Float, ci, out a)) return;
             if (bText != null && !double.TryParse(bText, NumberStyles.Float, ci, out b)) return;
-            _driver.Sim.Enqueue(new SimCommand { Kind = kind, A = a, B = b });
+            // Recorded (and net-routed on a client): console actions are real
+            // history — the save's replay must reproduce them.
+            Game.Runtime.World.GameBootstrap.SendCommand(new SimCommand { Kind = kind, A = a, B = b }, null);
         }
 
         // ------------------------------------------------------------------

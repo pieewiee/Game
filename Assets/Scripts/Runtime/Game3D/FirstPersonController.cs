@@ -23,11 +23,15 @@ namespace Game.Runtime.World
         public int TempWorkerCount;
         public Forklift Driving;
 
+        private const float HoldThreshold = 0.35f;
+
         private CharacterController _cc;
         private Transform _carryAnchor;
         private float _yaw, _pitch;
         private float _fallSpeed;
         private IHoldInteractable _holding;
+        private IHoldInteractable _pendingHold;
+        private float _pendingTime;
         private float _exposure; // freezing, 0..1 (FreezeSystem drives it)
 
         public float Exposure { get { return _exposure; } set { _exposure = value; } }
@@ -71,17 +75,25 @@ namespace Game.Runtime.World
             if (kb == null) return;
             ShiftHeld = kb.leftShiftKey.isPressed;
 
-            // Escape frees the cursor for the debug console; click re-locks.
-            if (kb.escapeKey.wasPressedThisFrame)
+            // Escape TOGGLES the cursor (free it for the debug console, press
+            // again to play on). Never re-lock by click: clicking a console
+            // slider must not yank the camera. Modal windows own their own
+            // Escape, so it is ignored while one is open.
+            if (kb.escapeKey.wasPressedThisFrame && !GameBootstrap.UiWantsCursor)
             {
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
+                bool locking = Cursor.lockState != CursorLockMode.Locked;
+                Cursor.lockState = locking ? CursorLockMode.Locked : CursorLockMode.None;
+                Cursor.visible = !locking;
             }
-            if (mouse != null && mouse.leftButton.wasPressedThisFrame &&
-                Cursor.lockState != CursorLockMode.Locked && !GameBootstrap.UiCapturesMouse)
+
+            // While any UI owns the input (or the cursor is free), the body
+            // stands still: typing a press release must not walk the author
+            // into the plant room.
+            if (GameBootstrap.UiWantsCursor || Cursor.lockState != CursorLockMode.Locked)
             {
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
+                if (_holding != null) { _holding.InteractRelease(this); _holding = null; }
+                _pendingHold = null;
+                return;
             }
 
             if (IsDead) return;
@@ -110,22 +122,42 @@ namespace Game.Runtime.World
             vel.y = _fallSpeed;
             _cc.Move(vel * Time.deltaTime);
 
-            // --- interact ---
+            // --- interact: tap vs hold ---
+            // Plain interactables fire on the E press. Objects that are ALSO
+            // hold-controls (door, diesel lever) disambiguate on release: a
+            // tap (< 0.35 s) is Interact, anything longer was a hold.
             IInteractable target = CurrentTarget(out _);
-            if (kb.eKey.isPressed && target is IHoldInteractable hold)
+            if (kb.eKey.wasPressedThisFrame && target != null)
             {
-                _holding = hold;
-                hold.InteractHold(this, Time.deltaTime);
+                if (target is IHoldInteractable armed)
+                {
+                    _pendingHold = armed;
+                    _pendingTime = 0f;
+                }
+                else target.Interact(this);
             }
-            if (kb.eKey.wasReleasedThisFrame && _holding != null)
+            if (kb.eKey.isPressed && _pendingHold != null)
             {
-                _holding.InteractRelease(this);
+                _pendingTime += Time.deltaTime;
+                if (_pendingTime >= HoldThreshold)
+                {
+                    _holding = _pendingHold;
+                    _holding.InteractHold(this, Time.deltaTime);
+                }
+            }
+            if (kb.eKey.wasReleasedThisFrame)
+            {
+                if (_holding != null)
+                {
+                    _holding.InteractRelease(this);
+                }
+                else if (_pendingHold is IInteractable tapped && _pendingTime < HoldThreshold)
+                {
+                    tapped.Interact(this);
+                }
                 _holding = null;
+                _pendingHold = null;
             }
-            if (kb.eKey.wasPressedThisFrame && target != null && !(target is IHoldInteractable))
-                target.Interact(this);
-            if (kb.eKey.wasPressedThisFrame && target is DieselLever lever && lever.Running)
-                lever.Interact(this); // stop is a tap, start is the hold
             if (kb.qKey.wasPressedThisFrame && Carried != null) Drop();
         }
 
@@ -168,6 +200,23 @@ namespace Game.Runtime.World
             c.transform.SetParent(null, true);
             c.transform.position = Cam.transform.position + Cam.transform.forward * 1.0f;
             c.OnDropped();
+        }
+
+        /// <summary>Destroys the carried object (a panel remounted into a rack
+        /// slot lives on as the slot's own panel, not as this world object).</summary>
+        public void ConsumeCarried()
+        {
+            if (Carried == null) return;
+            Carryable c = Carried;
+            Carried = null;
+            Destroy(c.gameObject);
+        }
+
+        /// <summary>The forklift disables the walking capsule while driving —
+        /// two enabled CharacterControllers nested in one hierarchy fight.</summary>
+        public void SetBodyEnabled(bool on)
+        {
+            if (_cc != null) _cc.enabled = on;
         }
 
         /// <summary>Death is never the punishment; the statistic is. The rig is

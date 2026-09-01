@@ -16,8 +16,8 @@ namespace Game.Sim
         SetVisualPoints, // A = fortification points
 
         // --- Milestones 3-5: facility, hazards, media -------------------
-        SetPlant,        // A = (int)PlantKind, B = new value in that kind's unit
-        SetRouteLossKw,  // A = total conductor/pump loss of the routed runs, kW
+        AddPlant,        // A = (int)PlantKind, B = DELTA in that kind's unit (may be negative)
+        AddRouteLossKw,  // A = DELTA conductor/pump loss of a routed run, kW
         DestroyNodes,    // A = node count (suppression discharge, forklift...)
         EpoTrip,         // A = fraction of site load cut, B = hours (>= 1 tick)
         SetCoolingDerate,// A = multiplier on all cooling capacity (panels/airflow)

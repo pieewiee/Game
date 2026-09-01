@@ -231,26 +231,32 @@ namespace Game.Sim
                     break;
 
                 // --- Milestones 3-5 -----------------------------------------
-                case CommandKind.SetPlant:
+                case CommandKind.AddPlant:
                 {
+                    // DELTA, not absolute: concurrent placements from several
+                    // players (or several clicks in one paused tick) must
+                    // compose without anyone reading current state first.
                     var kind = (PlantKind)(int)cmd.A;
-                    double v = Math.Max(0.0, cmd.B);
+                    double d = cmd.B;
+                    double v;
                     switch (kind)
                     {
-                        case PlantKind.FreecoolKwTh: s.FreecoolKwTh = v; break;
-                        case PlantKind.EvapKwTh: s.EvapKwTh = v; break;
-                        case PlantKind.ChillerKwTh: s.ChillerKwTh = v; break;
-                        case PlantKind.SolarKwp: s.SolarKwp = v; break;
-                        case PlantKind.WindKw: s.WindKw = v; break;
-                        case PlantKind.BatteryKwh: s.BatteryKwhCap = v; break;
-                        case PlantKind.BatteryKw: s.BatteryKw = v; break;
-                        case PlantKind.DieselKw: s.DieselKw = v; break;
+                        case PlantKind.FreecoolKwTh: v = s.FreecoolKwTh = Math.Max(0.0, s.FreecoolKwTh + d); break;
+                        case PlantKind.EvapKwTh: v = s.EvapKwTh = Math.Max(0.0, s.EvapKwTh + d); break;
+                        case PlantKind.ChillerKwTh: v = s.ChillerKwTh = Math.Max(0.0, s.ChillerKwTh + d); break;
+                        case PlantKind.SolarKwp: v = s.SolarKwp = Math.Max(0.0, s.SolarKwp + d); break;
+                        case PlantKind.WindKw: v = s.WindKw = Math.Max(0.0, s.WindKw + d); break;
+                        case PlantKind.BatteryKwh: v = s.BatteryKwhCap = Math.Max(0.0, s.BatteryKwhCap + d); break;
+                        case PlantKind.BatteryKw: v = s.BatteryKw = Math.Max(0.0, s.BatteryKw + d); break;
+                        case PlantKind.DieselKw: v = s.DieselKw = Math.Max(0.0, s.DieselKw + d); break;
+                        default: v = 0; break;
                     }
-                    s.Log("facility", kind + " set to " + v.ToString("0", CultureInfo.InvariantCulture));
+                    s.Log("facility", kind + " now " + v.ToString("0", CultureInfo.InvariantCulture));
                     break;
                 }
-                case CommandKind.SetRouteLossKw:
-                    s.RouteLossKw = Math.Max(0.0, cmd.A);
+                case CommandKind.AddRouteLossKw:
+                    // Delta per finished run; the total never goes negative.
+                    s.RouteLossKw = Math.Max(0.0, s.RouteLossKw + cmd.A);
                     break;
                 case CommandKind.DestroyNodes:
                 {

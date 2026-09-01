@@ -34,7 +34,7 @@ namespace Game.Runtime.World
     /// The dynamic facility layer (M3): placement, hand-routed runs and the
     /// visual mirror of the sim's aggregate assets. The simulation stays
     /// authoritative — every placement and every routing consequence reaches it
-    /// exclusively through commands (SetPlant / AddNodes / SetRouteLossKw /
+    /// exclusively through commands (AddPlant / AddNodes / AddRouteLossKw /
     /// SetCoolingDerate), and the visuals re-derive from SimState, so a
     /// suppression discharge that destroys nodes makes racks disappear without
     /// this class doing anything special.
@@ -77,13 +77,40 @@ namespace Game.Runtime.World
         // Mirror of sim aggregates → visuals
         // ------------------------------------------------------------------
 
-        private int CurrentNodes()
+        /// <summary>What the facility currently owns, from the authoritative
+        /// source: the replicated TickReport on a client (its local sim is
+        /// paused and stale), the live sim state on the host/solo.</summary>
+        private struct Aggregates
+        {
+            public int Nodes;
+            public double EvapKwTh, ChillerKwTh, FreecoolKwTh, SolarKwp, BatteryKwhCap;
+        }
+
+        private Aggregates CurrentAggregates()
         {
             var net = GameBootstrap.Net;
-            if (net != null && net.IsClient) return net.RemoteNodes;
+            if (net != null && net.IsClient)
+            {
+                var r = net.RemoteReport;
+                return new Aggregates
+                {
+                    Nodes = r.NodesInstalled,
+                    EvapKwTh = r.EvapKwTh, ChillerKwTh = r.ChillerKwTh, FreecoolKwTh = r.FreecoolKwTh,
+                    SolarKwp = r.SolarKwp, BatteryKwhCap = r.BatteryKwhCap,
+                };
+            }
             var driver = GameBootstrap.Driver;
-            return driver != null && driver.Sim != null ? driver.Sim.State.NodesInstalled : 0;
+            if (driver == null || driver.Sim == null) return default;
+            var s = driver.Sim.State;
+            return new Aggregates
+            {
+                Nodes = s.NodesInstalled,
+                EvapKwTh = s.EvapKwTh, ChillerKwTh = s.ChillerKwTh, FreecoolKwTh = s.FreecoolKwTh,
+                SolarKwp = s.SolarKwp, BatteryKwhCap = s.BatteryKwhCap,
+            };
         }
+
+        public int CurrentNodes() { return CurrentAggregates().Nodes; }
 
         private void Update()
         {
@@ -91,15 +118,16 @@ namespace Game.Runtime.World
             HandlePlacementInput();
         }
 
-        /// <summary>Rebuilds racks and plant visuals from the CURRENT sim state.
-        /// initial=true also seeds State.items so saves reflect the scenario.</summary>
+        /// <summary>Rebuilds racks and plant visuals from the CURRENT
+        /// authoritative aggregates. Purely visual: sends NO commands — on load
+        /// the replay already reproduced derates and losses, and on a client
+        /// the local view must never write back into the host's sim.</summary>
         public void SyncFromSim(bool initial)
         {
-            var driver = GameBootstrap.Driver;
-            if (driver == null || driver.Sim == null || Site == null) return;
-            var s = driver.Sim.State;
-            _lastSyncedNodes = CurrentNodes();
-            int nodeCount = _lastSyncedNodes;
+            if (Site == null) return;
+            Aggregates s = CurrentAggregates();
+            _lastSyncedNodes = s.Nodes;
+            int nodeCount = s.Nodes;
 
             foreach (GameObject go in _rackGos) if (go != null) Destroy(go);
             foreach (GameObject go in _plantGos) if (go != null) Destroy(go);
@@ -126,7 +154,13 @@ namespace Game.Runtime.World
                 _plantGos.Add(MatLib.Spawn("SolarRow", pm.Build("solar"), Site.Root, Site.SolarSlots[i]));
             }
 
-            OnPanelChanged();
+            // Restore missing-panel state SILENTLY: rebuilt panels default to
+            // Mounted, but the hazard must survive a rack resync (and a load).
+            // No command is sent — the sim's derate is already correct (replay
+            // or live), only the visuals needed rebuilding.
+            int restore = Mathf.Min(State.missingPanels, _panels.Count);
+            for (int i = 0; i < restore; i++) _panels[i].SetMissingSilently();
+            State.missingPanels = restore;
         }
 
         private GameObject BuildRack(Vector3 pos, int index)
@@ -137,6 +171,7 @@ namespace Game.Runtime.World
             // status LEDs
             pm.Box(new Vector3(0.42f, 1.8f, 0.3f), new Vector3(0.03f, 0.06f, 0.06f), Palette.Field);
             var rack = MatLib.Spawn("Rack" + index, pm.Build("rack"), Site.Root, pos);
+            rack.AddComponent<RackRemount>().Facility = this;
 
             for (int p = 0; p < PanelsPerRack; p++)
             {
@@ -167,6 +202,33 @@ namespace Game.Runtime.World
         // Blanking panels → cooling derate
         // ------------------------------------------------------------------
 
+        public bool HasMissingPanel
+        {
+            get
+            {
+                foreach (BlankingPanel p in _panels) if (p != null && !p.Mounted) return true;
+                return false;
+            }
+        }
+
+        /// <summary>Remount a carried panel into the first empty slot: the
+        /// carried object is consumed, the hidden slot panel reappears, and the
+        /// derate command goes out through the normal interaction path.</summary>
+        public void RemountPanel(PlayerRig player)
+        {
+            foreach (BlankingPanel p in _panels)
+            {
+                if (p == null || p.Mounted) continue;
+                p.Mounted = true;
+                p.gameObject.SetActive(true);
+                player.ConsumeCarried();
+                OnPanelChanged();
+                return;
+            }
+        }
+
+        /// <summary>Called from ACTUAL panel interactions only (pull/remount) —
+        /// never from visual resyncs, which must not write into the sim.</summary>
         public void OnPanelChanged()
         {
             int total = Mathf.Max(1, _panels.Count);
@@ -187,10 +249,8 @@ namespace Game.Runtime.World
 
         public int RoomNodeCount(Room room)
         {
-            var driver = GameBootstrap.Driver;
-            if (driver == null || driver.Sim == null) return 0;
             // Slice: all racks live in Hall A.
-            return room == Site.HallA ? driver.Sim.State.NodesInstalled : 0;
+            return room == Site.HallA ? CurrentNodes() : 0;
         }
 
         public double RoomLoadFraction(Room room)
@@ -206,7 +266,7 @@ namespace Game.Runtime.World
         {
             Keyboard kb = Keyboard.current;
             Mouse mouse = Mouse.current;
-            if (kb == null || GameBootstrap.UiCapturesMouse) return;
+            if (kb == null || GameBootstrap.UiWantsCursor) return;
 
             for (int i = 0; i < PlaceKinds.Length; i++)
             {
@@ -244,40 +304,70 @@ namespace Game.Runtime.World
                     : "";
         }
 
+        private static void Place(PlantKind kind, double delta, string desc)
+        {
+            // DELTAS (never absolute targets computed from local state): the
+            // sim composes concurrent placements from any number of players,
+            // and a paused client needs no state to place correctly.
+            GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.AddPlant, A = (int)kind, B = delta }, desc);
+        }
+
         private void PlaceNext(string kind)
         {
-            var d = GameBootstrap.Driver;
-            if (d == null || d.Sim == null) return;
-            var s = d.Sim.State;
+            Aggregates s = CurrentAggregates();
             switch (kind)
             {
                 case "rack":
+                    if ((s.Nodes + NodesPerRack + NodesPerRack - 1) / NodesPerRack > Site.RackSlots.Count)
+                    { PlacementHint = "no free rack slots"; return; }
                     GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.AddNodes, A = NodesPerRack },
                         "rack placed (+10 nodes)");
                     break;
                 case "evap":
-                    GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.SetPlant, A = (int)PlantKind.EvapKwTh, B = s.EvapKwTh + EvapUnitKwTh }, "evaporative tower placed");
+                    if (PlantSlotsFull(s)) return;
+                    Place(PlantKind.EvapKwTh, EvapUnitKwTh, "evaporative tower placed");
                     break;
                 case "chiller":
-                    GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.SetPlant, A = (int)PlantKind.ChillerKwTh, B = s.ChillerKwTh + ChillerUnitKwTh }, "chiller placed");
+                    if (PlantSlotsFull(s)) return;
+                    Place(PlantKind.ChillerKwTh, ChillerUnitKwTh, "chiller placed");
                     break;
                 case "freecool":
-                    GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.SetPlant, A = (int)PlantKind.FreecoolKwTh, B = s.FreecoolKwTh + FreecoolUnitKwTh }, "free-cooling unit placed");
+                    if (PlantSlotsFull(s)) return;
+                    Place(PlantKind.FreecoolKwTh, FreecoolUnitKwTh, "free-cooling unit placed");
                     break;
                 case "solar":
-                    GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.SetPlant, A = (int)PlantKind.SolarKwp, B = s.SolarKwp + SolarRowKwp }, "solar row placed");
+                    if ((int)Math.Ceiling((s.SolarKwp + SolarRowKwp) / SolarRowKwp) > Site.SolarSlots.Count)
+                    { PlacementHint = "no free solar slots"; return; }
+                    Place(PlantKind.SolarKwp, SolarRowKwp, "solar row placed");
                     break;
                 case "battery":
-                    GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.SetPlant, A = (int)PlantKind.BatteryKwh, B = s.BatteryKwhCap + BatteryPackKwh }, "battery pack placed");
-                    GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.SetPlant, A = (int)PlantKind.BatteryKw, B = s.BatteryKw + BatteryPackKw }, null);
+                    // A second pack grows the existing bank; only the first
+                    // pack claims a plant slot for its visual.
+                    if (s.BatteryKwhCap <= 0 && PlantSlotsFull(s)) return;
+                    Place(PlantKind.BatteryKwh, BatteryPackKwh, "battery pack placed");
+                    Place(PlantKind.BatteryKw, BatteryPackKw, null);
                     break;
                 case "diesel":
-                    GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.SetPlant, A = (int)PlantKind.DieselKw, B = s.DieselKw + DieselUnitKw }, "diesel unit placed");
+                    Place(PlantKind.DieselKw, DieselUnitKw, "diesel unit placed");
                     break;
             }
             State.items.Add(new PlacedItem { kind = kind, slot = State.items.Count });
-            // Racks/plant re-derive from sim state on the next Update; solar too.
+            // Racks/plant re-derive from authoritative state on the next Update.
             _lastSyncedNodes = -1;
+        }
+
+        private bool PlantSlotsFull(Aggregates s)
+        {
+            int used = (int)Math.Ceiling(s.FreecoolKwTh / FreecoolUnitKwTh)
+                     + (int)Math.Ceiling(s.EvapKwTh / EvapUnitKwTh)
+                     + (int)Math.Ceiling(s.ChillerKwTh / ChillerUnitKwTh)
+                     + (s.BatteryKwhCap > 0 ? 1 : 0);
+            if (used + 1 > Site.PlantSlots.Count)
+            {
+                PlacementHint = "no free plant slots";
+                return true;
+            }
+            return false;
         }
 
         private void StartRoute(string kind)
@@ -307,7 +397,7 @@ namespace Game.Runtime.World
             {
                 State.routes.Add(_draftRoute);
                 _routeGos.Add(BuildRouteMesh(_draftRoute, false));
-                RecomputeRouteLoss();
+                SendRouteLoss(_draftRoute);
             }
             if (_draftGo != null) Destroy(_draftGo);
             _draftGo = null;
@@ -358,21 +448,21 @@ namespace Game.Runtime.World
 
         /// <summary>Length → loss, ROUTE_LOSS_PCT_PER_100M of a nominal 100 kW
         /// served per power run, half of that for pumped cooling runs. Network
-        /// runs lose nothing. Pushed into the sim's aux demand.</summary>
-        public void RecomputeRouteLoss()
+        /// runs lose nothing. Sent as a DELTA for the one just-finished run,
+        /// so several players routing at once (and clients with a paused local
+        /// sim) compose correctly in the host's ledger.</summary>
+        private void SendRouteLoss(RoutePath route)
         {
             var d = GameBootstrap.Driver;
             if (d == null) return;
             double pct = d.Balance.RouteLossPctPer100M / 100.0;
-            double loss = 0;
-            foreach (RoutePath r in State.routes)
-            {
-                double per100 = RouteLengthM(r) / 100.0;
-                if (r.kind == "power") loss += per100 * pct * 100.0;
-                else if (r.kind == "cooling") loss += per100 * pct * 50.0;
-            }
-            GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.SetRouteLossKw, A = loss },
-                "route losses now " + loss.ToString("0.0", CultureInfo.InvariantCulture) + " kW");
+            double per100 = RouteLengthM(route) / 100.0;
+            double loss = route.kind == "power" ? per100 * pct * 100.0
+                        : route.kind == "cooling" ? per100 * pct * 50.0 : 0.0;
+            if (loss <= 0) return;
+            GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.AddRouteLossKw, A = loss },
+                "routed a " + RouteLengthM(route).ToString("0", CultureInfo.InvariantCulture) + " m " +
+                route.kind + " run (+" + loss.ToString("0.0", CultureInfo.InvariantCulture) + " kW loss)");
         }
 
         // ------------------------------------------------------------------

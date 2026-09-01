@@ -22,8 +22,16 @@ namespace Game.Runtime.World
         {
             GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.ReportAccident, A = 1 },
                 rig.PlayerName + " " + cause);
-            NewsFeed.Post(rig.PlayerName + " " + cause + ". The public accident statistics have " +
-                "been updated; the Program reaffirms that safety culture remains a cornerstone.");
+
+            // The MANDATORY Program bulletin (workplace-accidents.md §70-88):
+            // automatic, burns credibility like any other bulletin, and names
+            // a responsible employee by default — the deceased.
+            GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.IssueBulletin, A = 1 }, null);
+            if (GameBootstrap.Net != null && GameBootstrap.Net.Active)
+                GameBootstrap.Net.ApplyNamingPenalty(rig.PlayerName);
+
+            NewsFeed.Post(rig.PlayerName + " " + cause + ". A mandatory Program bulletin identifies " +
+                rig.PlayerName + " as the responsible employee; safety culture remains a cornerstone.");
 
             if (_site != null) rig.FinishRespawn(_site.CarParkSpawn);
         }

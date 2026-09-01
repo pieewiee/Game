@@ -92,6 +92,11 @@ namespace Game.Sim
             r.RouteLossKw = s.RouteLossKw;
             r.OutageFrac = s.OutageUntilTick > s.Tick ? s.OutageFrac : 0.0;
             r.CoolingDerateMult = s.CoolingDerateMult;
+            r.SetpointC = s.SetpointC;
+            r.WaterValveFrac = s.WaterValveFrac;
+            r.NodesInstalled = s.NodesInstalled;
+            r.EvapKwTh = s.EvapKwTh; r.ChillerKwTh = s.ChillerKwTh; r.FreecoolKwTh = s.FreecoolKwTh;
+            r.SolarKwp = s.SolarKwp; r.BatteryKwhCap = s.BatteryKwhCap; r.DieselKw = s.DieselKw;
 
             // ---- Escalation ladder with hysteresis -------------------------
             EscalationStage before = s.Stage;

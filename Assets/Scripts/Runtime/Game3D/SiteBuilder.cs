@@ -214,6 +214,22 @@ namespace Game.Runtime.World
             pm.Box(new Vector3(x0, 1.9f, (z0 + z1) / 2), new Vector3(0.06f, 0.06f, z1 - z0), Palette.ProgramBlue);
             pm.Box(new Vector3(x1, 1.9f, (z0 + z1) / 2), new Vector3(0.06f, 0.06f, z1 - z0), Palette.ProgramBlue);
             MatLib.Spawn("Fence", pm.Build("fence"), root, Vector3.zero, false);
+
+            // The perimeter actually blocks bodies and forklifts: invisible
+            // collider walls (the visual posts alone let everything through).
+            // One gate gap at the south-west corner faces the visitor car park.
+            void Wall(string name, Vector3 centre, Vector3 size)
+            {
+                var go = new GameObject(name);
+                go.transform.SetParent(root, false);
+                go.transform.localPosition = centre;
+                go.AddComponent<BoxCollider>().size = size;
+            }
+            float midX = (x0 + x1) / 2f, midZ = (z0 + z1) / 2f;
+            Wall("FenceWall S", new Vector3((x0 + 4f + x1) / 2f, h / 2, z0), new Vector3(x1 - x0 - 4f, h, 0.3f));
+            Wall("FenceWall N", new Vector3(midX, h / 2, z1), new Vector3(x1 - x0, h, 0.3f));
+            Wall("FenceWall W", new Vector3(x0, h / 2, midZ), new Vector3(0.3f, h, z1 - z0));
+            Wall("FenceWall E", new Vector3(x1, h / 2, midZ), new Vector3(0.3f, h, z1 - z0));
         }
 
         private static void BuildTown(Transform root)

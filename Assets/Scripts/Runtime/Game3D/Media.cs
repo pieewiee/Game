@@ -46,26 +46,37 @@ namespace Game.Runtime.Media
             var driver = World.GameBootstrap.Driver;
             if (driver == null || driver.Sim == null) return;
 
-            // Turn notable sim events into news items as they appear.
-            var events = driver.Sim.State.Events;
-            for (; _lastEventCount < events.Count; _lastEventCount++)
-            {
-                SimEvent e = events[_lastEventCount];
-                string item = Translate(e);
-                if (item != null) _queue.Enqueue(item);
-            }
-            if (_lastEventCount > events.Count) _lastEventCount = events.Count; // restart
+            // A client generates nothing: the host's copies of these stories
+            // arrive over the wire (its own sim is paused and stale). It only
+            // scrolls what lands in the feed.
+            var net = World.GameBootstrap.Net;
+            bool generate = net == null || !net.IsClient;
 
-            // The plume story writes itself from the wind.
-            TickReport r = driver.Latest;
-            bool diesel = r.DieselKwh > 1e-6;
-            if (diesel && !_wasDiesel)
+            if (generate)
             {
-                _queue.Enqueue(r.WindTowardTown
-                    ? "The generator is running and the wind is from the east. Residents on the lane are photographing the plume over their gardens."
-                    : "The site's generator is running. Today's wind carries the plume away from town; nobody has said thank you.");
+                // Turn notable sim events into news as it appears. Generated
+                // items go through NewsFeed.Post so they reach the archive —
+                // and, when hosting, every client.
+                var events = driver.Sim.State.Events;
+                for (; _lastEventCount < events.Count; _lastEventCount++)
+                {
+                    SimEvent e = events[_lastEventCount];
+                    string item = Translate(e);
+                    if (item != null) NewsFeed.Post(item);
+                }
+                if (_lastEventCount > events.Count) _lastEventCount = events.Count; // restart
+
+                // The plume story writes itself from the wind.
+                TickReport r = driver.Latest;
+                bool diesel = r.DieselKwh > 1e-6;
+                if (diesel && !_wasDiesel)
+                {
+                    NewsFeed.Post(r.WindTowardTown
+                        ? "The generator is running and the wind is from the east. Residents on the lane are photographing the plume over their gardens."
+                        : "The site's generator is running. Today's wind carries the plume away from town; nobody has said thank you.");
+                }
+                _wasDiesel = diesel;
             }
-            _wasDiesel = diesel;
 
             // Scroll.
             if (_current.Length == 0 && _queue.Count > 0)
@@ -145,7 +156,9 @@ namespace Game.Runtime.Media
         private void OnGUI()
         {
             if (!IsOpen) return;
-            _win = GUI.Window(913, _win, DrawWindow, "PROGRAM BULLETIN — draft");
+            // GUILayout.Window, not GUI.Window: the window body uses GUILayout
+            // controls, which need the layouting window variant.
+            _win = GUILayout.Window(913, _win, DrawWindow, "PROGRAM BULLETIN — draft");
         }
 
         private void DrawWindow(int id)
@@ -159,10 +172,10 @@ namespace Game.Runtime.Media
             _namedIndex = GUILayout.Toolbar(Mathf.Clamp(_namedIndex, 0, names.Length - 1), names);
             GUILayout.EndHorizontal();
 
-            var driver = World.GameBootstrap.Driver;
-            string cred = driver != null && driver.Sim != null
-                ? driver.Sim.State.Credibility.ToString("0.00", CultureInfo.InvariantCulture)
-                : "-";
+            // The replicated report, so a client sees the credibility its
+            // bulletin will actually be judged against — not its stale sim.
+            string cred = World.GameBootstrap.CurrentReport.Credibility
+                .ToString("0.00", CultureInfo.InvariantCulture);
             GUILayout.Label("Current credibility: " + cred + "  (each bulletin spends some; below 0.20 they backfire)");
 
             GUILayout.BeginHorizontal();

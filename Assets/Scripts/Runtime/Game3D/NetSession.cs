@@ -30,9 +30,11 @@ namespace Game.Runtime.Net
     /// </summary>
     public sealed class NetSession : MonoBehaviour
     {
-        private const byte MsgHello = 1, MsgCmd = 2, MsgAvatar = 3, MsgTime = 4, MsgNamed = 5;
+        private const byte MsgHello = 1, MsgCmd = 2, MsgAvatar = 3, MsgTime = 4, MsgNamed = 5,
+                           MsgHazard = 6;
         private const byte MsgSnapshot = 20, MsgLedger = 21, MsgRoster = 22,
-                           MsgFacility = 23, MsgKill = 24, MsgNews = 25, MsgStanding = 26;
+                           MsgFacility = 23, MsgKill = 24, MsgNews = 25, MsgStanding = 26,
+                           MsgAvatars = 27, MsgHazardEvent = 28;
         private const string Channel = "GNP";
         private const double StandingLossNamed = 14.0;   // coop-griefing.md §4
         private const double StandingStart = 50.0;
@@ -43,7 +45,7 @@ namespace Game.Runtime.Net
         public string LocalPlayerName = "Operator";
         public TickReport RemoteReport;
         public long RemoteTick;
-        public int RemoteNodes;
+        public bool PanelOpen { get { return _panelOpen; } }
 
         private NetworkManager _nm;
         private UnityTransport _transport;
@@ -87,8 +89,14 @@ namespace Game.Runtime.Net
             LocalPlayerName = "Host";
             _standings[LocalPlayerName] = StandingStart;
             _nm.CustomMessagingManager.RegisterNamedMessageHandler(Channel, OnMessage);
+            // -= before += : a re-hosted session must not stack stale handlers.
+            _nm.OnClientConnectedCallback -= OnClientConnected;
             _nm.OnClientConnectedCallback += OnClientConnected;
+            _nm.OnClientDisconnectCallback -= OnClientDisconnected;
             _nm.OnClientDisconnectCallback += OnClientDisconnected;
+            // Everything the host's game posts reaches every client verbatim.
+            NewsFeed.OnPosted -= BroadcastNews;
+            NewsFeed.OnPosted += BroadcastNews;
             NewsFeed.Post("Session hosted on port 7777. Shared account, no permissions — the ledger records names.");
         }
 
@@ -102,34 +110,48 @@ namespace Game.Runtime.Net
             // The client renders snapshots; its local sim must not tick.
             if (GameBootstrap.Driver != null) GameBootstrap.Driver.Paused = true;
             _nm.CustomMessagingManager.RegisterNamedMessageHandler(Channel, OnMessage);
-            _nm.OnClientConnectedCallback += id =>
-            {
-                if (id == _nm.LocalClientId)
-                {
-                    LocalPlayerName = "P" + id.ToString(CultureInfo.InvariantCulture);
-                    if (GameBootstrap.LocalPlayer != null)
-                        GameBootstrap.LocalPlayer.PlayerName = LocalPlayerName;
-                    using var w = BeginMsg(MsgHello);
-                    w.WriteValueSafe(LocalPlayerName);
-                    Send(w, NetworkManager.ServerClientId);
-                }
-            };
-            _nm.OnClientDisconnectCallback += id =>
-            {
-                if (id == _nm.LocalClientId)
-                {
-                    Active = false; IsClient = false;
-                    NewsFeed.Post("Disconnected from the host.");
-                }
-            };
+            _nm.OnClientConnectedCallback -= OnSelfConnected;
+            _nm.OnClientConnectedCallback += OnSelfConnected;
+            _nm.OnClientDisconnectCallback -= OnSelfDisconnected;
+            _nm.OnClientDisconnectCallback += OnSelfDisconnected;
+        }
+
+        private void OnSelfConnected(ulong id)
+        {
+            if (!IsClient || id != _nm.LocalClientId) return;
+            LocalPlayerName = "P" + id.ToString(CultureInfo.InvariantCulture);
+            if (GameBootstrap.LocalPlayer != null)
+                GameBootstrap.LocalPlayer.PlayerName = LocalPlayerName;
+            using var w = BeginMsg(MsgHello);
+            w.WriteValueSafe(LocalPlayerName);
+            Send(w, NetworkManager.ServerClientId);
+        }
+
+        private void OnSelfDisconnected(ulong id)
+        {
+            if (!IsClient || id != _nm.LocalClientId) return;
+            Active = false; IsClient = false;
+            ClearRemoteState();
+            // Frozen forever would be worse: the stale local sim resumes solo.
+            if (GameBootstrap.Driver != null) GameBootstrap.Driver.Paused = false;
+            NewsFeed.Post("Disconnected from the host — your local (stale) site resumes.");
         }
 
         public void Disconnect()
         {
+            bool wasClient = IsClient;
             if (_nm != null) _nm.Shutdown();
             Active = false; IsHost = false; IsClient = false;
+            NewsFeed.OnPosted -= BroadcastNews;
+            ClearRemoteState();
+            if (wasClient && GameBootstrap.Driver != null) GameBootstrap.Driver.Paused = false;
+        }
+
+        private void ClearRemoteState()
+        {
             foreach (var kv in _avatars) if (kv.Value != null) Destroy(kv.Value);
             _avatars.Clear();
+            _avatarPos.Clear();
             _roster.Clear();
         }
 
@@ -165,6 +187,26 @@ namespace Game.Runtime.Net
             return w;
         }
 
+        // TickReport lives in the Unity-free sim assembly, so it cannot carry
+        // NGO's INetworkSerializeByMemcpy. It IS unmanaged, so it crosses the
+        // wire as its raw managed bytes — valid because host and clients run
+        // the same build (a length check drops mismatched versions).
+        private static byte[] ReportToBytes(TickReport r)
+        {
+            return System.Runtime.InteropServices.MemoryMarshal.AsBytes(
+                System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref r, 1)).ToArray();
+        }
+
+        private static readonly int ReportByteLen = ReportToBytes(default).Length;
+
+        private static bool ReportFromBytes(byte[] bytes, out TickReport r)
+        {
+            r = default;
+            if (bytes == null || bytes.Length != ReportByteLen) return false;
+            r = System.Runtime.InteropServices.MemoryMarshal.Read<TickReport>(bytes);
+            return true;
+        }
+
         private void Send(FastBufferWriter w, ulong to)
         {
             _nm.CustomMessagingManager.SendNamedMessage(Channel, to, w, NetworkDelivery.ReliableFragmentedSequenced);
@@ -198,10 +240,18 @@ namespace Game.Runtime.Net
                     var cmd = new SimCommand { Kind = (CommandKind)kind, A = a, B = b };
                     GameBootstrap.Driver.EnqueueRecorded(cmd);
                     // The HOST stamps the actor from the connection, never from
-                    // the payload (multiplayer.md §4).
+                    // the payload (multiplayer.md §4). The description is free
+                    // text from the client's own build — it only ever appears
+                    // under the sender's own name, but cap and flatten it so a
+                    // modified client cannot fake multi-line ledger entries.
                     string actor = _roster.TryGetValue(sender, out string n)
                         ? n : "P" + sender.ToString(CultureInfo.InvariantCulture);
-                    if (!string.IsNullOrEmpty(desc)) GameBootstrap.AddLedger(actor, desc);
+                    if (!string.IsNullOrEmpty(desc))
+                    {
+                        desc = desc.Replace('\n', ' ').Replace('\r', ' ');
+                        if (desc.Length > 120) desc = desc.Substring(0, 120);
+                        GameBootstrap.AddLedger(actor, desc);
+                    }
                     break;
                 }
                 case MsgAvatar when IsHost:
@@ -218,8 +268,24 @@ namespace Game.Runtime.Net
                     reader.ReadValueSafe(out float tps);
                     GameBootstrap.Driver.Paused = paused;
                     GameBootstrap.Driver.TicksPerSecond = tps;
-                    string actor = _roster.TryGetValue(sender, out string tn) ? tn : "P" + sender;
-                    GameBootstrap.AddLedger(actor, paused ? "paused the clock" : "set speed " + tps + " t/s");
+                    string actor = _roster.TryGetValue(sender, out string tn)
+                        ? tn : "P" + sender.ToString(CultureInfo.InvariantCulture);
+                    GameBootstrap.AddLedger(actor, paused ? "paused the clock"
+                        : "set speed " + tps.ToString("0.#", CultureInfo.InvariantCulture) + " t/s");
+                    break;
+                }
+                case MsgAvatars when IsClient:
+                {
+                    reader.ReadValueSafe(out int count);
+                    for (int i = 0; i < count; i++)
+                    {
+                        reader.ReadValueSafe(out ulong id);
+                        reader.ReadValueSafe(out Vector3 pos);
+                        reader.ReadValueSafe(out float yaw);
+                        if (id == _nm.LocalClientId) continue; // that one is me
+                        _avatarPos[id] = pos;
+                        UpdateAvatar(id, pos, yaw);
+                    }
                     break;
                 }
                 case MsgNamed when IsHost:
@@ -228,14 +294,40 @@ namespace Game.Runtime.Net
                     ApplyNamingPenalty(named);
                     break;
                 }
+                case MsgHazard when IsHost:
+                {
+                    // A client wants to operate a pull station. The host's
+                    // instance is authoritative; the state change echoes to
+                    // everyone as a hazard event.
+                    reader.ReadValueSafe(out int index);
+                    reader.ReadValueSafe(out byte action);
+                    if (index < 0 || index >= World.PullStation.All.Count) break;
+                    string actor = _roster.TryGetValue(sender, out string hn)
+                        ? hn : "P" + sender.ToString(CultureInfo.InvariantCulture);
+                    World.PullStation.All[index].Apply(action, actor);
+                    BroadcastHazard(index, action);
+                    break;
+                }
+                case MsgHazardEvent when IsClient:
+                {
+                    reader.ReadValueSafe(out int index);
+                    reader.ReadValueSafe(out byte action);
+                    if (index < 0 || index >= World.PullStation.All.Count) break;
+                    // Mirror only — the host already ledgered and posted news.
+                    World.PullStation.All[index].Apply(action, null);
+                    break;
+                }
                 case MsgSnapshot when IsClient:
                 {
                     reader.ReadValueSafe(out long tick);
-                    reader.ReadValueSafe(out TickReport report);
-                    reader.ReadValueSafe(out int nodes);
-                    RemoteTick = tick;
-                    RemoteReport = report;
-                    RemoteNodes = nodes;
+                    reader.ReadValueSafe(out int len);
+                    var bytes = new byte[len];
+                    reader.ReadBytesSafe(ref bytes, len);
+                    if (ReportFromBytes(bytes, out TickReport report))
+                    {
+                        RemoteTick = tick;
+                        RemoteReport = report;
+                    }
                     break;
                 }
                 case MsgLedger when IsClient:
@@ -334,10 +426,16 @@ namespace Game.Runtime.Net
             foreach (var kv in _avatarPos)
             {
                 if (!room.Contains(kv.Value)) continue;
-                using var w = BeginMsg(MsgKill);
-                w.WriteValueSafe(cause + " in " + room.Name);
-                Send(w, kv.Key);
+                HostKillClient(kv.Key, cause + " in " + room.Name);
             }
+        }
+
+        public void HostKillClient(ulong clientId, string cause)
+        {
+            if (!IsHost || _nm == null) return;
+            using var w = BeginMsg(MsgKill);
+            w.WriteValueSafe(cause);
+            Send(w, clientId);
         }
 
         // ------------------------------------------------------------------
@@ -347,9 +445,19 @@ namespace Game.Runtime.Net
         private void Update()
         {
             Keyboard kb = Keyboard.current;
-            if (kb != null && kb.f2Key.wasPressedThisFrame) _panelOpen = !_panelOpen;
+            if (kb != null && kb.f2Key.wasPressedThisFrame)
+            {
+                _panelOpen = !_panelOpen;
+                Cursor.lockState = _panelOpen ? CursorLockMode.None : CursorLockMode.Locked;
+                Cursor.visible = _panelOpen;
+            }
 
             if (!Active || _nm == null) return;
+
+            // Backstop: nothing on a client may ever tick the local sim — the
+            // debug console's time buttons included. Intent goes via MsgTime.
+            if (IsClient && GameBootstrap.Driver != null && !GameBootstrap.Driver.Paused)
+                GameBootstrap.Driver.Paused = true;
 
             if (IsHost && Time.unscaledTime >= _nextBroadcast)
             {
@@ -359,13 +467,36 @@ namespace Game.Runtime.Net
                 {
                     using var w = BeginMsg(MsgSnapshot);
                     w.WriteValueSafe(driver.Sim.State.Tick);
-                    TickReport r = driver.Latest;
-                    w.WriteValueSafe(r);
-                    w.WriteValueSafe(driver.Sim.State.NodesInstalled);
+                    byte[] bytes = ReportToBytes(driver.Latest);
+                    w.WriteValueSafe(bytes.Length);
+                    w.WriteBytesSafe(bytes);
                     Broadcast(w);
                 }
                 SendFacility(0, force: false);
-                // Also feed clients the news the host generated this interval.
+            }
+
+            if (IsHost && Time.unscaledTime >= _nextAvatarSend)
+            {
+                // Everyone sees everyone: the host mirrors all known positions
+                // (its own included) back out at 10 Hz.
+                _nextAvatarSend = Time.unscaledTime + 0.1f;
+                var rig = GameBootstrap.LocalPlayer;
+                using var w = BeginMsg(MsgAvatars);
+                w.WriteValueSafe(_avatarPos.Count + (rig != null ? 1 : 0));
+                if (rig != null)
+                {
+                    w.WriteValueSafe(_nm.LocalClientId);
+                    w.WriteValueSafe(rig.transform.position);
+                    w.WriteValueSafe(rig.transform.eulerAngles.y);
+                }
+                foreach (var kv in _avatarPos)
+                {
+                    w.WriteValueSafe(kv.Key);
+                    w.WriteValueSafe(kv.Value);
+                    w.WriteValueSafe(_avatars.TryGetValue(kv.Key, out GameObject go) && go != null
+                        ? go.transform.eulerAngles.y : 0f);
+                }
+                Broadcast(w);
             }
 
             if (IsClient && Time.unscaledTime >= _nextAvatarSend)
@@ -382,11 +513,59 @@ namespace Game.Runtime.Net
             }
         }
 
+        public void SendHazard(int stationIndex, byte action)
+        {
+            if (!IsClient) return;
+            using var w = BeginMsg(MsgHazard);
+            w.WriteValueSafe(stationIndex);
+            w.WriteValueSafe(action);
+            Send(w, NetworkManager.ServerClientId);
+        }
+
+        public void BroadcastHazard(int stationIndex, byte action)
+        {
+            if (!IsHost || _nm == null) return;
+            using var w = BeginMsg(MsgHazardEvent);
+            w.WriteValueSafe(stationIndex);
+            w.WriteValueSafe(action);
+            Broadcast(w);
+        }
+
+        /// <summary>Client-side time intent: forwarded to the host, ledgered
+        /// there under this player's name. The local sim stays paused.</summary>
+        public void SendTimeControl(bool paused, float ticksPerSecond)
+        {
+            if (!IsClient) return;
+            using var w = BeginMsg(MsgTime);
+            w.WriteValueSafe(paused);
+            w.WriteValueSafe(ticksPerSecond);
+            Send(w, NetworkManager.ServerClientId);
+        }
+
+        private void BroadcastNews(string item)
+        {
+            if (!IsHost || _nm == null) return;
+            using var w = BeginMsg(MsgNews);
+            w.WriteValueSafe(item);
+            Broadcast(w);
+        }
+
         private void SendFacility(ulong specificClient, bool force)
         {
             if (GameBootstrap.Facility == null) return;
             string json = GameBootstrap.Facility.ToJson();
             if (!force && json == _lastFacilityJson) return;
+            // WriteValueSafe throws past the writer's 64 KB ceiling; a site
+            // with that much routing keeps its last replicated layout instead.
+            if (System.Text.Encoding.UTF8.GetByteCount(json) > 60000)
+            {
+                if (_lastFacilityJson != "OVERSIZE")
+                {
+                    _lastFacilityJson = "OVERSIZE";
+                    Debug.LogWarning("[GNP] facility JSON exceeds the message ceiling; layout replication suspended");
+                }
+                return;
+            }
             _lastFacilityJson = json;
             using var w = BeginMsg(MsgFacility);
             w.WriteValueSafe(json);
@@ -397,6 +576,10 @@ namespace Game.Runtime.Net
         private void BroadcastRoster()
         {
             var sb = new System.Text.StringBuilder();
+            // The host is a player too — without this entry clients could
+            // never publicly name the host in a press release.
+            sb.Append(_nm.LocalClientId.ToString(CultureInfo.InvariantCulture)).Append('|')
+              .Append(LocalPlayerName).Append('|');
             foreach (var kv in _roster)
                 sb.Append(kv.Key.ToString(CultureInfo.InvariantCulture)).Append('|')
                   .Append(kv.Value).Append('|');

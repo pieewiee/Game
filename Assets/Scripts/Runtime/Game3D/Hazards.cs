@@ -12,6 +12,8 @@ namespace Game.Runtime.World
     {
         public static void Install(SiteRefs site, FacilityController facility)
         {
+            PullStation.All.Clear();
+
             // Pull stations: Hall A and the plant room (workplace-accidents.md §4.1).
             MakePullStation(site, facility, site.HallA, new Vector3(1.0f, 1.5f, 2f));
             MakePullStation(site, facility, site.Plant, new Vector3(21f, 1.5f, 2f));
@@ -59,6 +61,8 @@ namespace Game.Runtime.World
             var st = go.AddComponent<PullStation>();
             st.Room = room;
             st.Facility = fac;
+            st.Index = PullStation.All.Count;
+            PullStation.All.Add(st);
         }
 
         private static void MakeEpo(SiteRefs site, FacilityController fac, Room room, Vector3 pos)
@@ -139,6 +143,13 @@ namespace Game.Runtime.World
     public sealed class PullStation : MonoBehaviour, IInteractable
     {
         public const float PreAlarmSeconds = 30f;
+        public const byte ActionCutSeal = 1, ActionPull = 2;
+
+        /// <summary>Creation order is deterministic (HazardInstaller), so the
+        /// index addresses the same station on every machine.</summary>
+        public static readonly List<PullStation> All = new List<PullStation>();
+
+        public int Index;
         public Room Room;
         public FacilityController Facility;
         public bool SealCut;
@@ -159,20 +170,43 @@ namespace Game.Runtime.World
         public void Interact(PlayerRig player)
         {
             if (CountingDown) return;
-            if (!SealCut)
+            byte action = SealCut ? ActionPull : ActionCutSeal;
+            if (action == ActionCutSeal && !(player.Carried is WireCutters)) return;
+
+            var net = GameBootstrap.Net;
+            if (net != null && net.IsClient)
             {
-                if (player.Carried is WireCutters)
-                {
-                    SealCut = true;
-                    GameBootstrap.AddLedger(player.PlayerName, "cut the suppression seal in " + Room.Name);
-                }
+                // Host-authoritative: the intent travels, the host runs the
+                // countdown, and the started state comes back as a broadcast.
+                net.SendHazard(Index, action);
                 return;
             }
-            CountingDown = true;
-            Remaining = PreAlarmSeconds;
-            SiteAudio.PlaySiren(transform.position, PreAlarmSeconds);
-            GameBootstrap.AddLedger(player.PlayerName, "PULLED the fire suppression in " + Room.Name);
-            NewsFeed.Post("A fire-suppression pre-alarm is sounding in " + Room.Name + ".");
+            Apply(action, player.PlayerName);
+            if (net != null && net.IsHost) net.BroadcastHazard(Index, action);
+        }
+
+        /// <summary>Applies a hazard action on this machine. actorName is the
+        /// host-stamped name for the ledger, or null on a client mirroring a
+        /// broadcast (the host already ledgered and posted the news).</summary>
+        public void Apply(byte action, string actorName)
+        {
+            if (action == ActionCutSeal && !SealCut && !CountingDown)
+            {
+                SealCut = true;
+                if (actorName != null)
+                    GameBootstrap.AddLedger(actorName, "cut the suppression seal in " + Room.Name);
+            }
+            else if (action == ActionPull && SealCut && !CountingDown)
+            {
+                CountingDown = true;
+                Remaining = PreAlarmSeconds;
+                SiteAudio.PlaySiren(transform.position, PreAlarmSeconds);
+                if (actorName != null)
+                {
+                    GameBootstrap.AddLedger(actorName, "PULLED the fire suppression in " + Room.Name);
+                    NewsFeed.Post("A fire-suppression pre-alarm is sounding in " + Room.Name + ".");
+                }
+            }
         }
 
         private void Update()
@@ -186,29 +220,34 @@ namespace Game.Runtime.World
 
         private void Discharge()
         {
-            var driver = GameBootstrap.Driver;
-            double lossFrac = driver != null ? driver.Balance.SuppressionDriveLoss : 0.55;
-            int roomNodes = Facility != null ? Facility.RoomNodeCount(Room) : 0;
-            int destroyed = (int)Math.Round(roomNodes * lossFrac);
-            if (destroyed > 0)
-                GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.DestroyNodes, A = destroyed },
-                    "suppression discharge destroyed " + destroyed + " nodes in " + Room.Name);
+            var net = GameBootstrap.Net;
+            bool authoritative = net == null || !net.IsClient;
 
-            // Everyone still inside becomes an incident.
+            if (authoritative)
+            {
+                var driver = GameBootstrap.Driver;
+                double lossFrac = driver != null ? driver.Balance.SuppressionDriveLoss : 0.55;
+                int roomNodes = Facility != null ? Facility.RoomNodeCount(Room) : 0;
+                int destroyed = (int)Math.Round(roomNodes * lossFrac);
+                if (destroyed > 0)
+                    GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.DestroyNodes, A = destroyed },
+                        "suppression discharge destroyed " + destroyed + " nodes in " + Room.Name);
+                if (net != null) net.HostKillPlayersInRoom(Room, "inert-gas discharge");
+                NewsFeed.Post("Residents report a prolonged alarm from the site. The operator describes it as " +
+                    "\"a scheduled validation of the Program's life-safety readiness\".");
+            }
+
+            // Local consequences happen everywhere: your own body, your own view.
             var player = GameBootstrap.LocalPlayer;
             if (player != null && !player.IsDead && Room.Contains(player.transform.position))
                 player.Die("inert-gas discharge in " + Room.Name);
-            if (GameBootstrap.Net != null) GameBootstrap.Net.HostKillPlayersInRoom(Room, "inert-gas discharge");
 
-            // The cloud.
             var pm = new ProcMesh();
             var c = Palette.Render; c.a = 0.35f;
             pm.Box(Room.Bounds.center, Room.Bounds.size * 0.96f, c);
             _gasCloud = MatLib.Spawn("GasCloud", pm.Build("gas"), transform.parent, Vector3.zero, false, true);
             Destroy(_gasCloud, 25f);
 
-            NewsFeed.Post("Residents report a prolonged alarm from the site. The operator describes it as " +
-                "\"a scheduled validation of the Program's life-safety readiness\".");
             SealCut = false; // system spent; needs re-arming (and a new seal)
         }
     }
@@ -230,12 +269,15 @@ namespace Game.Runtime.World
 
         private void Update()
         {
-            var driver = GameBootstrap.Driver;
             var player = GameBootstrap.LocalPlayer;
-            if (driver == null || driver.Sim == null || player == null || player.IsDead) return;
-            double setpoint = driver.Sim.State.SetpointC;
-            bool inCooledRoom = _site.HallA.Contains(player.transform.position)
-                             || _site.Plant.Contains(player.transform.position);
+            if (player == null || player.IsDead) return;
+            // The replicated report: a client freezes by the HOST's setpoint,
+            // not by its own paused sim's stale one.
+            double setpoint = GameBootstrap.CurrentReport.SetpointC;
+            // Only the cold aisle freezes people. The plant room holds the
+            // dial itself — freezing its operator would make turning the dial
+            // back impossible, which is a dead end, not a joke.
+            bool inCooledRoom = _site.HallA.Contains(player.transform.position);
             if (setpoint < 0.0 && inCooledRoom)
             {
                 // Exposure builds faster the colder the dial sits.

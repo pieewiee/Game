@@ -27,16 +27,23 @@ namespace Game.Sim.Tests
         }
 
         [Test]
-        public void SetPlantChangesEveryAsset()
+        public void AddPlantIsADeltaSoConcurrentPlacementsCompose()
         {
             Simulation sim = NewSim();
-            Cmd(sim, CommandKind.SetPlant, (int)PlantKind.ChillerKwTh, 750);
-            Cmd(sim, CommandKind.SetPlant, (int)PlantKind.SolarKwp, 123);
-            Cmd(sim, CommandKind.SetPlant, (int)PlantKind.DieselKw, 999);
+            // Two players place a chiller unit in the SAME tick without reading
+            // state first — both units must arrive (the reason it is a delta).
+            Cmd(sim, CommandKind.AddPlant, (int)PlantKind.ChillerKwTh, 250);
+            Cmd(sim, CommandKind.AddPlant, (int)PlantKind.ChillerKwTh, 250);
+            Cmd(sim, CommandKind.AddPlant, (int)PlantKind.SolarKwp, 123);
+            Cmd(sim, CommandKind.AddPlant, (int)PlantKind.DieselKw, 699);   // scenario starts at 300
             sim.Tick();
-            Assert.That(sim.State.ChillerKwTh, Is.EqualTo(750));
+            Assert.That(sim.State.ChillerKwTh, Is.EqualTo(500));
             Assert.That(sim.State.SolarKwp, Is.EqualTo(123));
             Assert.That(sim.State.DieselKw, Is.EqualTo(999));
+            // A negative delta clamps at zero instead of going negative.
+            Cmd(sim, CommandKind.AddPlant, (int)PlantKind.SolarKwp, -500);
+            sim.Tick();
+            Assert.That(sim.State.SolarKwp, Is.EqualTo(0));
         }
 
         [Test]
@@ -44,7 +51,8 @@ namespace Game.Sim.Tests
         {
             Simulation sim = NewSim();
             TickReport before = sim.Tick();
-            Cmd(sim, CommandKind.SetRouteLossKw, 40);
+            Cmd(sim, CommandKind.AddRouteLossKw, 25);
+            Cmd(sim, CommandKind.AddRouteLossKw, 15);
             TickReport after = sim.Tick();
             Assert.That(after.PAuxKw, Is.GreaterThan(before.PAuxKw + 35),
                 "route loss must appear in aux demand");

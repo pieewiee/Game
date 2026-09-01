@@ -85,6 +85,35 @@ namespace Game.Runtime.World
             }
             base.Interact(player);
         }
+
+        /// <summary>Visual-resync path: the sim's derate already reflects this
+        /// panel being gone; mark and hide it without sending any command. The
+        /// physical panel object someone pulled is still lying around (or being
+        /// carried) — this slot just stays visibly empty.</summary>
+        public void SetMissingSilently()
+        {
+            Mounted = false;
+            gameObject.SetActive(false);
+        }
+    }
+
+    /// <summary>Lives on each rack: remounting point for a carried blanking
+    /// panel (workplace-accidents.md §4.7 — "putting it back restores it").</summary>
+    public sealed class RackRemount : MonoBehaviour, IInteractable
+    {
+        public FacilityController Facility;
+
+        public string Prompt(PlayerRig player)
+        {
+            if (Facility == null || !(player.Carried is BlankingPanel)) return null;
+            return Facility.HasMissingPanel ? "E: remount blanking panel" : null;
+        }
+
+        public void Interact(PlayerRig player)
+        {
+            if (Facility != null && player.Carried is BlankingPanel)
+                Facility.RemountPanel(player);
+        }
     }
 
     /// <summary>A compartment door. Opens from both sides, always — and can be

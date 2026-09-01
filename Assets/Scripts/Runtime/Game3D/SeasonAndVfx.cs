@@ -58,14 +58,16 @@ namespace Game.Runtime.World
             int hour = SimClock.HourOfDay(CurrentTick());
             float summer = 0.5f - 0.5f * Mathf.Cos((month - 1) / 12f * Mathf.PI * 2f); // 0 winter → 1 July-ish
 
-            float dayFrac = Mathf.InverseLerp(5f, 15f, hour) - Mathf.InverseLerp(15f, 23f, hour);
-            float sunUp = Mathf.Clamp01(0.15f + dayFrac);
-            _sun.transform.rotation = Quaternion.Euler(20f + sunUp * 45f + summer * 12f, 160f, 0);
-            _sun.intensity = 0.25f + sunUp * (0.7f + 0.3f * summer);
+            // Solar height as a sine over the day: negative at night, so the
+            // site actually goes DARK instead of holding a pale afternoon.
+            float sunH = Mathf.Sin((hour + 0.5f - 6f) / 12f * Mathf.PI);
+            float sunUp = Mathf.Clamp01(sunH * 1.15f + 0.05f);
+            _sun.transform.rotation = Quaternion.Euler(15f + sunUp * 50f + summer * 12f, 160f, 0);
+            _sun.intensity = 0.05f + sunUp * (0.85f + 0.3f * summer);
             _sun.color = Color.Lerp(new Color(0.85f, 0.88f, 1f), new Color(1f, 0.96f, 0.85f), summer);
 
             Color sky = Color.Lerp(new Color(0.62f, 0.68f, 0.75f), new Color(0.75f, 0.83f, 0.88f), summer);
-            sky = Color.Lerp(Color.Lerp(sky, Palette.Ink, 0.85f), sky, Mathf.Clamp01(sunUp + 0.15f));
+            sky = Color.Lerp(Color.Lerp(sky, Palette.Ink, 0.92f), sky, sunUp);
             RenderSettings.ambientLight = Color.Lerp(sky * 0.7f, sky, 0.5f);
             RenderSettings.fog = true;
             RenderSettings.fogColor = sky;

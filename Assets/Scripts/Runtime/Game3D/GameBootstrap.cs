@@ -27,11 +27,29 @@ namespace Game.Runtime.World
         public static NetSession Net { get; private set; }
         public static readonly List<string> Ledger = new List<string>();
 
-        /// <summary>True while a mouse-driven UI (console with freed cursor,
-        /// bulletin editor) should swallow clicks meant for placement.</summary>
-        public static bool UiCapturesMouse
+        /// <summary>The report every presentation system reads: the replicated
+        /// snapshot on a client (whose own sim is paused and stale), the live
+        /// sim's latest tick otherwise. HUD, audio, VFX, freeze, media — all
+        /// of it keys off this so clients see the host's reality.</summary>
+        public static TickReport CurrentReport
         {
-            get { return Cursor.lockState != CursorLockMode.Locked; }
+            get
+            {
+                if (Net != null && Net.IsClient) return Net.RemoteReport;
+                return Driver != null ? Driver.Latest : default;
+            }
+        }
+
+        /// <summary>True while a modal IMGUI window is open (bulletin editor,
+        /// network panel). Those windows own Escape and the mouse; the player
+        /// rig neither moves nor re-locks the cursor until they close.</summary>
+        public static bool UiWantsCursor
+        {
+            get
+            {
+                if (BulletinEditor.Instance != null && BulletinEditor.Instance.IsOpen) return true;
+                return Net != null && Net.PanelOpen;
+            }
         }
 
         private void Awake()
