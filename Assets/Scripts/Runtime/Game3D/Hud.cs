@@ -68,14 +68,14 @@ namespace Game.Runtime.World
             if (player != null && !player.IsDead)
             {
                 player.CurrentTarget(out string prompt);
-                if (!string.IsNullOrEmpty(prompt))
+                bool aimed = !string.IsNullOrEmpty(prompt);
+                if (aimed)
                     GUI.Label(new Rect(Screen.width / 2f - 300, Screen.height * 0.62f, 600, 26), prompt, _centre);
                 var fac = GameBootstrap.Facility;
                 if (fac != null && fac.PlacementHint.Length > 0)
                     GUI.Label(new Rect(Screen.width / 2f - 300, Screen.height * 0.66f, 600, 26),
                         fac.PlacementHint, _centre);
-                // crosshair
-                GUI.Label(new Rect(Screen.width / 2f - 4, Screen.height / 2f - 10, 10, 20), "·", _centre);
+                DrawCrosshair(aimed);
 
                 if (player.Exposure > 0.05f)
                 {
@@ -86,6 +86,21 @@ namespace Game.Runtime.World
                         "IT IS VERY COLD IN HERE", _centre);
                 }
             }
+        }
+
+        /// <summary>Four ticks around a gap, opening up and turning amber when
+        /// something under the cursor can be operated. A text dot told you
+        /// where the centre was; this tells you whether it matters.</summary>
+        private static void DrawCrosshair(bool aimed)
+        {
+            float cx = Screen.width / 2f, cy = Screen.height / 2f;
+            float gap = aimed ? 7f : 4f, len = aimed ? 7f : 5f, w = 2f;
+            GUI.color = aimed ? new Color(1f, 0.72f, 0.2f, 0.95f) : new Color(1f, 1f, 1f, 0.55f);
+            GUI.DrawTexture(new Rect(cx - w / 2, cy - gap - len, w, len), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(cx - w / 2, cy + gap, w, len), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(cx - gap - len, cy - w / 2, len, w), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(cx + gap, cy - w / 2, len, w), Texture2D.whiteTexture);
+            GUI.color = Color.white;
         }
 
         private void DrawWindArrow(Vector2 centre, TickReport r)
