@@ -95,3 +95,6 @@ secrets.json
 # --- Hand-authored dotnet tooling (exception to the Unity-generated ignores) ---
 !Tools/**/*.csproj
 Tools/**/[Bb]in/
+
+# Test Runner exports (Unity writes these into the project root)
+/TestResults_*.xml
