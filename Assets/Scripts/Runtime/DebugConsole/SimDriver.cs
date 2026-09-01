@@ -29,6 +29,9 @@ namespace Game.Runtime.DebugTools
             DontDestroyOnLoad(go);
             go.AddComponent<SimDriver>();
             go.AddComponent<DebugConsole>();
+            // Milestones 3-6: the playable world assembles itself on the same
+            // object. Still no authored scene content anywhere.
+            go.AddComponent<Game.Runtime.World.GameBootstrap>();
         }
 
         /// <summary>Ring capacity: five simulated years of hourly reports.</summary>
@@ -130,10 +133,19 @@ namespace Game.Runtime.DebugTools
             ScenarioName = scenarioName;
             Seed = seed;
             Sim = new Simulation(Balance, sc);
+            CommandLog.Clear();
             _histCount = 0;
             _histHead = 0;
             _accum = 0;
             HistoryVersion++;
+        }
+
+        /// <summary>Save/load path: swap in an exact Balance (parsed from the
+        /// save's embedded tuning text) before the deterministic replay.</summary>
+        public void ReplaceBalance(Balance balance)
+        {
+            Balance = balance;
+            BalanceGeneration++;
         }
 
         public void ReloadBalanceFromFileAndRestart()
@@ -193,6 +205,30 @@ namespace Game.Runtime.DebugTools
             if (n <= 0) return;
             _accum -= n;
             for (int i = 0; i < n; i++) PushTick();
+        }
+
+        [Serializable]
+        public struct RecordedCommand
+        {
+            public long tick;
+            public int kind;
+            public double a, b;
+        }
+
+        /// <summary>Every player-caused command with the tick it applies at.
+        /// With a deterministic sim, {balance text, scenario, seed, this log}
+        /// IS the save file (SaveSystem, M6). The debug console's direct
+        /// Sim.Enqueue pokes stay unrecorded on purpose - console pokes are
+        /// experiments, not history.</summary>
+        public readonly System.Collections.Generic.List<RecordedCommand> CommandLog =
+            new System.Collections.Generic.List<RecordedCommand>();
+
+        /// <summary>Enqueue AND record for the save system - all gameplay paths.</summary>
+        public void EnqueueRecorded(SimCommand cmd)
+        {
+            if (Sim == null) return;
+            CommandLog.Add(new RecordedCommand { tick = Sim.State.Tick, kind = (int)cmd.Kind, a = cmd.A, b = cmd.B });
+            Sim.Enqueue(cmd);
         }
 
         public void Step(int ticks)
