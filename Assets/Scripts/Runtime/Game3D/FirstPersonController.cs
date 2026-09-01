@@ -44,8 +44,10 @@ namespace Game.Runtime.World
         public bool IsDead { get; private set; }
         public bool IsCrouched { get; private set; }
         public bool IsGrounded { get; private set; }
-        /// <summary>Horizontal speed in m/s — HUD and audio read it.</summary>
-        public float Speed { get { return new Vector3(_vel.x, 0, _vel.z).magnitude; } }
+        /// <summary>Horizontal speed in m/s that the body ACTUALLY covered —
+        /// not what it intended. Blocked against a wall this is zero, so the
+        /// camera stops pretending you are running.</summary>
+        public float Speed { get { return _achieved.magnitude; } }
         public string PlayerName = "Operator";
         public int TempWorkerCount;
         public Forklift Driving;
@@ -62,6 +64,7 @@ namespace Game.Runtime.World
         private float _coyote, _jumpBuffer;
         private bool _jumping;
         private Vector3 _groundNormal = Vector3.up;
+        private Vector3 _achieved;            // measured horizontal movement
         private Transform _platform;          // what we stand on (forklift!)
         private Vector3 _platformLastPos;
         private float _apexY;                 // highest point of the current fall
@@ -208,6 +211,7 @@ namespace Game.Runtime.World
             _bobAmount = 0f;
             _viewDip = 0f;
             _vel = Vector3.zero;          // no walking momentum in the seat
+            _achieved = Vector3.zero;
             _fovKick = 0f;
             transform.localRotation = Quaternion.identity;
         }
@@ -251,7 +255,7 @@ namespace Game.Runtime.World
             ProbeGround();
 
             // --- landing ---
-            if (IsGrounded && !wasGrounded) OnLanded();
+            if (IsGrounded && !wasGrounded && OnLanded()) return;   // fatal fall: body replaced
             if (!IsGrounded) _apexY = Mathf.Max(_apexY, transform.position.y);
             else _apexY = transform.position.y;
 
@@ -294,10 +298,15 @@ namespace Game.Runtime.World
                     horizontal += down * (GravityMss * 0.55f * dt);
                 }
             }
-            else
+            else if (wish.sqrMagnitude > 0.01f)
             {
-                // Air control: steer, don't accelerate. Momentum is preserved.
-                horizontal = Vector3.MoveTowards(horizontal, wish * targetSpeed, AirAccel * dt);
+                // Air control STEERS: it may redirect momentum but never spend
+                // it. Releasing the keys mid-jump used to brake to a standstill
+                // in mid-air, which is the opposite of how a jump reads.
+                float keep = horizontal.magnitude;
+                Vector3 steered = Vector3.MoveTowards(horizontal, wish * targetSpeed, AirAccel * dt);
+                horizontal = steered.magnitude < keep && keep > 0.01f
+                    ? steered.normalized * keep : steered;
             }
 
             // --- vertical ---
@@ -330,7 +339,25 @@ namespace Game.Runtime.World
                 _platformLastPos = _platform.position;
             }
 
+            Vector3 posBefore = transform.position;
             _cc.Move(_vel * dt + platformDelta);
+
+            // Reconcile with what actually happened: pressed into a wall, the
+            // open-loop velocity keeps claiming full speed, which drives the
+            // bob and the sprint FOV — and launches the player sideways the
+            // instant the wall ends. Only ever REDUCE, so slopes and steps
+            // (where the controller achieves less for a frame) do not stall us.
+            if (dt > 0f)
+            {
+                Vector3 achieved = (transform.position - posBefore - platformDelta) / dt;
+                _achieved = new Vector3(achieved.x, 0f, achieved.z);
+                var wanted = new Vector3(_vel.x, 0f, _vel.z);
+                if (_achieved.magnitude < wanted.magnitude)
+                {
+                    _vel.x = _achieved.x;
+                    _vel.z = _achieved.z;
+                }
+            }
 
             // Ceiling: stop climbing the moment the hard hat hits something.
             if ((_cc.collisionFlags & CollisionFlags.Above) != 0 && _vel.y > 0f) _vel.y = 0f;
@@ -364,10 +391,15 @@ namespace Game.Runtime.World
             {
                 IsGrounded = _vel.y <= 0.01f;
                 _groundNormal = hit.normal;
-                if (_platform != hit.transform)
+                // Only a VEHICLE carries its passengers. Treating any collider
+                // as a platform makes network-teleported avatars and rebuilt
+                // racks fling the player across the site.
+                Transform platform = hit.collider.GetComponentInParent<Forklift>() != null
+                    ? hit.collider.GetComponentInParent<Forklift>().transform : null;
+                if (_platform != platform)
                 {
-                    _platform = hit.transform;
-                    _platformLastPos = hit.transform.position;
+                    _platform = platform;
+                    if (platform != null) _platformLastPos = platform.position;
                 }
                 return;
             }
@@ -376,7 +408,9 @@ namespace Game.Runtime.World
             _platform = null;
         }
 
-        private void OnLanded()
+        /// <summary>Returns true when the landing killed the player, so the
+        /// caller stops moving a body that has already been replaced.</summary>
+        private bool OnLanded()
         {
             float drop = _apexY - transform.position.y;
             _jumping = false;
@@ -387,7 +421,7 @@ namespace Game.Runtime.World
             {
                 Die("fell from height (" + drop.ToString("0.0",
                     System.Globalization.CultureInfo.InvariantCulture) + " m)");
-                return;
+                return true;
             }
             if (drop >= HurtFallM)
             {
@@ -396,10 +430,13 @@ namespace Game.Runtime.World
                 _vel.x *= 0.2f;
                 _vel.z *= 0.2f;
             }
+            return false;
         }
 
-        /// <summary>Walk cadence for the camera only — silent. The bob is a
-        /// speed cue, so it stays subtle enough to read for an hour.</summary>
+        /// <summary>Walk cadence for the camera only — silent. _bobPhase counts
+        /// STEPS: stride length grows with speed, which puts a brisk walk near
+        /// 2.8 steps/s and a sprint near 4.3 — human, instead of the 10-19
+        /// steps/s a naive speed multiplier produces.</summary>
         private void Stride(float dt)
         {
             float speed = Speed;
@@ -408,7 +445,8 @@ namespace Game.Runtime.World
                 _bobAmount = Mathf.MoveTowards(_bobAmount, 0f, 4f * dt);
                 return;
             }
-            _bobPhase += speed * dt * 1.55f;
+            float stride = 0.9f + speed * 0.09f;
+            _bobPhase += speed * dt / stride;
             float amp = IsCrouched ? 0.008f : ShiftHeld ? 0.024f : 0.014f;
             _bobAmount = Mathf.MoveTowards(_bobAmount, amp, 0.12f * dt);
         }
@@ -426,8 +464,9 @@ namespace Game.Runtime.World
 
             _viewDip = Mathf.SmoothDamp(_viewDip, 0f, ref _viewDipVel, 0.16f);
 
+            // One vertical dip per step, one lateral sway per stride.
             float bob = _bobAmount * PlayerOptions.BobScale;
-            float bobY = Mathf.Sin(_bobPhase * 2f * Mathf.PI) * bob;
+            float bobY = Mathf.Cos(_bobPhase * 2f * Mathf.PI) * bob;
             float bobX = Mathf.Sin(_bobPhase * Mathf.PI) * bob * 0.35f;
             Cam.transform.localPosition = new Vector3(bobX, _eye + bobY - _viewDip, 0f);
 
@@ -467,7 +506,7 @@ namespace Game.Runtime.World
                     _pendingHold = armed;
                     _pendingTime = 0f;
                 }
-                else target.Interact(this);
+                else { target.Interact(this); _targetFrame = -1; }
             }
             if (kb.eKey.isPressed && _pendingHold != null)
             {
@@ -487,6 +526,7 @@ namespace Game.Runtime.World
                 else if (_pendingHold is IInteractable tapped && _pendingTime < HoldThreshold)
                 {
                     tapped.Interact(this);
+                    _targetFrame = -1;
                 }
                 _holding = null;
                 _pendingHold = null;
@@ -604,11 +644,24 @@ namespace Game.Runtime.World
         {
             TempWorkerCount++;
             PlayerName = "Temp worker #" + TempWorkerCount;
+
+            // A dead driver leaves the seat. Without this the new body stays
+            // PARENTED to the forklift with both CharacterControllers enabled:
+            // it is dragged around by the machine, can never walk again, and
+            // is immune to being run over.
+            if (Driving != null)
+            {
+                Driving.ForceDismount(this);
+                Driving = null;
+            }
+            if (transform.parent != null) transform.SetParent(null, true);
+
             _cc.enabled = false;
             transform.position = carPark;
             _cc.enabled = true;
             // A teleport is not a fall, and the new body starts upright.
             _vel = Vector3.zero;
+            _achieved = Vector3.zero;
             _apexY = carPark.y;
             _platform = null;
             _jumping = false;

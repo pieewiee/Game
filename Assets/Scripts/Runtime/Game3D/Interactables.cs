@@ -69,8 +69,10 @@ namespace Game.Runtime.World
 
         public override string Prompt(PlayerRig player)
         {
-            if (Mounted) return "E: pull blanking panel";
-            return base.Prompt(player);
+            if (!Mounted) return base.Prompt(player);
+            return player.Carried == null
+                ? "E: pull blanking panel"
+                : "blanking panel (your hands are full)";
         }
 
         public override void Interact(PlayerRig player)
@@ -78,7 +80,9 @@ namespace Game.Runtime.World
             // Slot panels never leave the rack: pulling one hides the slot and
             // hands the player a LOOSE panel object instead, so a later rack
             // rebuild cannot duplicate it and a remount cannot destroy it.
-            if (Mounted && Facility != null) Facility.OnPanelPulled(this, player);
+            // With full hands the panel would vanish into nothing, so refuse.
+            if (Mounted && Facility != null && player.Carried == null)
+                Facility.OnPanelPulled(this, player);
         }
     }
 

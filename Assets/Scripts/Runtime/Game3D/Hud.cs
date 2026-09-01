@@ -55,11 +55,11 @@ namespace Game.Runtime.World
                 "Cash € " + r.CashEur.ToString("N0", ci) +
                 "   Water " + (r.WaterLPerH * 24.0 / 1000.0).ToString("0.0", ci) + " m³/d", _big);
             bool isClient = GameBootstrap.Net != null && GameBootstrap.Net.IsClient;
-            GUI.Label(new Rect(16, 76, 320, 20), isClient
-                ? "Esc cursor · F1 console · F2 net · F3 options · E/Q"
-                : "Esc cursor · F1 console · F2 net · F3 options · F5/F9 save · E/Q");
-            GUI.Label(new Rect(16, 94, 320, 20),
-                "Space jump · Ctrl duck · Shift run · 1-7 build · 8-0 route");
+            GUI.Label(new Rect(16, 76, 322, 20), isClient
+                ? "F1 console · F2 net · F3 options · Esc cursor"
+                : "F1 console · F2 net · F3 options · F5/F9 save · Esc cursor");
+            GUI.Label(new Rect(16, 94, 322, 20),
+                "E use · Q drop · Space jump · Ctrl duck · 1-7 build · 8-0 route");
 
             // --- wind arrow -------------------------------------------------
             DrawWindArrow(new Vector2(Screen.width - 70, 70), r);
@@ -71,7 +71,10 @@ namespace Game.Runtime.World
             }
 
             // --- interact prompt -------------------------------------------
-            if (player != null && !player.IsDead)
+            // While a modal window owns the mouse there is nothing to aim at:
+            // promising E in that state is a lie the player will act on.
+            bool inWorld = Cursor.lockState == CursorLockMode.Locked && !GameBootstrap.UiWantsCursor;
+            if (player != null && !player.IsDead && inWorld)
             {
                 player.CurrentTarget(out string prompt);
                 bool aimed = !string.IsNullOrEmpty(prompt);

@@ -17,8 +17,20 @@ namespace Game.Runtime.World
         public static Pallet Current;
 
         public string Kind = "rack";     // what installing it delivers
-        public bool Carried;
         public float BaseY;              // height of the fork pockets above ground
+
+        private bool _carried;
+        public bool Carried
+        {
+            get { return _carried; }
+            set
+            {
+                _carried = value;
+                // On the forks it is cargo, not an obstacle: a live collider
+                // would let the load block the machine carrying it.
+                foreach (Collider c in GetComponentsInChildren<Collider>()) c.enabled = !value;
+            }
+        }
 
         public static Pallet Spawn(Vector3 pos, string kind)
         {
@@ -298,8 +310,26 @@ namespace Game.Runtime.World
             DriverRig = null;
             player.Driving = null;
             player.transform.SetParent(null, true);
-            player.transform.position = transform.position + transform.right * 1.5f + Vector3.up * 0.1f;
+            // Step out on whichever side is clear, and above the deck rather
+            // than 10 cm inside it.
+            Vector3 side = transform.right * 1.6f;
+            if (Physics.SphereCast(transform.position + Vector3.up * 1f, 0.4f,
+                    transform.right, out _, 1.8f, ~(1 << PlayerRig.PlayerLayer),
+                    QueryTriggerInteraction.Ignore))
+                side = -side;
+            player.transform.position = transform.position + side + Vector3.up * 0.6f;
             player.SetBodyEnabled(true);
+            Speed = 0f;
+            var net = GameBootstrap.Net;
+            if (net != null && net.Active) net.ClaimVehicle(false);
+        }
+
+        /// <summary>The seat is vacated without the dismount teleport: the
+        /// driver died and RespawnSystem owns where the new body appears.</summary>
+        public void ForceDismount(PlayerRig rig)
+        {
+            if (DriverRig != rig) return;
+            DriverRig = null;
             Speed = 0f;
             var net = GameBootstrap.Net;
             if (net != null && net.Active) net.ClaimVehicle(false);
