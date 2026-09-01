@@ -15,7 +15,12 @@ namespace Game.Sim
             var s = State;
 
             // ---- 3. Demand (billable kW_IT) --------------------------------
-            double capacityKw = s.MaxBillableKw;
+            // Read node specs live from Balance every tick, so a tuning edit of
+            // GPU_NODE_P_PEAK takes effect without a restart (audit finding #8).
+            double peak = B.GpuNodePeakKw;
+            double idleKw = B.GpuNodeIdleKw;
+            int n = s.NodesInstalled;
+            double capacityKw = n * peak;
             double trainingReq = 0.0, inferenceReq = 0.0;
             for (int i = 0; i < s.Contracts.Count; i++)
             {
@@ -41,8 +46,6 @@ namespace Game.Sim
             if (fibreCut) requested = 0.0;
 
             // ---- 4. Cooling pass A: capacity against requested heat --------
-            double peak = B.GpuNodePeakKw, idleKw = B.GpuNodeIdleKw;
-            int n = s.NodesInstalled;
             double uReq = capacityKw > 0 ? requested / capacityKw : 0.0;
             double pItReq = n * (idleKw + (peak - idleKw) * uReq);
             double qReq = pItReq * B.HeatFraction;

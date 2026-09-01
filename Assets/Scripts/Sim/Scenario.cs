@@ -67,7 +67,7 @@ namespace Game.Sim
                     if (parts.Length < 3)
                         throw new FormatException("Scenario line " + (n + 1) + ": AT <tick> <COMMAND> [args]");
                     var cmd = new SimCommand { Tick = long.Parse(parts[1], ci) };
-                    double A(int i) { return parts.Length > i ? double.Parse(parts[i], ci) : 0.0; }
+                    double A(int i) { return parts.Length > i ? double.Parse(parts[i], NumberStyles.Float, ci) : 0.0; }
                     switch (parts[2])
                     {
                         case "SIGN_INFERENCE": cmd.Kind = CommandKind.SignInference; cmd.A = A(3); cmd.B = A(4); break;
@@ -96,19 +96,19 @@ namespace Game.Sim
                     case "TICKS": s.Ticks = int.Parse(val, ci); break;
                     case "NODES": s.Nodes = int.Parse(val, ci); break;
                     case "GRID_TIER": s.GridTier = int.Parse(val, ci); break;
-                    case "FREECOOL_KWTH": s.FreecoolKwTh = double.Parse(val, ci); break;
-                    case "EVAP_KWTH": s.EvapKwTh = double.Parse(val, ci); break;
-                    case "CHILLER_KWTH": s.ChillerKwTh = double.Parse(val, ci); break;
-                    case "SOLAR_KWP": s.SolarKwp = double.Parse(val, ci); break;
-                    case "WIND_KW": s.WindKw = double.Parse(val, ci); break;
-                    case "BATTERY_KWH": s.BatteryKwh = double.Parse(val, ci); break;
-                    case "BATTERY_KW": s.BatteryKw = double.Parse(val, ci); break;
-                    case "DIESEL_KW": s.DieselKw = double.Parse(val, ci); break;
+                    case "FREECOOL_KWTH": s.FreecoolKwTh = double.Parse(val, NumberStyles.Float, ci); break;
+                    case "EVAP_KWTH": s.EvapKwTh = double.Parse(val, NumberStyles.Float, ci); break;
+                    case "CHILLER_KWTH": s.ChillerKwTh = double.Parse(val, NumberStyles.Float, ci); break;
+                    case "SOLAR_KWP": s.SolarKwp = double.Parse(val, NumberStyles.Float, ci); break;
+                    case "WIND_KW": s.WindKw = double.Parse(val, NumberStyles.Float, ci); break;
+                    case "BATTERY_KWH": s.BatteryKwh = double.Parse(val, NumberStyles.Float, ci); break;
+                    case "BATTERY_KW": s.BatteryKw = double.Parse(val, NumberStyles.Float, ci); break;
+                    case "DIESEL_KW": s.DieselKw = double.Parse(val, NumberStyles.Float, ci); break;
                     case "DIESEL_POLICY": s.Diesel = (DieselPolicy)Enum.Parse(typeof(DieselPolicy), val, true); break;
-                    case "LOCAL_FTE": s.LocalFte = double.Parse(val, ci); break;
-                    case "VISUAL_POINTS": s.VisualPoints = double.Parse(val, ci); break;
-                    case "CASH": s.CashEur = double.Parse(val, ci); break;
-                    case "REPUTATION": s.ReputationStart = double.Parse(val, ci); break;
+                    case "LOCAL_FTE": s.LocalFte = double.Parse(val, NumberStyles.Float, ci); break;
+                    case "VISUAL_POINTS": s.VisualPoints = double.Parse(val, NumberStyles.Float, ci); break;
+                    case "CASH": s.CashEur = double.Parse(val, NumberStyles.Float, ci); break;
+                    case "REPUTATION": s.ReputationStart = double.Parse(val, NumberStyles.Float, ci); break;
                     case "SPOT_ENABLED": s.SpotEnabled = val == "1" || val.Equals("true", StringComparison.OrdinalIgnoreCase); break;
                     default:
                         throw new FormatException("Scenario line " + (n + 1) + ": unknown key " + key);
