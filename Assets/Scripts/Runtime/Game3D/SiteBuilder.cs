@@ -372,7 +372,7 @@ namespace Game.Runtime.World
             // Down to the basement, descending north in the west bay.
             StairRun(pm, 1.2f, 4.2f, 9.0f, -0.42f, GroundY - 0.21f, -0.21f, 21);
             // Up to the first floor, ascending north in the east bay.
-            StairRun(pm, 5.8f, 8.8f, 1.0f, 0.42f, GroundY + 0.24f, 0.24f, 21);
+            StairRun(pm, 5.8f, 8.8f, 1.0f, 0.42f, GroundY + 0.24f, 0.24f, 20);   // 20 x 0.24 = 4.80 = UpperY
             pm.Box(new Vector3(1.2f, GroundY - 2.3f, 5f), new Vector3(0.08f, 1.0f, 8.6f), Palette.Amber);
             pm.Box(new Vector3(8.8f, GroundY + 2.5f, 5f), new Vector3(0.08f, 1.0f, 8.6f), Palette.Amber);
             MatLib.Spawn("Stairs", pm.Build("stairs"), root, Vector3.zero);
