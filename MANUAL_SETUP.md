@@ -168,3 +168,26 @@ These were deliberately left out of the scaffold rather than guessed at.
 - [ ] **5.3 Do not add a JSON package.** The tuning format is deliberately
       flat key=value (`balance.tuning`) so `Game.Sim` needs no dependencies —
       see the Milestone 1 PR description before changing this.
+
+---
+
+## Part 6 — After Milestone 2 (debug interface)
+
+- [ ] **6.1 Open any scene and press Play.** The debug console spawns itself
+      (`[GNP Debug Console]` via `RuntimeInitializeOnLoadMethod`) — no scene
+      wiring exists or is needed. **F1** toggles it. Tabs: Meters, Graphs,
+      Tuning, Actions, Contracts, Events, Scenario.
+- [ ] **6.2 The balancing loop:** Tuning tab → drag sliders (LIVE, next tick) →
+      Scenario tab → *Restart current* (keeps tuned values) → compare graphs →
+      *Save tuned values to file* → the diff lands in
+      `Assets/StreamingAssets/Tuning/balance.tuning` → commit it.
+      A live-tuned run is NOT reproducible until saved.
+- [ ] **6.3 Commit the new `.meta` files** Unity generates for
+      `Assets/Scripts/Runtime/DebugConsole/`.
+- [ ] **6.4 Move `Assets/game.unity` into `Assets/Scenes/`** in the Project
+      window (still outstanding from Part 5; never move it in Explorer).
+
+**Known trap — "Multiple Unity instances cannot open the same project" with no
+Unity running:** a crashed or force-closed editor leaves a stale
+`Temp/UnityLockfile`. Verify no `Unity.exe` process exists (Task-Manager), then
+delete that file. `Temp/` is git-ignored; nothing to commit.
