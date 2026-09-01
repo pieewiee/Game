@@ -42,6 +42,7 @@ namespace Game.Runtime.World
         {
             if (Current != null) Destroy(Current.gameObject);
             var go = new GameObject("Pallet " + kind);
+            pos.y = FloorAt(pos);
             go.transform.position = pos;
 
             var pm = new ProcMesh();
@@ -59,6 +60,24 @@ namespace Game.Runtime.World
             p.BaseY = 0.16f;
             Current = p;
             return p;
+        }
+
+        /// <summary>The surface under a point. The apron stands 4.5 cm above
+        /// the terrain datum and the halls are at 0, so "y = 0" buried a pallet
+        /// outdoors and floated nothing indoors. Bodies and pallets are not
+        /// floors.</summary>
+        public static float FloorAt(Vector3 pos)
+        {
+            float best = 0f;
+            bool found = false;
+            foreach (RaycastHit h in Physics.RaycastAll(pos + Vector3.up * 0.5f, Vector3.down, 8f,
+                ~(1 << PlayerRig.PlayerLayer), QueryTriggerInteraction.Ignore))
+            {
+                if (h.collider is CharacterController || h.collider.GetComponentInParent<Pallet>() != null) continue;
+                if (h.collider.name.StartsWith("Avatar ", System.StringComparison.Ordinal)) continue;
+                if (!found || h.point.y > best) { best = h.point.y; found = true; }
+            }
+            return found ? best : 0f;
         }
     }
 
@@ -116,6 +135,10 @@ namespace Game.Runtime.World
         private bool _claimPending;
         private float _claimSentAt;
         private bool _wasAuthority = true;
+        private Door _eDoor;          // the door a seated E press was aimed at
+        private float _ePressedAt;
+        private string _doorPrompt, _note;
+        private float _noteUntil;
         private bool _lastSeenPalletExists;
         private Vector3 _lastSeenPalletPos;
 
@@ -328,6 +351,7 @@ namespace Game.Runtime.World
         {
             if (player == null || DriverRig != null) return;
             _claimPending = false;
+            ClearCabInput();
             DriverRig = player;
             player.Driving = this;
             player.SetBodyEnabled(false);
@@ -369,24 +393,88 @@ namespace Game.Runtime.World
             if (DriverRig != null) ForceDismount(DriverRig);   // evicted: not ours
         }
 
-        private void Dismount(PlayerRig player)
+        /// <summary>Leave the seat. Steps out on the first side with room for
+        /// a body — right, left, behind — and refuses when there is none (a
+        /// truck stopped in a 2 m doorway has a jamb on both sides). A forced
+        /// exit (tip-over) takes the seat position and lets the controller
+        /// push the body clear.</summary>
+        private bool Dismount(PlayerRig player, bool force = false)
         {
+            Quaternion flat = Quaternion.Euler(0, transform.eulerAngles.y, 0);
+            Vector3 right = flat * Vector3.right, fwd = flat * Vector3.forward;
+            Vector3[] spots = { right * 1.6f, -right * 1.6f, -fwd * 2.6f };
+            Vector3 foot = transform.position + Vector3.up * 0.6f;
+            bool found = false;
+            foreach (Vector3 s in spots)
+            {
+                if (!RoomForBody(transform.position + s)) continue;
+                if (!PathClear(transform.position, transform.position + s)) continue;
+                foot = transform.position + s + Vector3.up * 0.6f;
+                found = true;
+                break;
+            }
+            if (!found && !force)
+            {
+                _note = "no room to climb out here";
+                _noteUntil = Time.unscaledTime + 1.5f;
+                return false;
+            }
             ReleaseLoad();          // the pallet stays on site, not on the forks
+            ClearCabInput();
             DriverRig = null;
             player.Driving = null;
             player.transform.SetParent(null, true);
-            // Step out on whichever side is clear, and above the deck rather
-            // than 10 cm inside it.
-            Vector3 side = transform.right * 1.6f;
-            if (Physics.SphereCast(transform.position + Vector3.up * 1f, 0.4f,
-                    transform.right, out _, 1.8f, ~(1 << PlayerRig.PlayerLayer),
-                    QueryTriggerInteraction.Ignore))
-                side = -side;
-            player.transform.position = transform.position + side + Vector3.up * 0.6f;
+            // Above the deck rather than 10 cm inside it.
+            player.transform.position = foot;
             player.SetBodyEnabled(true);
             Speed = 0f;
             var net = GameBootstrap.Net;
             if (net != null && net.Active) net.ClaimVehicle(false);
+            return true;
+        }
+
+        /// <summary>A standing body (r 0.32, 1.8 m) fits at this floor point
+        /// without being inside a wall, a rack or a pallet. The truck's own
+        /// colliders and the player's do not count.</summary>
+        /// <summary>A body can get from the seat to the spot: the spot being
+        /// free is not enough when a 0.3 m wall or fence stands between.</summary>
+        private bool PathClear(Vector3 from, Vector3 to)
+        {
+            Vector3 d = to - from;
+            float len = d.magnitude;
+            if (len < 0.01f) return true;
+            Vector3 a = from + Vector3.up * 0.42f, b = from + Vector3.up * 1.48f;
+            foreach (RaycastHit h in Physics.CapsuleCastAll(a, b, 0.30f, d / len, len,
+                         ~(1 << PlayerRig.PlayerLayer), QueryTriggerInteraction.Ignore))
+            {
+                if (h.collider.GetComponentInParent<Forklift>() == this) continue;
+                if (h.collider.GetComponentInParent<PlayerRig>() != null) continue;
+                return false;
+            }
+            return true;
+        }
+
+        private bool RoomForBody(Vector3 floor)
+        {
+            Vector3 a = floor + Vector3.up * 0.42f, b = floor + Vector3.up * 1.48f;
+            foreach (Collider c in Physics.OverlapCapsule(a, b, 0.30f, ~(1 << PlayerRig.PlayerLayer),
+                         QueryTriggerInteraction.Ignore))
+            {
+                if (c.GetComponentInParent<Forklift>() == this) continue;
+                if (c.GetComponentInParent<PlayerRig>() != null) continue;
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>Forget a half-finished seated E press and any cab note:
+        /// a stale one would fire on the next driver's first frame.</summary>
+        private void ClearCabInput()
+        {
+            _eDoor = null;
+            _note = null;
+            _noteUntil = 0f;
+            _doorPrompt = null;
         }
 
         /// <summary>The seat is vacated without the dismount teleport: the
@@ -395,6 +483,7 @@ namespace Game.Runtime.World
         {
             if (DriverRig != rig) return;
             ReleaseLoad();
+            ClearCabInput();
             DriverRig = null;
             Speed = 0f;
             var net = GameBootstrap.Net;
@@ -405,10 +494,69 @@ namespace Game.Runtime.World
         // Driving — called from the seated player's Update
         // ------------------------------------------------------------------
 
+        /// <summary>What the E key does from the seat right now, for the HUD.</summary>
+        public string CabPrompt => Time.unscaledTime < _noteUntil ? _note : _doorPrompt;
+
+        public const float DoorReach = 3.0f;        // from the truck's centre
+        public const float ClimbOutHold = 0.35f;    // hold E this long to leave the seat
+
+        /// <summary>The nearest door around the truck, if any. Probed from the
+        /// centre: from 1.5 m ahead, the door just driven through — the one
+        /// to close behind — was out of reach.</summary>
+        private Door DoorAhead()
+        {
+            Vector3 probe = transform.position + Vector3.up * 1f;
+            Door best = null;
+            float bestD = float.MaxValue;
+            foreach (Collider c in Physics.OverlapSphere(probe, DoorReach, ~0, QueryTriggerInteraction.Collide))
+            {
+                var d = c.GetComponentInParent<Door>();
+                if (d == null) continue;
+                float dist = (d.transform.position - transform.position).sqrMagnitude;
+                if (dist < bestD) { bestD = dist; best = d; }
+            }
+            return best;
+        }
+
         public void Drive(PlayerRig player, Keyboard kb)
         {
             float dt = Time.deltaTime;
-            if (kb.eKey.wasPressedThisFrame) { Dismount(player); return; }
+
+            // E from the seat. With a door in reach a TAP works the door and a
+            // HOLD climbs out; with nothing to work, E is simply "out". Nobody
+            // should have to dismount to open the door they are driving at.
+            Door door = DoorAhead();
+            _doorPrompt = door == null ? null
+                : (door.IsOpen ? "E: close " : "E: open ") + door.DoorName;
+            if (kb.eKey.wasPressedThisFrame)
+            {
+                if (door == null) { if (Dismount(player)) return; }
+                else
+                {
+                    _eDoor = door;
+                    _ePressedAt = Time.unscaledTime;
+                }
+            }
+            if (_eDoor != null)
+            {
+                if (kb.eKey.isPressed && Time.unscaledTime - _ePressedAt >= ClimbOutHold)
+                {
+                    _eDoor = null;
+                    if (Dismount(player)) return;
+                }
+                else if (!kb.eKey.isPressed)
+                {
+                    Door d = _eDoor;
+                    _eDoor = null;
+                    if (!d.Toggle(player))
+                    {
+                        _note = d.HeldShutBy != null && d.HeldShutBy != player
+                            ? d.DoorName + " is being held shut"
+                            : d.DoorName + ": something is in the doorway";
+                        _noteUntil = Time.unscaledTime + 1.5f;
+                    }
+                }
+            }
             if (Tipped) { Speed = 0f; return; }
 
             // --- throttle: W/S, with real braking before reversing ---
@@ -469,6 +617,12 @@ namespace Game.Runtime.World
                 bool inPockets = local.z > 0.6f && local.z < 2.4f && Mathf.Abs(local.x) < 0.7f;
                 if (inPockets && ForkHeight > p.BaseY && ForkHeight < p.BaseY + 0.45f)
                 {
+                    // Seat it on the tines. Engaged high in the window the
+                    // pallet rode up to 0.45 m above them, and the floor probe
+                    // on release then started under a mezzanine slab.
+                    Vector3 seat = p.transform.position;
+                    seat.y = _forks.position.y - p.BaseY;
+                    p.transform.position = seat;
                     Load = p;
                     p.Carried = true;
                     p.transform.SetParent(_forks, true);
@@ -491,7 +645,7 @@ namespace Game.Runtime.World
             load.Carried = false;
             load.transform.SetParent(null, true);
             Vector3 pos = load.transform.position;
-            pos.y = 0f;
+            pos.y = Pallet.FloorAt(pos);
             load.transform.position = pos;
             load.transform.rotation = Quaternion.Euler(0, load.transform.eulerAngles.y, 0);
             TryInstall(load);
@@ -576,7 +730,7 @@ namespace Game.Runtime.World
             var driver = DriverRig;
             if (driver != null)
             {
-                Dismount(driver);
+                Dismount(driver, force: true);
                 driver.Die("was crushed by an overturning forklift");
             }
             NewsFeed.Post("A forklift has overturned on site. The Program confirms the equipment " +

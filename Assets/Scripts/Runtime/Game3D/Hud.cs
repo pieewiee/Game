@@ -15,6 +15,8 @@ namespace Game.Runtime.World
     {
         private GUIStyle _big;
         private GUIStyle _centre;
+        private GUIStyle _arrow;
+        private GUIStyle _small;
 
         private void OnGUI()
         {
@@ -47,8 +49,10 @@ namespace Game.Runtime.World
 
             if (_big == null)
             {
-                _big = new GUIStyle(GUI.skin.label) { fontSize = 15 };
-                _centre = new GUIStyle(GUI.skin.label) { fontSize = 15, alignment = TextAnchor.MiddleCenter };
+                _big = new GUIStyle(GUI.skin.label) { fontSize = 15, wordWrap = false };
+                _centre = new GUIStyle(GUI.skin.label) { fontSize = 15, alignment = TextAnchor.MiddleCenter, wordWrap = false };
+                _arrow = new GUIStyle(GUI.skin.label) { fontSize = 34, alignment = TextAnchor.MiddleCenter };
+                _small = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter };
             }
 
             // --- top-left block --------------------------------------------
@@ -83,7 +87,7 @@ namespace Game.Runtime.World
             // While a modal window owns the mouse there is nothing to aim at:
             // promising E in that state is a lie the player will act on.
             bool inWorld = Cursor.lockState == CursorLockMode.Locked && !GameBootstrap.UiWantsCursor;
-            if (player != null && !player.IsDead && inWorld)
+            if (player != null && !player.IsDead && inWorld && player.Driving == null)
             {
                 player.CurrentTarget(out string prompt);
                 // Amber means "E does something here". A prompt that merely
@@ -113,7 +117,7 @@ namespace Game.Runtime.World
         /// numbers that decide whether the next corner tips you over.</summary>
         private void DrawDriving(Forklift f, CultureInfo ci)
         {
-            float w = 300f, h = 96f;
+            float w = 470f, h = 116f;
             var box = new Rect(UiScaler.W / 2f - w / 2f, UiScaler.H - h - 44f, w, h);
             GUI.Box(box, "");
             float kmh = Mathf.Abs(f.Speed) * 3.6f;
@@ -134,8 +138,17 @@ namespace Game.Runtime.World
                     "LOAD RAISED — DO NOT TURN AT SPEED", _big);
                 GUI.color = Color.white;
             }
-            GUI.Label(new Rect(box.x + 12, box.y + 68, w - 24, 20),
-                "WASD drive · Space/Ctrl mast · L lights · H horn · E out");
+            // The door line: what E does from the seat right now.
+            string cab = f.CabPrompt;
+            if (!string.IsNullOrEmpty(cab))
+            {
+                GUI.color = cab.StartsWith("E", System.StringComparison.Ordinal)
+                    ? new Color(1f, 0.85f, 0.4f) : new Color(1f, 0.5f, 0.3f);
+                GUI.Label(new Rect(box.x + 12, box.y + 68, w - 24, 20), cab, _big);
+                GUI.color = Color.white;
+            }
+            GUI.Label(new Rect(box.x + 12, box.y + 90, w - 24, 20),
+                "WASD drive · Space/Ctrl mast · L lights · H horn · hold E: climb out");
         }
 
         /// <summary>Four ticks around a gap, opening up and turning amber when
@@ -160,16 +173,13 @@ namespace Game.Runtime.World
             GUI.Box(new Rect(centre.x - 52, centre.y - 52, 104, 118), "");
             Matrix4x4 prev = GUI.matrix;
             GUIUtility.RotateAroundPivot((float)r.WindTowardDeg, centre);
-            var style = new GUIStyle(GUI.skin.label) { fontSize = 34, alignment = TextAnchor.MiddleCenter };
             GUI.color = r.WindTowardTown ? new Color(1f, 0.45f, 0.35f) : Color.white;
-            GUI.Label(new Rect(centre.x - 20, centre.y - 24, 40, 48), "↑", style);
+            GUI.Label(new Rect(centre.x - 20, centre.y - 24, 40, 48), "↑", _arrow);
             GUI.matrix = prev;
             GUI.Label(new Rect(centre.x - 50, centre.y + 28, 100, 20),
-                "wind " + r.WindSpeedMs.ToString("0.0", CultureInfo.InvariantCulture) + " m/s",
-                new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter });
+                "wind " + r.WindSpeedMs.ToString("0.0", CultureInfo.InvariantCulture) + " m/s", _small);
             GUI.Label(new Rect(centre.x - 50, centre.y + 44, 100, 20),
-                r.WindTowardTown ? "TOWARD TOWN" : "away from town",
-                new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter });
+                r.WindTowardTown ? "TOWARD TOWN" : "away from town", _small);
             GUI.color = Color.white;
         }
     }

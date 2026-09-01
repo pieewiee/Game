@@ -114,28 +114,61 @@ namespace Game.Runtime.World
 
     /// <summary>A compartment door. Opens from both sides, always — and can be
     /// HELD shut with E from either side, which is the whole point
-    /// (workplace-accidents.md §4.1).</summary>
+    /// (workplace-accidents.md §4.1). The leaf SLIDES into the wall (or, for
+    /// the goods shutter, up into the lintel), so an open door never stands in
+    /// the opening; and it refuses to close on a body, a truck or a pallet —
+    /// the leaf is solid, and a solid leaf closing through a forklift would
+    /// launch it.</summary>
     public sealed class Door : MonoBehaviour, IInteractable, IHoldInteractable
     {
+        public const float LeafH = 3.1f;         // fills the opening under the lintel
+        public const float ShutterRise = LeafH;  // the whole leaf clears the opening
+        public const float LeafSpeed = 2.2f;     // m/s of travel
+
         public string DoorName = "door";
         public bool IsOpen;
+        public bool Shutter;
         public PlayerRig HeldShutBy { get; private set; }
         private float _lastHoldTime;
-        private Transform _leaf;
+        private Transform _carrier;
+        private float _leafW = 2.0f;
+        private float _travel;
+        private Collider _leafCollider;
 
-        public void SetLeaf(Transform leaf) { _leaf = leaf; Apply(); }
+        public void SetCarrier(Transform carrier, float leafW, bool shutter)
+        {
+            _carrier = carrier;
+            _leafCollider = carrier.GetComponentInChildren<Collider>();
+            _leafW = leafW;
+            Shutter = shutter;
+            _travel = IsOpen ? OpenTravel : 0f;
+            Apply();
+        }
+
+        // The leaf is exactly its opening wide, so its own width clears it.
+        private float OpenTravel => Shutter ? ShutterRise : _leafW;
 
         public string Prompt(PlayerRig player)
         {
             if (HeldShutBy != null && HeldShutBy != player) return DoorName + " is being held shut";
+            if (IsOpen && Blocked()) return DoorName + ": something is in the doorway";
             return (IsOpen ? "E: close " : "E: open ") + DoorName + "  (hold E: hold shut)";
         }
 
         public void Interact(PlayerRig player)
         {
-            if (HeldShutBy != null && HeldShutBy != player) return; // physically blocked
+            Toggle(player);
+        }
+
+        /// <summary>Flip the leaf — from the floor or from a cab. False when
+        /// someone else is holding the door shut or a closing leaf would land
+        /// on something; the caller reads HeldShutBy to tell the two apart.</summary>
+        public bool Toggle(PlayerRig by)
+        {
+            if (HeldShutBy != null && HeldShutBy != by) return false;   // physically blocked
+            if (IsOpen && Blocked()) return false;
             IsOpen = !IsOpen;
-            Apply();
+            return true;
         }
 
         public void InteractHold(PlayerRig player, float dt)
@@ -144,7 +177,7 @@ namespace Game.Runtime.World
             {
                 HeldShutBy = player;
                 _lastHoldTime = Time.unscaledTime;
-                if (IsOpen) { IsOpen = false; Apply(); }
+                if (IsOpen && !Blocked()) IsOpen = false;
             }
         }
 
@@ -153,14 +186,56 @@ namespace Game.Runtime.World
             if (HeldShutBy == player) HeldShutBy = null;
         }
 
+        /// <summary>Anything in the closed leaf's volume that a leaf must not
+        /// close on: a player, another player's avatar, the forklift, a pallet.</summary>
+        public bool Blocked()
+        {
+            Vector3 centre = transform.TransformPoint(new Vector3(0, LeafH / 2f, 0));
+            var half = new Vector3(0.45f, LeafH / 2f - 0.05f, _leafW / 2f);
+            foreach (Collider c in Physics.OverlapBox(centre, half, transform.rotation, ~0,
+                         QueryTriggerInteraction.Ignore))
+            {
+                if (c.GetComponentInParent<PlayerRig>() != null) return true;
+                if (c.GetComponentInParent<Forklift>() != null) return true;
+                if (c.GetComponentInParent<Pallet>() != null) return true;
+                if (c.name.StartsWith("Avatar ", System.StringComparison.Ordinal)) return true;
+            }
+            // A carried pallet has no live collider (it is cargo, not an
+            // obstacle), so the overlap cannot see it: test its mesh bounds.
+            Forklift truck = Forklift.Instance;
+            if (truck != null && truck.Load != null)
+            {
+                var r = truck.Load.GetComponentInChildren<Renderer>();
+                Vector3 size = transform.rotation * (half * 2f);
+                var leaf = new Bounds(centre, new Vector3(Mathf.Abs(size.x), Mathf.Abs(size.y), Mathf.Abs(size.z)));
+                if (r != null && r.bounds.Intersects(leaf)) return true;
+            }
+            return false;
+        }
+
         private void Update()
         {
             if (HeldShutBy != null && Time.unscaledTime - _lastHoldTime > 0.3f) HeldShutBy = null;
+            float target = IsOpen ? OpenTravel : 0f;
+            if (Mathf.Abs(_travel - target) > 0.0005f)
+            {
+                // Safety edge: a leaf takes 0.9-1.4 s to close, and anything
+                // that walks or drives into the opening meanwhile reverses it
+                // — the leaf is solid and would otherwise sweep through them.
+                if (!IsOpen && Blocked()) { IsOpen = true; return; }
+                _travel = Mathf.MoveTowards(_travel, target, LeafSpeed * Time.deltaTime);
+                Apply();
+            }
         }
 
         private void Apply()
         {
-            if (_leaf != null) _leaf.gameObject.SetActive(!IsOpen);
+            if (_carrier == null) return;
+            _carrier.localPosition = Shutter ? new Vector3(0, _travel, 0) : new Vector3(0, 0, _travel);
+            // Fully open, the leaf sits inside the wall (or the lintel) and the
+            // wall's collider already covers it; its own only made a plain
+            // stretch of wall answer to E as a door.
+            if (_leafCollider != null) _leafCollider.enabled = _travel < OpenTravel - 0.01f;
         }
     }
 

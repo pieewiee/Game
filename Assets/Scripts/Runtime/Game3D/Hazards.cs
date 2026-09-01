@@ -37,6 +37,9 @@ namespace Game.Runtime.World
             MakeVentFan(site);
             MakeEyewash(site);
 
+            // The generator's start lever, on the set itself, out in the yard.
+            MakeDieselLever(site);
+
             // Tools live in the workshop end of goods receiving.
             MakeToolCabinet(site, site.CabinetPos);
 
@@ -93,6 +96,19 @@ namespace Game.Runtime.World
             pm.Box(new Vector3(0, 0.08f, 0.11f), new Vector3(0.12f, 0.16f, 0.06f), Palette.Field);
             MatLib.Spawn("VentSwitchMesh", pm.Build("vent"), go.transform, Vector3.zero, false);
             go.AddComponent<HydrogenVentFan>();
+        }
+
+        /// <summary>The diesel start lever (hazard-inventory.md, the generator):
+        /// on the genset's own housing, three seconds of holding to start it
+        /// and one pull to stop it. It was a class with nowhere to live.</summary>
+        private static void MakeDieselLever(SiteRefs site)
+        {
+            var go = MountedBox(site, "DieselLever", site.DieselStart, new Vector3(0.5f, 1.0f, 0.35f));
+            var pm = new ProcMesh();
+            pm.Box(Vector3.zero, new Vector3(0.3f, 0.5f, 0.12f), Palette.Slate);
+            pm.Box(new Vector3(0, 0.22f, 0.14f), new Vector3(0.06f, 0.42f, 0.06f), Palette.AlarmRed);
+            MatLib.Spawn("LeverMesh", pm.Build("diesellever"), go.transform, Vector3.zero, false);
+            go.AddComponent<DieselLever>();
         }
 
         private static void MakeEyewash(SiteRefs site)

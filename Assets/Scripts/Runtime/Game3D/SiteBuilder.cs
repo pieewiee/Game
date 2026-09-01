@@ -33,11 +33,11 @@ namespace Game.Runtime.World
         public Transform Root;
 
         // Ground floor compartments.
-        public Room HallA, Hall2, Plant, Nshv, Ups, GasRoom, MeetMe, Workshop, Water, Office, GoodsIn, StairCore;
+        public Room HallA, Hall2, Plant, Nshv, Ups, GasRoom, MeetMe, Workshop, Office, GoodsIn, StairCore;
         // Basement compartments.
-        public Room CableBasement, DieselTankRoom, WaterTanks, StairCoreB;
+        public Room CableBasement, DieselTankRoom, WaterTanks, StairCoreB, BasementStore;
         // Upper floor compartments.
-        public Room HallC, Ahu, StairCoreU;
+        public Room HallC, Ahu, StairCoreU, WestBayU;
 
         public List<Room> Rooms = new List<Room>();
         /// <summary>Every compartment that holds racks — the suppression, freeze
@@ -50,7 +50,7 @@ namespace Game.Runtime.World
         public Vector3 TransformerPos = new Vector3(64, 0, -11);
         public Vector3 TurbinePos = new Vector3(84, 0, 34);
         public Vector3 DockPos = new Vector3(-4.5f, 0, 19f);
-        public Vector3 ForkliftSpawn = new Vector3(-4.5f, 0, 13f);
+        public Vector3 ForkliftSpawn = new Vector3(-4.5f, 0.1f, 13f);   // drops onto the apron
         public Vector3 SkipPos = new Vector3(-4.5f, 0, 26f);
 
         public List<Vector3> RackSlots = new List<Vector3>();      // both halls
@@ -60,7 +60,7 @@ namespace Game.Runtime.World
         // Wall mounts for the physical controls.
         public Mount PullHallA, PullHall2, PullPlant, PullGoodsIn;
         public Mount EpoHallA, EpoHall2, EpoPlant, EpoUps;
-        public Mount Valve, Dial, Breaker, VentFan, Eyewash;
+        public Mount Valve, Dial, Breaker, VentFan, Eyewash, DieselStart;
         public Vector3 CabinetPos, BulletinDesk, ContractDesk, GasBottles;
 
         public Transform GroundTf;
@@ -91,6 +91,7 @@ namespace Game.Runtime.World
         // Level datums.
         public const float BasementY = -4.4f, GroundY = 0f, UpperY = 4.8f;
         public const float RoomH = 4.6f, BasementH = 4.2f;
+        public const float RoofY = UpperY + RoomH;   // the envelope closes here
         public const float T = 0.3f;          // wall thickness
         public const float SlabT = 0.4f;      // floor slab thickness
 
@@ -125,37 +126,57 @@ namespace Game.Runtime.World
 
         private static void BuildTerrain(Transform root, SiteRefs refs)
         {
-            // The ground is built as four slabs around the excavation instead of
-            // one solid block: a single 500 m box with a MeshCollider makes a
-            // basement physically impossible to enter.
-            const float ex0 = X0 - 0.6f, ex1 = XSpine + 0.6f, ez0 = Z0 - 0.6f, ez1 = Z1 + 0.6f;
+            // The ground is built as four slabs around the building footprint
+            // instead of one solid block: a single 500 m box with a MeshCollider
+            // makes a basement physically impossible to enter. The strips butt
+            // FLUSH against the slab edge — any daylight between the two is a
+            // bottomless slot, and the goods doorway sat right on top of one.
             var pm = new ProcMesh();
-            GroundStrip(pm, -260f, ex0, -260f, 260f);
-            GroundStrip(pm, ex1, 260f, -260f, 260f);
-            GroundStrip(pm, ex0, ex1, -260f, ez0);
-            GroundStrip(pm, ex0, ex1, ez1, 260f);
+            GroundStrip(pm, -260f, X0, -260f, 260f);
+            GroundStrip(pm, X1, 260f, -260f, 260f);
+            GroundStrip(pm, X0, X1, -260f, Z0);
+            GroundStrip(pm, X0, X1, Z1, 260f);
             var ground = MatLib.Spawn("Ground", pm.Build("ground"), root, Vector3.zero);
             refs.GroundTf = ground.transform;
 
-            // Excavation walls, so the hole reads as a hole.
+            // Excavation lining around the basement footprint, so the hole
+            // reads as a hole from below the terrain skin.
+            const float px0 = X0, px1 = XSpine, pz0 = Z0, pz1 = Z1;
             var pit = new ProcMesh();
-            pit.Box(new Vector3((ex0 + ex1) / 2f, BasementY - 0.4f, ez0 - 0.15f),
-                new Vector3(ex1 - ex0, 5f, 0.3f), Palette.Concrete);
-            pit.Box(new Vector3((ex0 + ex1) / 2f, BasementY - 0.4f, ez1 + 0.15f),
-                new Vector3(ex1 - ex0, 5f, 0.3f), Palette.Concrete);
-            pit.Box(new Vector3(ex0 - 0.15f, BasementY - 0.4f, (ez0 + ez1) / 2f),
-                new Vector3(0.3f, 5f, ez1 - ez0), Palette.Concrete);
-            pit.Box(new Vector3(ex1 + 0.15f, BasementY - 0.4f, (ez0 + ez1) / 2f),
-                new Vector3(0.3f, 5f, ez1 - ez0), Palette.Concrete);
+            pit.Box(new Vector3((px0 + px1) / 2f, BasementY - 0.4f, pz0 - 0.15f),
+                new Vector3(px1 - px0 + 0.6f, 5f, 0.3f), Palette.Concrete);
+            pit.Box(new Vector3((px0 + px1) / 2f, BasementY - 0.4f, pz1 + 0.15f),
+                new Vector3(px1 - px0 + 0.6f, 5f, 0.3f), Palette.Concrete);
+            pit.Box(new Vector3(px0 - 0.15f, BasementY - 0.4f, (pz0 + pz1) / 2f),
+                new Vector3(0.3f, 5f, pz1 - pz0), Palette.Concrete);
+            pit.Box(new Vector3(px1 + 0.15f, BasementY - 0.4f, (pz0 + pz1) / 2f),
+                new Vector3(0.3f, 5f, pz1 - pz0), Palette.Concrete);
             MatLib.Spawn("Excavation", pit.Build("pit"), root, Vector3.zero);
 
+            // The apron is four strips AROUND the building. One sheet under the
+            // whole site sat 4.5 cm above every interior floor and painted over
+            // the stair voids.
             var apron = new ProcMesh();
-            apron.Box(new Vector3(30, 0.02f, 4), new Vector3(104, 0.05f, 60), Palette.Concrete);
-            MatLib.Spawn("Apron", apron.Build("apron"), root, Vector3.zero, false);
+            ApronStrip(apron, -22f, X0, -26f, 34f);    // west: dock, forklift bay, car park
+            ApronStrip(apron, X1, 82f, -26f, 34f);     // east: genset and transformer
+            ApronStrip(apron, X0, X1, -26f, Z0);       // south: the cooling yard
+            ApronStrip(apron, X0, X1, Z1, 34f);        // north
+            // Both carry colliders: they stand 4.5 and 7 cm proud of the terrain
+            // datum, and a body walking on the terrain collider sank into them.
+            MatLib.Spawn("Apron", apron.Build("apron"), root, Vector3.zero);
 
+            // The car park sits ON the apron, not IN it: coplanar faces z-fight,
+            // and this is the first surface every new body looks at.
             var park = new ProcMesh();
-            park.Box(new Vector3(-22, 0.02f, -20), new Vector3(16, 0.05f, 12), Palette.Slate);
-            MatLib.Spawn("CarPark", park.Build("carpark"), root, Vector3.zero, false);
+            park.Box(new Vector3(-22, 0.045f, -20), new Vector3(16, 0.05f, 12), Palette.Slate);
+            MatLib.Spawn("CarPark", park.Build("carpark"), root, Vector3.zero);
+        }
+
+        private static void ApronStrip(ProcMesh pm, float x0, float x1, float z0, float z1)
+        {
+            if (x1 - x0 <= 0.01f || z1 - z0 <= 0.01f) return;
+            pm.Box(new Vector3((x0 + x1) / 2f, 0.02f, (z0 + z1) / 2f),
+                new Vector3(x1 - x0, 0.05f, z1 - z0), Palette.Concrete);
         }
 
         private static void GroundStrip(ProcMesh pm, float x0, float x1, float z0, float z1)
@@ -174,7 +195,9 @@ namespace Game.Runtime.World
             var pm = new ProcMesh();
             float y = BasementY, h = BasementH;
 
-            SlabStrips(pm, y, X0, XSpine);                        // basement floor
+            // The lowest slab is SOLID. Nothing descends below it, and a stair
+            // void cut here is a shaft with no bottom.
+            SlabStrip(pm, y, X0, XSpine, Z0, Z1);
             WallAlongX(pm, y, h, X0, XSpine, Z0);
             WallAlongX(pm, y, h, X0, XSpine, Z1);
             WallAlongZ(pm, y, h, Z0, Z1, X0);
@@ -186,11 +209,13 @@ namespace Game.Runtime.World
             MatLib.Spawn("Basement", pm.Build("basement"), root, Vector3.zero);
 
             refs.StairCoreB = MakeRoom(refs, "stair core (basement)", Box(X0, XCore, Z0, ZCore, y, h));
+            refs.BasementStore = MakeRoom(refs, "basement store", Box(X0, XCore, ZCore, Z1, y, h));
             refs.CableBasement = MakeRoom(refs, "cable basement", Box(XCore, XHall, Z0, Z1, y, h));
             refs.DieselTankRoom = MakeRoom(refs, "diesel tank room", Box(XHall, XSpine, Z0, ZHallSplit, y, h));
             refs.WaterTanks = MakeRoom(refs, "water treatment", Box(XHall, XSpine, ZHallSplit, Z1, y, h));
 
-            MakeDoor(root, refs.StairCoreB, refs.CableBasement, "cable basement door", new Vector3(5f, y, ZCore), 90f);
+            MakeDoor(root, refs.StairCoreB, refs.BasementStore, "basement store door", new Vector3(5f, y, ZCore), 90f);
+            MakeDoor(root, refs.BasementStore, refs.CableBasement, "cable basement door", new Vector3(XCore, y, 13f), 0f);
             MakeDoor(root, refs.CableBasement, refs.DieselTankRoom, "tank room door", new Vector3(XHall, y, 7f), 0f);
             MakeDoor(root, refs.DieselTankRoom, refs.WaterTanks, "water plant door", new Vector3(39f, y, ZHallSplit), 90f);
 
@@ -221,14 +246,14 @@ namespace Game.Runtime.World
             var pm = new ProcMesh();
             float y = GroundY, h = RoomH;
 
-            SlabStrips(pm, y, X0, X1);
+            SlabStrips(pm, y, X0, X1, cutDownBay: true, cutUpBay: false);
             WallAlongXGap(pm, y, h, X0, X1, Z0, 54f, 56f);        // south: main entrance
             WallAlongX(pm, y, h, X0, X1, Z1);
             WallAlongZGap(pm, y, h, Z0, Z1, X0, 17f, 21f);        // west: goods door
             WallAlongZ(pm, y, h, Z0, Z1, X1);
 
             WallAlongXGap(pm, y, h, X0, XCore, ZCore, 4f, 6f);
-            WallAlongZGap(pm, y, h, Z0, ZCore, XCore, 4f, 6f);
+            WallAlongZGap(pm, y, h, Z0, ZCore, XCore, 5f, 7f);    // north of the up flight's low treads
             WallAlongZGap(pm, y, h, ZCore, ZHallSplit, XCore, 11f, 13f);
             WallAlongZGap(pm, y, h, ZHallSplit, Z1, XCore, 21f, 23f);
             WallAlongXGap(pm, y, h, XCore, XHall, ZHallSplit, 30f, 32f);   // Hall A | Hall 2
@@ -258,7 +283,7 @@ namespace Game.Runtime.World
             refs.Office = MakeRoom(refs, "office", Box(XEast, X1, Z0, Z1, y, h));
 
             MakeDoor(root, refs.StairCore, refs.GoodsIn, "stair core door", new Vector3(5f, y, ZCore), 90f);
-            MakeDoor(root, refs.StairCore, refs.HallA, "Hall A stair door", new Vector3(XCore, y, 5f), 0f);
+            MakeDoor(root, refs.StairCore, refs.HallA, "Hall A stair door", new Vector3(XCore, y, 6f), 0f);
             MakeDoor(root, refs.GoodsIn, refs.HallA, "Hall A goods door", new Vector3(XCore, y, 12f), 0f);
             MakeDoor(root, refs.GoodsIn, refs.Hall2, "Hall 2 goods door", new Vector3(XCore, y, 22f), 0f);
             MakeDoor(root, refs.HallA, refs.Hall2, "hall link door", new Vector3(31f, y, ZHallSplit), 90f);
@@ -270,9 +295,11 @@ namespace Game.Runtime.World
             MakeDoor(root, refs.Plant, refs.Workshop, "workshop door", new Vector3(XSpine, y, 5f), 0f);
             MakeDoor(root, refs.Nshv, refs.MeetMe, "meet-me door", new Vector3(XSpine, y, 15f), 0f);
             MakeDoor(root, refs.Ups, refs.GasRoom, "cylinder room door", new Vector3(XSpine, y, 24f), 0f);
+            MakeDoor(root, refs.Workshop, refs.MeetMe, "meet-me service door", new Vector3(48f, y, ZCore), 90f);
+            MakeDoor(root, refs.MeetMe, refs.GasRoom, "cylinder room service door", new Vector3(48f, y, ZNshv), 90f);
             MakeDoor(root, refs.Workshop, refs.Office, "office door", new Vector3(XEast, y, 7f), 0f);
             MakeDoor(root, refs.Office, null, "main entrance", new Vector3(55f, y, Z0), 90f);
-            MakeDoor(root, refs.GoodsIn, null, "goods door", new Vector3(X0, y, 19f), 0f);
+            MakeDoor(root, refs.GoodsIn, null, "goods door", new Vector3(X0, y, 19f), 0f, 4.0f, true);
 
             var kit = new ProcMesh();
             for (int i = 0; i < 3; i++)   // UPS cabinets
@@ -314,7 +341,12 @@ namespace Game.Runtime.World
             var pm = new ProcMesh();
             float y = UpperY, h = RoomH;
 
-            SlabStrips(pm, y, X0, XSpine);
+            SlabStrips(pm, y, X0, XSpine, cutDownBay: false, cutUpBay: true);
+            // The ceiling over the single-storey east block and the roof over
+            // the upper storey. The building was an open-topped box without
+            // these two, with the sun on the switchgear at noon.
+            SlabStrip(pm, UpperY, XSpine, X1, Z0, Z1);
+            SlabStrip(pm, RoofY, X0, XSpine, Z0, Z1);
             WallAlongX(pm, y, h, X0, XSpine, Z0);
             WallAlongX(pm, y, h, X0, XSpine, Z1);
             WallAlongZ(pm, y, h, Z0, Z1, X0);
@@ -325,10 +357,12 @@ namespace Game.Runtime.World
             MatLib.Spawn("UpperFloor", pm.Build("upper_floor"), root, Vector3.zero);
 
             refs.StairCoreU = MakeRoom(refs, "stair core (first floor)", Box(X0, XCore, Z0, ZCore, y, h));
+            refs.WestBayU = MakeRoom(refs, "west bay (first floor)", Box(X0, XCore, ZCore, Z1, y, h));
             refs.HallC = MakeRoom(refs, "Hall 3 (shell)", Box(XCore, XHall, Z0, Z1, y, h));
             refs.Ahu = MakeRoom(refs, "air handling", Box(XHall, XSpine, Z0, Z1, y, h));
 
-            MakeDoor(root, refs.StairCoreU, refs.HallC, "Hall 3 door", new Vector3(XCore, y, 13f), 0f);
+            MakeDoor(root, refs.StairCoreU, refs.WestBayU, "west bay door", new Vector3(5f, y, ZCore), 90f);
+            MakeDoor(root, refs.WestBayU, refs.HallC, "Hall 3 door", new Vector3(XCore, y, 13f), 0f);
             MakeDoor(root, refs.HallC, refs.Ahu, "air handling door", new Vector3(XHall, y, 13f), 0f);
 
             var ahu = new ProcMesh();
@@ -343,16 +377,34 @@ namespace Game.Runtime.World
             CeilingLight(root, new Vector3(39f, y + h - 0.5f, 14f), 18f);
         }
 
-        /// <summary>A floor slab with the two stair voids left open.</summary>
-        private static void SlabStrips(ProcMesh pm, float y, float xEnd0, float xEnd1)
+        // The stair bays: the down flight in the west bay, the up flight in
+        // the east bay, both voids running z VoidZ0..VoidZ1 so the walkways at
+        // either end are 0.95 m — wider than the 0.64 m capsule, which the old
+        // 0.45 m ledges were not.
+        public const float DownBayX0 = 1.0f, DownBayX1 = 4.4f, UpBayX0 = 5.6f, UpBayX1 = 9.0f;
+        public const float VoidZ0 = 1.1f, VoidZ1 = 8.9f;
+
+        /// <summary>A floor slab, with a stair void cut only where a flight
+        /// actually passes through THIS slab. A void in a slab nothing descends
+        /// through is a hole in the floor.</summary>
+        private static void SlabStrips(ProcMesh pm, float y, float xEnd0, float xEnd1,
+            bool cutDownBay, bool cutUpBay)
         {
-            SlabStrip(pm, y, xEnd0, 1.0f, Z0, Z1);
-            SlabStrip(pm, y, 1.0f, 4.4f, Z0, 0.6f);
-            SlabStrip(pm, y, 1.0f, 4.4f, 9.4f, Z1);
-            SlabStrip(pm, y, 4.4f, 5.6f, Z0, Z1);
-            SlabStrip(pm, y, 5.6f, 9.0f, Z0, 0.6f);
-            SlabStrip(pm, y, 5.6f, 9.0f, 9.4f, Z1);
-            SlabStrip(pm, y, 9.0f, xEnd1, Z0, Z1);
+            SlabStrip(pm, y, xEnd0, DownBayX0, Z0, Z1);
+            if (cutDownBay)
+            {
+                SlabStrip(pm, y, DownBayX0, DownBayX1, Z0, VoidZ0);
+                SlabStrip(pm, y, DownBayX0, DownBayX1, VoidZ1, Z1);
+            }
+            else SlabStrip(pm, y, DownBayX0, DownBayX1, Z0, Z1);
+            SlabStrip(pm, y, DownBayX1, UpBayX0, Z0, Z1);
+            if (cutUpBay)
+            {
+                SlabStrip(pm, y, UpBayX0, UpBayX1, Z0, VoidZ0);
+                SlabStrip(pm, y, UpBayX0, UpBayX1, VoidZ1, Z1);
+            }
+            else SlabStrip(pm, y, UpBayX0, UpBayX1, Z0, Z1);
+            SlabStrip(pm, y, UpBayX1, xEnd1, Z0, Z1);
         }
 
         private static void SlabStrip(ProcMesh pm, float y, float x0, float x1, float z0, float z1)
@@ -369,18 +421,57 @@ namespace Game.Runtime.World
         private static void BuildStairs(Transform root, SiteRefs refs)
         {
             var pm = new ProcMesh();
-            // Down to the basement, descending north in the west bay.
-            StairRun(pm, 1.2f, 4.2f, 9.0f, -0.42f, GroundY - 0.21f, -0.21f, 21);
-            // Up to the first floor, ascending north in the east bay.
-            StairRun(pm, 5.8f, 8.8f, 1.0f, 0.42f, GroundY + 0.24f, 0.24f, 20);   // 20 x 0.24 = 4.80 = UpperY
-            pm.Box(new Vector3(1.2f, GroundY - 2.3f, 5f), new Vector3(0.08f, 1.0f, 8.6f), Palette.Amber);
-            pm.Box(new Vector3(8.8f, GroundY + 2.5f, 5f), new Vector3(0.08f, 1.0f, 8.6f), Palette.Amber);
+            // Down to the basement, descending southward in the west bay:
+            // 21 risers of 0.21 = 4.41, the last tread flush with the basement
+            // slab; a 0.36 going keeps the whole run inside the 7.8 m void.
+            StairRun(pm, 1.2f, 4.2f, 8.65f, -0.36f, GroundY - 0.21f, -0.21f, 21);
+            // Up to the first floor, ascending northward in the east bay:
+            // 20 risers of 0.24 = 4.80 = UpperY; a 0.39 going lands the top
+            // tread on the slab edge at VoidZ1.
+            StairRun(pm, 5.8f, 8.8f, 1.36f, 0.39f, GroundY + 0.24f, 0.24f, 20);
+
+            // Balustrades on the three closed sides of each void, on the floor
+            // the void is cut in. The open side is the one the flight arrives at.
+            Balustrade(pm, GroundY, DownBayX0, DownBayX0, VoidZ0, VoidZ1);
+            Balustrade(pm, GroundY, DownBayX1, DownBayX1, VoidZ0, VoidZ1);
+            Balustrade(pm, GroundY, DownBayX0, DownBayX1, VoidZ0, VoidZ0);
+            Balustrade(pm, UpperY, UpBayX0, UpBayX0, VoidZ0, VoidZ1);
+            Balustrade(pm, UpperY, UpBayX1, UpBayX1, VoidZ0, VoidZ1);
+            Balustrade(pm, UpperY, UpBayX0, UpBayX1, VoidZ0, VoidZ0);
             MatLib.Spawn("Stairs", pm.Build("stairs"), root, Vector3.zero);
         }
 
+        /// <summary>Two rails and posts along one edge of a void. The gaps are
+        /// under 0.5 m, so no capsule fits through; the mesh carries the
+        /// collider, so nothing walks off the edge either.</summary>
+        private static void Balustrade(ProcMesh pm, float floorY, float x0, float x1, float z0, float z1)
+        {
+            const float railH = 1.1f, t = 0.08f;
+            bool alongX = x1 - x0 > z1 - z0;
+            float len = alongX ? x1 - x0 : z1 - z0;
+            var c = new Vector3((x0 + x1) / 2f, 0f, (z0 + z1) / 2f);
+            Vector3 rail = alongX ? new Vector3(len, 0.06f, t) : new Vector3(t, 0.06f, len);
+            pm.Box(c + Vector3.up * (floorY + railH), rail, Palette.Amber);
+            pm.Box(c + Vector3.up * (floorY + railH * 0.5f), rail, Palette.Amber);
+            int posts = Mathf.Max(2, Mathf.CeilToInt(len / 1.6f) + 1);
+            for (int i = 0; i < posts; i++)
+            {
+                float a = -len / 2f + len * i / (posts - 1);
+                Vector3 p = c + (alongX ? new Vector3(a, 0f, 0f) : new Vector3(0f, 0f, a));
+                pm.Box(p + Vector3.up * (floorY + railH / 2f), new Vector3(t, railH, t), Palette.Amber);
+            }
+        }
+
+        /// <summary>A flight of solid treads with a handrail on both edges —
+        /// both sides of a flight through a void are a drop. The rails follow
+        /// the pitch of the flight, nosing to nosing, at hand height: a level
+        /// bar across a flight that climbs 4.8 m cut through the middle treads
+        /// and floated at both ends.</summary>
         private static void StairRun(ProcMesh pm, float x0, float x1, float zStart, float dz,
             float yStart, float dy, int steps)
         {
+            const float railH = 0.9f, t = 0.06f;
+            float[] rails = { x0 + t, x1 - t };
             for (int i = 0; i < steps; i++)
             {
                 float y = yStart + dy * i;
@@ -388,7 +479,15 @@ namespace Game.Runtime.World
                 // Solid treads: a capsule must never fall between two steps.
                 pm.Box(new Vector3((x0 + x1) / 2f, y - 0.12f, z),
                     new Vector3(x1 - x0, 0.26f, Mathf.Abs(dz) + 0.04f), Palette.Slate);
+                if (i % 4 == 0 || i == steps - 1)
+                    foreach (float railX in rails)
+                        pm.Box(new Vector3(railX, y + railH / 2f, z), new Vector3(t, railH, t), Palette.Amber);
             }
+            float yEnd = yStart + dy * (steps - 1), zEnd = zStart + dz * (steps - 1);
+            float over = Mathf.Sign(dz) * 0.2f;
+            foreach (float railX in rails)
+                pm.Beam(new Vector3(railX, yStart + railH, zStart - over),
+                    new Vector3(railX, yEnd + railH, zEnd + over), t, Palette.Amber);
         }
 
         // ------------------------------------------------------------------
@@ -437,12 +536,13 @@ namespace Game.Runtime.World
             skip.Box(new Vector3(0, 1.75f, 0), new Vector3(2.0f, 0.1f, 4.6f), Palette.Ink);
             MatLib.Spawn("Skip", skip.Build("skip"), root, refs.SkipPos);
 
-            // Guard post at the compound gate.
+            // Guard post BESIDE the compound gate, window on the gateway. In
+            // the middle of it, it split the 8 m gate into two lanes.
             var guard = new ProcMesh();
             guard.Box(new Vector3(0, 1.3f, 0), new Vector3(2.4f, 2.6f, 2.4f), Palette.Render);
             guard.Box(new Vector3(0, 2.7f, 0), new Vector3(2.8f, 0.2f, 2.8f), Palette.Ink);
-            guard.Box(new Vector3(0, 1.5f, -1.25f), new Vector3(1.6f, 1.0f, 0.06f), Palette.PaleBlue);
-            MatLib.Spawn("GuardPost", guard.Build("guard"), root, new Vector3(24f, 0, -16f));
+            guard.Box(new Vector3(-1.25f, 1.5f, 0), new Vector3(0.06f, 1.0f, 1.6f), Palette.PaleBlue);
+            MatLib.Spawn("GuardPost", guard.Build("guard"), root, new Vector3(30.2f, 0, -18.3f));
         }
 
         // ------------------------------------------------------------------
@@ -466,14 +566,8 @@ namespace Game.Runtime.World
             Color m = colour; m.a = 0.28f;
             const float span = 4f;
 
-            bool IsGate(char side, float a0, float a1)
-            {
-                return gateSide == side && a1 > gate0 + 0.01f && a0 < gate1 - 0.01f;
-            }
-
             void Panel(bool alongX, float a0, float a1, float fixedCoord, char side)
             {
-                if (IsGate(side, a0, a1)) return;
                 float mid = (a0 + a1) / 2f;
                 if (alongX)
                 {
@@ -489,28 +583,43 @@ namespace Game.Runtime.World
                 }
             }
 
-            for (float x = x0; x < x1 - 0.01f; x += span)
+            void Post(bool alongX, float a, float fixedCoord)
             {
-                float xe = Mathf.Min(x + span, x1);
-                Panel(true, x, xe, z0, 'S');
-                Panel(true, x, xe, z1, 'N');
+                // Corner posts belong to the X sides; the Z sides would put a
+                // second, coincident post there.
+                if (!alongX && (Mathf.Abs(a - z0) < 0.01f || Mathf.Abs(a - z1) < 0.01f)) return;
+                Vector3 p = alongX ? new Vector3(a, h / 2f, fixedCoord) : new Vector3(fixedCoord, h / 2f, a);
+                posts.Box(p, new Vector3(0.12f, h, 0.12f), colour);
             }
-            for (float z = z0; z < z1 - 0.01f; z += span)
+
+            // A run is divided into EVEN panels, so a post lands on both ends
+            // of it: the corners and the gate edges. Striding 4 m from the
+            // corner left posts standing in the gateway and none on the far
+            // corner whenever the side was not a multiple of four.
+            void Run(bool alongX, float a0, float a1, float fixedCoord, char side)
             {
-                float ze = Mathf.Min(z + span, z1);
-                Panel(false, z, ze, x0, 'W');
-                Panel(false, z, ze, x1, 'E');
+                float len = a1 - a0;
+                if (len <= 0.01f) return;
+                int n = Mathf.Max(1, Mathf.CeilToInt(len / span - 0.01f));
+                float step = len / n;
+                for (int i = 0; i <= n; i++) Post(alongX, a0 + i * step, fixedCoord);
+                for (int i = 0; i < n; i++) Panel(alongX, a0 + i * step, a0 + (i + 1) * step, fixedCoord, side);
             }
-            for (float x = x0; x <= x1 + 0.01f; x += span)
+
+            void Side(bool alongX, float a0, float a1, float fixedCoord, char side)
             {
-                posts.Box(new Vector3(x, h / 2f, z0), new Vector3(0.12f, h, 0.12f), colour);
-                posts.Box(new Vector3(x, h / 2f, z1), new Vector3(0.12f, h, 0.12f), colour);
+                if (gateSide == side)
+                {
+                    Run(alongX, a0, gate0, fixedCoord, side);
+                    Run(alongX, gate1, a1, fixedCoord, side);
+                }
+                else Run(alongX, a0, a1, fixedCoord, side);
             }
-            for (float z = z0; z <= z1 + 0.01f; z += span)
-            {
-                posts.Box(new Vector3(x0, h / 2f, z), new Vector3(0.12f, h, 0.12f), colour);
-                posts.Box(new Vector3(x1, h / 2f, z), new Vector3(0.12f, h, 0.12f), colour);
-            }
+
+            Side(true, x0, x1, z0, 'S');
+            Side(true, x0, x1, z1, 'N');
+            Side(false, z0, z1, x0, 'W');
+            Side(false, z0, z1, x1, 'E');
 
             // Amber caps on the gate posts: this is the way through.
             Vector3 ga, gb;
@@ -602,9 +711,14 @@ namespace Game.Runtime.World
             refs.Dial = new Mount(new Vector3(40f, y + 1.4f, Z0 + T / 2f + d), 0f);
             // Main breaker in the LV switch room; hydrogen vent switch in the
             // battery room; eyewash beside it, as the docs specify.
-            refs.Breaker = new Mount(new Vector3(XSpine - T / 2f - d, y + 1.4f, 14f), 90f);
-            refs.VentFan = new Mount(new Vector3(XSpine - T / 2f - d, y + 1.4f, 22f), 90f);
-            refs.Eyewash = new Mount(new Vector3(XSpine - T / 2f - d, y + 1.0f, 26f), 90f);
+            // All three hang on the WEST face of the x = 44 spine wall, so they
+            // face -X (yaw 270) into their rooms. The breaker sits on the solid
+            // z 16..19 segment, clear of the meet-me doorway at 14..16.
+            refs.Breaker = new Mount(new Vector3(XSpine - T / 2f - d, y + 1.4f, 17.5f), 270f);
+            refs.VentFan = new Mount(new Vector3(XSpine - T / 2f - d, y + 1.4f, 22f), 270f);
+            refs.Eyewash = new Mount(new Vector3(XSpine - T / 2f - d, y + 1.0f, 26f), 270f);
+            // The start lever on the genset's north face, facing the yard.
+            refs.DieselStart = new Mount(new Vector3(58f, y + 1.2f, -9.4f), 0f);
 
             refs.CabinetPos = new Vector3(2.0f, y, 24f);      // goods receiving
             refs.GasBottles = new Vector3(47.7f, y, 26f);     // cylinder room
@@ -630,25 +744,43 @@ namespace Game.Runtime.World
             return r;
         }
 
-        private static void MakeDoor(Transform root, Room a, Room b, string name, Vector3 pos, float yaw)
+        /// <summary>A door in a wall opening. The leaf hangs off a carrier the
+        /// Door component moves: sideways into the wall pocket on its local +z
+        /// side (every opening has at least a leaf's width of wall there), or
+        /// straight up into the lintel for the goods shutter. An open leaf that
+        /// stays in the opening is an obstacle; one that swings is a trap for
+        /// whatever is under it.</summary>
+        private static void MakeDoor(Transform root, Room a, Room b, string name, Vector3 pos, float yaw,
+            float leafW = 2.0f, bool shutter = false)
         {
             var go = new GameObject("Door " + name);
             go.transform.SetParent(root, false);
             go.transform.position = pos;
             go.transform.rotation = Quaternion.Euler(0, yaw, 0);
+            var carrier = new GameObject("Carrier");
+            carrier.transform.SetParent(go.transform, false);
             var pm = new ProcMesh();
-            pm.Box(new Vector3(0, 1.25f, 0), new Vector3(0.14f, 2.5f, 1.9f), Palette.ProgramBlue);
-            var leaf = MatLib.Spawn("Leaf", pm.Build("doorleaf"), go.transform, Vector3.zero);
+            float lh = Door.LeafH;
+            pm.Box(new Vector3(0, lh / 2f, 0), new Vector3(0.14f, lh, leafW), Palette.ProgramBlue);
+            MatLib.Spawn("Leaf", pm.Build("doorleaf"), carrier.transform, Vector3.zero);
+            if (shutter)
+            {
+                // The raised shutter stands a storey above its lintel; the
+                // hood on the outside hides the part the upper wall does not.
+                var hood = new ProcMesh();
+                hood.Box(new Vector3(-0.2f, lh + 1.6f, 0), new Vector3(0.4f, 0.6f, leafW + 0.5f), Palette.Slate);
+                MatLib.Spawn("Shutter hood", hood.Build("hood"), go.transform, Vector3.zero);
+            }
             // A TIGHT trigger. The old 1.2 x 2.6 x 2.6 volume protruded 0.6 m
             // into both rooms and intercepted the interaction probe for every
             // control anywhere near a doorway.
             var trigger = go.AddComponent<BoxCollider>();
-            trigger.size = new Vector3(0.45f, 2.4f, 1.9f);
-            trigger.center = new Vector3(0, 1.25f, 0);
+            trigger.size = new Vector3(0.45f, lh - 0.1f, leafW);
+            trigger.center = new Vector3(0, lh / 2f, 0);
             trigger.isTrigger = true;
             var door = go.AddComponent<Door>();
             door.DoorName = name;
-            door.SetLeaf(leaf.transform);
+            door.SetCarrier(carrier.transform, leafW, shutter);
             if (a != null) a.Doors.Add(door);
             if (b != null) b.Doors.Add(door);
         }
@@ -661,8 +793,13 @@ namespace Game.Runtime.World
             var l = go.AddComponent<Light>();
             l.type = LightType.Point;
             l.range = range;
-            l.intensity = 1.1f;
+            l.intensity = 1.6f;
             l.color = new Color(0.95f, 0.96f, 1f);
+            // A point light ignores walls: without shadows every room lit the
+            // yard through the envelope at night. Lowest resolution — the
+            // walls are flat boxes, the penumbra does not matter.
+            l.shadows = LightShadows.Hard;
+            l.shadowResolution = UnityEngine.Rendering.LightShadowResolution.Low;
         }
 
         private static void WallAlongX(ProcMesh pm, float y, float h, float x0, float x1, float z)

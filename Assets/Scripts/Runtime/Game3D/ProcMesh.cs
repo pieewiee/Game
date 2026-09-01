@@ -54,6 +54,29 @@ namespace Game.Runtime.World
             Quad(c001, c000, c010, c011, color);     // -x
         }
 
+        /// <summary>A square-section bar from a to b in any direction — a sloped
+        /// handrail. Same shading and winding as Box, in the bar's own frame.</summary>
+        public void Beam(Vector3 a, Vector3 b, float t, Color color)
+        {
+            Vector3 u = (b - a).normalized;
+            Vector3 v = Vector3.Cross(Vector3.up, u);
+            v = v.sqrMagnitude < 1e-4f ? Vector3.right : v.normalized;
+            Vector3 w = Vector3.Cross(u, v);
+            float h = t * 0.5f;
+            Vector3 c000 = a - v * h - w * h, c100 = a + v * h - w * h;
+            Vector3 c110 = a + v * h + w * h, c010 = a - v * h + w * h;
+            Vector3 c001 = b - v * h - w * h, c101 = b + v * h - w * h;
+            Vector3 c111 = b + v * h + w * h, c011 = b - v * h + w * h;
+            Color top = Color.Lerp(color, Color.white, 0.08f);
+            Color bottom = Color.Lerp(color, Color.black, 0.25f);
+            Quad(c010, c110, c111, c011, top);
+            Quad(c001, c101, c100, c000, bottom);
+            Quad(c000, c100, c110, c010, color);
+            Quad(c101, c001, c011, c111, color);
+            Quad(c100, c101, c111, c110, color);
+            Quad(c001, c000, c010, c011, color);
+        }
+
         /// <summary>Upright prism/cylinder around centre; low side count keeps it
         /// on-palette low-poly (turbine tower 6, tree cone 5...).</summary>
         public void Cylinder(Vector3 centre, float radius, float height, int sides,

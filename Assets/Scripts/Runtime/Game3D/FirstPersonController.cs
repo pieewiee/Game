@@ -27,11 +27,13 @@ namespace Game.Runtime.World
         public const float WalkSpeed = 3.4f, RunSpeed = 6.3f, CrouchSpeed = 1.7f;
         public const float GroundAccel = 60f, AirAccel = 16f, GroundFriction = 12f;
         public const float JumpHeight = 1.05f, GravityMss = 20f, TerminalVelocity = 45f;
+        public const float StepOffset = 0.42f;   // kerbs, thresholds, the car park lip
         public const float CoyoteTime = 0.12f, JumpBufferTime = 0.15f;
         public const float StandHeight = 1.8f, CrouchHeight = 1.05f;
         public const float StandEye = 1.62f, CrouchEye = 0.86f, SeatEye = 0.72f;
         public const float InteractRange = 3.2f, InteractRadius = 0.16f;
         public const float HurtFallM = 3.5f, FatalFallM = 6f;
+        public const float KillPlaneY = -40f;   // insurance, not a feature
 
         /// <summary>Own layer, so ground probes cannot hit the player's own
         /// capsule. Numeric — no project layer setup required.</summary>
@@ -105,7 +107,7 @@ namespace Game.Runtime.World
             _cc.radius = 0.32f;
             _cc.center = new Vector3(0, StandHeight * 0.5f, 0);
             _cc.slopeLimit = 50f;      // ramps yes, stacked crates no
-            _cc.stepOffset = 0.42f;    // kerbs, thresholds, the car park lip
+            _cc.stepOffset = StepOffset;
             _cc.skinWidth = 0.03f;
             _cc.minMoveDistance = 0f;  // default 0.001 eats slow crouch-walking
 
@@ -136,6 +138,10 @@ namespace Game.Runtime.World
             if (kb == null) return;
             float dt = Time.deltaTime;
             ShiftHeld = kb.leftShiftKey.isPressed;
+
+            // No floor should be missing; a body that does get under the site
+            // must still not fall for ever with the respawn never firing.
+            if (!IsDead && transform.position.y < KillPlaneY) Die("fell out of the world");
 
             // Escape TOGGLES the cursor (free it for the debug console, press
             // again to play on). Never re-lock by click: clicking a console
@@ -342,6 +348,10 @@ namespace Game.Runtime.World
                 _platformLastPos = _platform.position;
             }
 
+            // Steps are for feet on the ground. The controller auto-steps in
+            // the air too, which turned a jump into a vault over any rail whose
+            // top sat within the step height of the jump apex.
+            _cc.stepOffset = IsGrounded ? StepOffset : 0f;
             Vector3 posBefore = transform.position;
             _cc.Move(_vel * dt + platformDelta);
 
@@ -371,7 +381,7 @@ namespace Game.Runtime.World
             {
                 Vector3 origin = transform.position + Vector3.up * _cc.radius;
                 if (Physics.SphereCast(origin, _cc.radius * 0.95f, Vector3.down,
-                        out RaycastHit snap, _cc.stepOffset + 0.1f, WorldMask,
+                        out RaycastHit snap, StepOffset + 0.1f, WorldMask,
                         QueryTriggerInteraction.Ignore))
                 {
                     _cc.Move(Vector3.down * (snap.distance - 0.02f));

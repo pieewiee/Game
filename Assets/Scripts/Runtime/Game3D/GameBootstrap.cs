@@ -64,6 +64,27 @@ namespace Game.Runtime.World
         {
             Driver = GetComponent<SimDriver>();
 
+            // The site is lit by two dozen point lights and one sun. The
+            // project's quality levels allow four pixel lights and no shadows
+            // on the lower tiers, which renders every ceiling light as
+            // nothing and lets the sun through the slabs into the basement.
+            // 23 ceiling lights + sun + the truck's beacon and headlights all
+            // touch a whole-storey mesh; a light demoted past the cap is gone
+            // (there is no vertex-light path), and the pulsing beacon would
+            // demote a different ceiling light every half second.
+            QualitySettings.pixelLightCount = Mathf.Max(QualitySettings.pixelLightCount, 40);
+            QualitySettings.shadows = ShadowQuality.All;
+            QualitySettings.shadowDistance = Mathf.Max(QualitySettings.shadowDistance, 140f);
+
+            // The code assumes an empty scene; a scene Unity creates is not
+            // (Main Camera, Directional Light). A second directional light
+            // shines through every slab unshadowed, a second camera renders
+            // the whole site twice, its listener doubles the audio.
+            foreach (Light l in FindObjectsByType<Light>(FindObjectsSortMode.None))
+                if (l.type == LightType.Directional) l.gameObject.SetActive(false);
+            foreach (Camera c in FindObjectsByType<Camera>(FindObjectsSortMode.None))
+                c.gameObject.SetActive(false);
+
             Site = SiteBuilder.Build(transform);
             Facility = gameObject.AddComponent<FacilityController>();
             Facility.Init(Site);

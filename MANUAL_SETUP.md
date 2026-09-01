@@ -215,15 +215,44 @@ delete that file. `Temp/` is git-ignored; nothing to commit.
       halls), the plant room, the **LV switch room (NSHV)** with the main
       breaker, the **UPS and battery room** with the hydrogen vent fan and the
       eyewash station, the workshop, the meet-me room, the suppression cylinder
-      room, and the office. **Basement** (stairs down in the west core): cable
-      basement, diesel tank room, water treatment. **First floor** (stairs up):
-      Hall 3 as a shell, and the air-handling deck. Cooling towers and chillers
-      stand OUTDOORS in the yard, because that is where they live.
+      room, and the office. **Basement** (stairs down in the west core): the
+      basement store, the cable basement, the diesel tank room, water
+      treatment. **First floor** (stairs up): the west bay, Hall 3 as a shell,
+      and the air-handling deck. The stair core is one open well with
+      balustrades; the down flight and the up flight sit side by side in it.
+      Cooling towers and chillers stand OUTDOORS in the yard, because that is
+      where they live; the diesel start lever is on the genset in the yard.
       Two fences: an outer site boundary (solar field and turbine inside, the
       visitor car park outside, gate on the west) and an inner compound fence
-      around the datacentre itself (gate on the south, by the guard post).
-      Both gates are marked with amber post caps.
-- [ ] **7.2b Controls (forklift).** **E** get in and out, **WASD** drive
+      around the datacentre itself (gate on the south, guard post beside it,
+      window on the gateway). Both gates are marked with amber caps on the
+      gate posts; posts sit on every corner and the gate edges, never in the
+      opening. The apron and the car park carry colliders of their own, so
+      feet stand ON them, and a pallet set down anywhere lands on whatever
+      surface is under it.
+      **Doors** slide (the goods door is a 3.9 m roller shutter). **E** opens
+      or closes; a door refuses to close on a player, a forklift or a pallet
+      standing in it and says so in the prompt. Door state is LOCAL — it is
+      not replicated between players yet (known gap).
+      **Lighting.** The site is lit by one sun and two dozen ceiling lights
+      through a single vertex-colour shader with sun shadows. `GameBootstrap`
+      raises the pixel-light count to 40 and turns shadows on at runtime, so
+      the ceiling lights work whatever quality level the project is on, and
+      it switches the scene's own *Main Camera* and *Directional Light* off:
+      the game makes its own camera, and the scene's light shone through the
+      roof unshadowed and kept the site lit at night. Ambient light is set to
+      flat colour at runtime (the scene's skybox ambient ignored the day/night
+      grade). The ceiling lights cast hard shadows at the lowest resolution:
+      without them every room lit the yard through the walls at night. The
+      pixel-light count caps how many are shadowed per frame; if a laptop
+      drops frames indoors, lower *Pixel Light Count* in Quality settings
+      (the surplus lights fall back to unshadowed vertex lighting).
+- [ ] **7.2b Controls (forklift).** **E** get in; from the seat a **tap of E**
+      opens or closes the nearest door within 3 m of the truck — ahead or the
+      one just driven through (the cab line in the HUD says which) — and
+      **holding E** climbs out — with no door in reach a tap climbs out too;
+      climbing out refuses when a wall or fence stands between the seat and
+      the ground beside it. **WASD** drive
       (rear-wheel steering — it only turns while rolling, and the tail swings
       wide), **Space/R** raise the mast, **Ctrl/F** lower it, **L** headlights,
       **H** horn. Reversing sounds like reversing, and the town can hear it.
@@ -236,13 +265,26 @@ delete that file. `Temp/` is git-ignored; nothing to commit.
       rack/evap/chiller/freecool/solar/battery/diesel, click a highlighted
       slot; **8/9/0** route power/cooling/network runs (left-click waypoints,
       right-click finishes — length becomes electrical loss).
+- [ ] **7.2c Interface.** Every panel is a window: drag it by its title bar,
+      the debug console also resizes at its bottom-right corner. A window can
+      never be dragged off-screen (at least 80 px stay reachable, and nothing
+      sinks under the news ticker). **F3** has the interface options: **UI
+      scale** (everything, hit-testing included — helpful at 4K), **console
+      opacity** (the console's backgrounds go see-through, its text stays
+      solid) and **show the site HUD**. The site HUD hides itself while the
+      console is open. **F1** console top left, **F3** options top right under
+      the wind arrow, **F2** multiplayer bottom right above the ticker. The
+      bulletin desk and the contract desk never open on top of each other,
+      and closing either hands the mouse straight back to the player.
 - [ ] **7.3 The 5-player test needs standalone builds** (one project folder
       cannot be opened by five editors, and no third-party clone tool was added
-      without asking). FIRST add both game shaders to *Project Settings →
-      Graphics → Always Included Shaders* (`GNP/VertexColor` and
-      `GNP/VertexColorTransparent`) — the game finds them via `Shader.Find` at
-      runtime, and a build strips unreferenced shaders, which would render the
-      whole world hot pink. Then *File → Build Profiles → Windows → Build* into
+      without asking). Both game shaders (`GNP/VertexColor` and
+      `GNP/VertexColorTransparent`) are listed in *Project Settings →
+      Graphics → Always Included Shaders* in the repo — the game finds them
+      via `Shader.Find` at runtime, and a build strips unreferenced shaders,
+      which would render the whole world hot pink. Check the two entries are
+      still there if the list was ever edited in the editor. Then *File →
+      Build Profiles → Windows → Build* into
       e.g. `Builds/` (git-ignored). Start the editor as **Host** (F2 → Host),
       start four built players (F2 → address `127.0.0.1` → Join). For remote
       friends, forward UDP **7777** or use a VPN such as Tailscale/Hamachi — no

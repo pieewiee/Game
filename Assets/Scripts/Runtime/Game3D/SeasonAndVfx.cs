@@ -26,6 +26,10 @@ namespace Game.Runtime.World
             _sun = sunGo.AddComponent<Light>();
             _sun.type = LightType.Directional;
             _sun.shadows = LightShadows.Soft;
+            // The ambient grade below writes ambientLight, which only feeds
+            // the Flat mode; in the scene's default Skybox mode the probe is
+            // baked once from the default skybox and 2 a.m. looks like noon.
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
 
             var site = GameBootstrap.Site;
             var plumeGo = new GameObject("DieselPlume");
