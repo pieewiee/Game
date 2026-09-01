@@ -24,7 +24,9 @@ namespace Game.Runtime.DebugTools
         private SimDriver _driver;
         private TuningPanel _tuning;
         private GraphPanel _graphs;
-        private bool _visible = true;
+        // The game starts IN the world; the console is one key away. Starting
+        // it open left the cursor locked over a full-screen panel.
+        private bool _visible;
         private int _tab;
         private Vector2 _scroll;
 
