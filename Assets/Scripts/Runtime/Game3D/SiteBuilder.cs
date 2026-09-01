@@ -196,8 +196,16 @@ namespace Game.Runtime.World
 
         private static void BuildFence(Transform root)
         {
-            var pm = new ProcMesh();
+            // The fence must LOOK like what it does: solid everywhere except
+            // the gate. Posts + rails are opaque, the mesh infill between the
+            // posts is a translucent panel — visually chain-link, physically
+            // matched 1:1 by the collider walls below. The gate is the first
+            // south segment, marked with amber post caps.
+            var pm = new ProcMesh();          // opaque: posts, rails, caps
+            var infill = new ProcMesh();      // translucent: mesh panels
             float x0 = -6, x1 = 62, z0 = -8, z1 = 26, h = 2f;
+            Color mesh = Palette.ProgramBlue; mesh.a = 0.30f;
+
             for (float x = x0; x <= x1; x += 4f)
             {
                 pm.Box(new Vector3(x, h / 2, z0), new Vector3(0.12f, h, 0.12f), Palette.ProgramBlue);
@@ -208,12 +216,35 @@ namespace Game.Runtime.World
                 pm.Box(new Vector3(x0, h / 2, z), new Vector3(0.12f, h, 0.12f), Palette.ProgramBlue);
                 pm.Box(new Vector3(x1, h / 2, z), new Vector3(0.12f, h, 0.12f), Palette.ProgramBlue);
             }
-            // Rails (thin, no collider fidelity needed beyond blocking walks).
-            pm.Box(new Vector3((x0 + x1) / 2, 1.9f, z0), new Vector3(x1 - x0, 0.06f, 0.06f), Palette.ProgramBlue);
-            pm.Box(new Vector3((x0 + x1) / 2, 1.9f, z1), new Vector3(x1 - x0, 0.06f, 0.06f), Palette.ProgramBlue);
-            pm.Box(new Vector3(x0, 1.9f, (z0 + z1) / 2), new Vector3(0.06f, 0.06f, z1 - z0), Palette.ProgramBlue);
-            pm.Box(new Vector3(x1, 1.9f, (z0 + z1) / 2), new Vector3(0.06f, 0.06f, z1 - z0), Palette.ProgramBlue);
+
+            void SegmentX(float cx, float z)
+            {
+                pm.Box(new Vector3(cx, 1.9f, z), new Vector3(4f, 0.06f, 0.06f), Palette.ProgramBlue);
+                infill.Box(new Vector3(cx, 1.0f, z), new Vector3(3.9f, 1.7f, 0.04f), mesh);
+            }
+            void SegmentZ(float x, float cz)
+            {
+                pm.Box(new Vector3(x, 1.9f, cz), new Vector3(0.06f, 0.06f, 4f), Palette.ProgramBlue);
+                infill.Box(new Vector3(x, 1.0f, cz), new Vector3(0.04f, 1.7f, 3.9f), mesh);
+            }
+            for (float x = x0; x < x1 - 0.1f; x += 4f)
+            {
+                bool gate = x < x0 + 0.1f; // first south segment stays open
+                if (!gate) SegmentX(x + 2f, z0);
+                SegmentX(x + 2f, z1);
+            }
+            for (float z = z0; z < z1 - 0.1f; z += 4f)
+            {
+                SegmentZ(x0, z + 2f);
+                SegmentZ(x1, z + 2f);
+            }
+
+            // Amber caps on the two gate posts: this is the way in.
+            pm.Box(new Vector3(x0, h + 0.12f, z0), new Vector3(0.2f, 0.24f, 0.2f), Palette.Amber);
+            pm.Box(new Vector3(x0 + 4f, h + 0.12f, z0), new Vector3(0.2f, 0.24f, 0.2f), Palette.Amber);
+
             MatLib.Spawn("Fence", pm.Build("fence"), root, Vector3.zero, false);
+            MatLib.Spawn("FenceMesh", infill.Build("fenceMesh"), root, Vector3.zero, false, true);
 
             // The perimeter actually blocks bodies and forklifts: invisible
             // collider walls (the visual posts alone let everything through).

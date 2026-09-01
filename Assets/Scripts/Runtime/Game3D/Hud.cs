@@ -43,7 +43,7 @@ namespace Game.Runtime.World
             }
 
             // --- top-left block --------------------------------------------
-            GUI.Box(new Rect(8, 8, 330, 92), "");
+            GUI.Box(new Rect(8, 8, 330, 110), "");
             GUI.Label(new Rect(16, 12, 320, 22),
                 "Day " + SimClock.DayIndex(tick).ToString("0", ci) +
                 "  " + SimClock.HourOfDay(tick).ToString("00", ci) + ":00" +
@@ -56,8 +56,10 @@ namespace Game.Runtime.World
                 "   Water " + (r.WaterLPerH * 24.0 / 1000.0).ToString("0.0", ci) + " m³/d", _big);
             bool isClient = GameBootstrap.Net != null && GameBootstrap.Net.IsClient;
             GUI.Label(new Rect(16, 76, 320, 20), isClient
-                ? "Esc cursor · F1 console · F2 net · E/Q · 1-7 build · 8-0 route"
-                : "Esc cursor · F1 console · F2 net · F5/F9 save/load · E/Q · 1-7 · 8-0");
+                ? "Esc cursor · F1 console · F2 net · E/Q interact/drop"
+                : "Esc cursor · F1 console · F2 net · F5/F9 save/load · E/Q");
+            GUI.Label(new Rect(16, 94, 320, 20),
+                "Space jump · Ctrl duck · Shift run · 1-7 build · 8-0 route");
 
             // --- wind arrow -------------------------------------------------
             DrawWindArrow(new Vector2(Screen.width - 70, 70), r);

@@ -203,10 +203,12 @@ delete that file. `Temp/` is git-ignored; nothing to commit.
       and nothing scripted after tick 0. A hands-off year verifiably survives
       (no penalties, town content) — every disaster is player-built. The
       scripted balance-test year is `baseline-year` (Scenario tab in F1).
-      **Controls.** Mouse look, **WASD** move, **E** interact (hold for
+      **Controls.** Mouse look, **WASD** move, **Shift** run, **Space** jump,
+      **Ctrl** duck (standing up checks headroom), **E** interact (hold for
       hold-controls: diesel lever, holding a door shut), **Q** drop what you
       carry, **Esc** frees the cursor, **F1** debug console, **F2** network
-      panel, **F5/F9** save/load (host only). Placement: **1–7** choose
+      panel, **F5/F9** save/load (host only). The fence gate (amber post caps)
+      is at the south-west corner by the car park. Placement: **1–7** choose
       rack/evap/chiller/freecool/solar/battery/diesel, click a highlighted
       slot; **8/9/0** route power/cooling/network runs (left-click waypoints,
       right-click finishes — length becomes electrical loss).

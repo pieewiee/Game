@@ -35,6 +35,23 @@ namespace Game.Runtime.World
         private float _exposure; // freezing, 0..1 (FreezeSystem drives it)
 
         public float Exposure { get { return _exposure; } set { _exposure = value; } }
+        public bool IsCrouched { get; private set; }
+
+        private void SetCrouch(bool on)
+        {
+            IsCrouched = on;
+            _cc.height = on ? 1.0f : 1.8f;
+            _cc.center = new Vector3(0, _cc.height * 0.5f, 0);
+            Cam.transform.localPosition = new Vector3(0, on ? 0.85f : 1.65f, 0);
+        }
+
+        private bool HasHeadroom()
+        {
+            // Cast from just above the crouched capsule: anything within the
+            // stand-up envelope keeps the player down (desk, rack overhang).
+            var ray = new Ray(transform.position + Vector3.up * 1.05f, Vector3.up);
+            return !Physics.Raycast(ray, out _, 0.85f);
+        }
 
         public static PlayerRig Create(Vector3 pos, string name)
         {
@@ -110,15 +127,24 @@ namespace Game.Runtime.World
                 Cam.transform.localRotation = Quaternion.Euler(_pitch, 0, 0);
             }
 
+            // --- crouch (hold Ctrl; standing up needs headroom) ---
+            bool wantCrouch = kb.leftCtrlKey.isPressed;
+            if (wantCrouch != IsCrouched && (wantCrouch || HasHeadroom()))
+                SetCrouch(wantCrouch);
+
             // --- move ---
             Vector3 wish = Vector3.zero;
             if (kb.wKey.isPressed) wish += transform.forward;
             if (kb.sKey.isPressed) wish -= transform.forward;
             if (kb.dKey.isPressed) wish += transform.right;
             if (kb.aKey.isPressed) wish -= transform.right;
-            float speed = ShiftHeld ? 6.5f : 3.6f;
+            float speed = IsCrouched ? 1.8f : ShiftHeld ? 6.5f : 3.6f;
             Vector3 vel = wish.normalized * speed;
-            if (_cc.isGrounded) _fallSpeed = -0.5f;
+            if (_cc.isGrounded)
+            {
+                _fallSpeed = -0.5f;
+                if (kb.spaceKey.wasPressedThisFrame && !IsCrouched) _fallSpeed = 4.8f;
+            }
             else _fallSpeed -= 14f * Time.deltaTime;
             vel.y = _fallSpeed;
             _cc.Move(vel * Time.deltaTime);
@@ -246,6 +272,7 @@ namespace Game.Runtime.World
             _cc.enabled = false;
             transform.position = carPark;
             _cc.enabled = true;
+            if (IsCrouched) SetCrouch(false);
             _exposure = 0f;
             IsDead = false;
         }
