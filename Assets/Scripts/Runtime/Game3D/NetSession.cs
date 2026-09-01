@@ -375,6 +375,8 @@ namespace Game.Runtime.Net
                     }
                     else if (kind == 3)
                     {
+                        // Only ledger an order that actually produces a pallet.
+                        if (World.Pallet.Current != null) break;
                         GameBootstrap.AddLedger(vactor, "ordered a pallet of rack hardware");
                         if (_vehicleDriver == NoDriver || _vehicleDriver == _nm.LocalClientId)
                         {
@@ -385,6 +387,23 @@ namespace Game.Runtime.Net
                             using var fw = BeginMsg(MsgVehicleOrder);
                             Send(fw, _vehicleDriver);   // the authority spawns it
                         }
+                    }
+                    else if (kind == 4)
+                    {
+                        reader.ReadValueSafe(out ulong target);
+                        // Only the actual driver may run people over with it.
+                        if (_vehicleDriver != sender) break;
+                        if (target == _nm.LocalClientId)
+                        {
+                            var rig = GameBootstrap.LocalPlayer;
+                            if (rig != null && !rig.IsDead) rig.Die("was struck by the forklift");
+                        }
+                        else HostKillClient(target, "was struck by the forklift");
+                    }
+                    else if (kind == 5)
+                    {
+                        var flr = World.Forklift.Instance;
+                        if (flr != null && flr.IsAuthority()) flr.Right(vactor);
                     }
                     break;
                 }
@@ -399,6 +418,8 @@ namespace Game.Runtime.Net
                     _vehicleDriver = driver;
                     var st = ReadVehicle(ref reader);
                     var fl = World.Forklift.Instance;
+                    // Seat or evict: a claim is only real once the host says so.
+                    if (fl != null) fl.OnVehicleGranted(driver == _nm.LocalClientId);
                     if (fl != null && !fl.IsAuthority())
                     {
                         fl.ApplyState(st.Pos, st.Yaw, st.Roll, st.Fork);
@@ -741,12 +762,43 @@ namespace Game.Runtime.Net
             Send(w, NetworkManager.ServerClientId);
         }
 
-        /// <summary>Ask whoever owns the vehicle to put a delivery on the dock.</summary>
+        /// <summary>Ask whoever owns the vehicle to put a delivery on the dock.
+        /// A client asks the host; the host forwards to the driving client.</summary>
         public void RequestDelivery()
+        {
+            if (!Active || _nm == null) return;
+            if (IsHost)
+            {
+                if (_vehicleDriver == NoDriver || _vehicleDriver == _nm.LocalClientId)
+                {
+                    World.Forklift.SpawnDelivery();
+                    return;
+                }
+                using var fw = BeginMsg(MsgVehicleOrder);
+                Send(fw, _vehicleDriver);
+                return;
+            }
+            using var w = BeginMsg(MsgVehicle);
+            w.WriteValueSafe((byte)3);
+            Send(w, NetworkManager.ServerClientId);
+        }
+
+        /// <summary>A driving client asks the host to run somebody over.</summary>
+        public void RequestVehicleKill(ulong target)
         {
             if (!Active || _nm == null || IsHost) return;
             using var w = BeginMsg(MsgVehicle);
-            w.WriteValueSafe((byte)3);
+            w.WriteValueSafe((byte)4);
+            w.WriteValueSafe(target);
+            Send(w, NetworkManager.ServerClientId);
+        }
+
+        /// <summary>Ask the vehicle's owner to put it back on its wheels.</summary>
+        public void RequestRight()
+        {
+            if (!Active || _nm == null || IsHost) return;
+            using var w = BeginMsg(MsgVehicle);
+            w.WriteValueSafe((byte)5);
             Send(w, NetworkManager.ServerClientId);
         }
 

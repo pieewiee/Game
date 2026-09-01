@@ -29,7 +29,7 @@ namespace Game.Runtime.World
         public List<Vector3> SolarSlots = new List<Vector3>();     // south field
         public Vector3 TurbinePos = new Vector3(70, 0, 30);
         /// <summary>Where hardware deliveries land, beside the delivery door.</summary>
-        public Vector3 DockPos = new Vector3(-6.5f, 0, 13f);
+        public Vector3 DockPos = new Vector3(-3.4f, 0, 14f);
         public Transform GroundTf;
         public Mesh GroundSummer, GroundWinter;
     }
@@ -273,6 +273,7 @@ namespace Game.Runtime.World
                 go.transform.SetParent(root, false);
                 go.transform.localPosition = centre;
                 go.AddComponent<BoxCollider>().size = size;
+                go.AddComponent<FenceSection>();   // can be flattened once
             }
             float midX = (x0 + x1) / 2f, midZ = (z0 + z1) / 2f;
             Wall("FenceWall S", new Vector3((x0 + 4f + x1) / 2f, h / 2, z0), new Vector3(x1 - x0 - 4f, h, 0.3f));

@@ -7,6 +7,12 @@ using UnityEngine.InputSystem;
 
 namespace Game.Runtime.World
 {
+    /// <summary>A fence section that can be flattened exactly once.</summary>
+    public sealed class FenceSection : MonoBehaviour
+    {
+        public bool Wrecked;
+    }
+
     /// <summary>
     /// A delivery pallet. Hardware arrives on these and cannot be installed any
     /// other way (workplace-accidents.md §4.4). Exactly one exists at a time —
@@ -106,7 +112,12 @@ namespace Game.Runtime.World
         private Light _headL, _headR;
         private AudioSource _engine, _beeper;
         private float _lastImpact;
-        private string _lastImpactName = "";
+        private int _lastImpactId;
+        private bool _claimPending;
+        private float _claimSentAt;
+        private bool _wasAuthority = true;
+        private bool _lastSeenPalletExists;
+        private Vector3 _lastSeenPalletPos;
 
         // replicated state when this machine is not the authority
         private Vector3 _netPos;
@@ -247,6 +258,8 @@ namespace Game.Runtime.World
             var net = GameBootstrap.Net;
             if (net != null && net.Active && (Instance == null || !Instance.IsAuthority()))
             {
+                // Whoever owns the vehicle owns the pallet. A client asks the
+                // host; the HOST forwards to the client that is driving.
                 net.RequestDelivery();
                 return "delivery ordered";
             }
@@ -281,19 +294,40 @@ namespace Game.Runtime.World
 
         public void Interact(PlayerRig player)
         {
+            var net = GameBootstrap.Net;
+            bool networked = net != null && net.Active;
+
             if (Tipped)
             {
-                Tipped = false;
-                transform.rotation = Quaternion.Euler(0, transform.eulerAngles.y, 0);
-                GameBootstrap.AddLedger(player.PlayerName, "righted the overturned forklift");
-                NewsFeed.Post("Site staff have returned a forklift to its wheels. The Program " +
-                    "notes that the equipment \"performed as designed throughout\".");
+                // Only the machine that owns the vehicle can right it; anywhere
+                // else this was a no-op that still wrote news and a ledger line.
+                if (networked && !IsAuthority()) { net.RequestRight(); return; }
+                Right(player.PlayerName);   // the roll replicates with the state
                 return;
             }
-            if (DriverRig != null) return;
-            var net = GameBootstrap.Net;
-            if (net != null && net.Active && net.SomeoneElseDriving) return;
+            if (DriverRig != null || _claimPending) return;
+            if (networked && net.SomeoneElseDriving) return;
 
+            if (networked && net.IsClient)
+            {
+                // ASK, do not take. Seating before the host has granted the
+                // vehicle lets two clients drive two diverging forklifts, both
+                // of which keep sending real consequences to the host's sim.
+                _claimPending = true;
+                _claimSentAt = Time.time;
+                net.ClaimVehicle(true);
+                return;
+            }
+            Seat(player);
+            if (networked) net.ClaimVehicle(true);
+        }
+
+        /// <summary>Actually put a player in the seat. On a client this runs
+        /// only once the host's snapshot names them as the driver.</summary>
+        public void Seat(PlayerRig player)
+        {
+            if (player == null || DriverRig != null) return;
+            _claimPending = false;
             DriverRig = player;
             player.Driving = this;
             player.SetBodyEnabled(false);
@@ -301,12 +335,43 @@ namespace Game.Runtime.World
             player.transform.localPosition = new Vector3(0, 1.35f, -0.55f);
             player.transform.localRotation = Quaternion.identity;
             player.BeginDriving();
-            if (net != null && net.Active) net.ClaimVehicle(true);
-            GameBootstrap.AddLedger(player.PlayerName, "took the forklift");
+            var net = GameBootstrap.Net;
+            // The host ledgers a client's claim from the connection; only a
+            // host/solo seat is recorded here.
+            if (net == null || !net.Active || net.IsHost)
+                GameBootstrap.AddLedger(player.PlayerName, "took the forklift");
+        }
+
+        public void Right(string actorName)
+        {
+            if (!Tipped) return;
+            Tipped = false;
+            Speed = 0f;
+            SteerAngle = 0f;
+            transform.rotation = Quaternion.Euler(0, transform.eulerAngles.y, 0);
+            if (actorName != null)
+            {
+                GameBootstrap.AddLedger(actorName, "righted the overturned forklift");
+                NewsFeed.Post("Site staff have returned a forklift to its wheels. The Program " +
+                    "notes that the equipment \"performed as designed throughout\".");
+            }
+        }
+
+        /// <summary>The host granted (or revoked) this machine's seat.</summary>
+        public void OnVehicleGranted(bool mine)
+        {
+            if (mine)
+            {
+                if (DriverRig == null && _claimPending) Seat(GameBootstrap.LocalPlayer);
+                return;
+            }
+            _claimPending = false;
+            if (DriverRig != null) ForceDismount(DriverRig);   // evicted: not ours
         }
 
         private void Dismount(PlayerRig player)
         {
+            ReleaseLoad();          // the pallet stays on site, not on the forks
             DriverRig = null;
             player.Driving = null;
             player.transform.SetParent(null, true);
@@ -329,6 +394,7 @@ namespace Game.Runtime.World
         public void ForceDismount(PlayerRig rig)
         {
             if (DriverRig != rig) return;
+            ReleaseLoad();
             DriverRig = null;
             Speed = 0f;
             var net = GameBootstrap.Net;
@@ -411,18 +477,24 @@ namespace Game.Runtime.World
             }
 
             // Set down when the forks come back to the deck.
-            if (ForkHeight <= 0.05f)
-            {
-                Pallet load = Load;
-                Load = null;
-                load.Carried = false;
-                load.transform.SetParent(null, true);
-                Vector3 pos = load.transform.position;
-                pos.y = 0f;
-                load.transform.position = pos;
-                load.transform.rotation = Quaternion.Euler(0, load.transform.eulerAngles.y, 0);
-                TryInstall(load);
-            }
+            if (ForkHeight <= 0.05f) ReleaseLoad();
+        }
+
+        /// <summary>Put the load on the ground wherever the forks are. Used by
+        /// the mast AND by dismounting: a driver who walks away with a pallet
+        /// still on the forks would strand it there forever.</summary>
+        private void ReleaseLoad()
+        {
+            if (Load == null) return;
+            Pallet load = Load;
+            Load = null;
+            load.Carried = false;
+            load.transform.SetParent(null, true);
+            Vector3 pos = load.transform.position;
+            pos.y = 0f;
+            load.transform.position = pos;
+            load.transform.rotation = Quaternion.Euler(0, load.transform.eulerAngles.y, 0);
+            TryInstall(load);
         }
 
         /// <summary>Setting a rack pallet down on a prepared slot installs it —
@@ -446,9 +518,27 @@ namespace Game.Runtime.World
                                        new Vector3(pallet.transform.position.x, 0, pallet.transform.position.z));
             if (d > 2.5f) return;   // dropped somewhere else: it just sits there
 
+            // The sim REFUSES deliveries from Protest onwards (Simulation.cs:
+            // "turned away at the gate"). Consuming the pallet on a command
+            // that will be discarded silently eats the only way nodes can ever
+            // enter the site, for the rest of the escalation.
+            var drv = GameBootstrap.Driver;
+            var net = GameBootstrap.Net;
+            bool client = net != null && net.IsClient;
+            bool haveSim = client || (drv != null && drv.Sim != null);
+            EscalationStage stage = client ? GameBootstrap.CurrentReport.Stage
+                                  : drv != null && drv.Sim != null ? drv.Sim.State.Stage
+                                  : EscalationStage.Sabotage;   // no sim: treat as refused
+            if (!haveSim || stage >= EscalationStage.Protest)
+            {
+                NewsFeed.Post("The gate turned the delivery away. The pallet is still standing " +
+                    "in Hall A, which the Program describes as \"staged for installation\".");
+                return;   // the pallet survives exactly where it was set down
+            }
+
             GameBootstrap.SendCommand(
                 new SimCommand { Kind = CommandKind.AddNodes, A = FacilityController.NodesPerRack },
-                "installed a rack from the delivery pallet");
+                "set a rack pallet down on the Hall A slot");
             Destroy(pallet.gameObject);
             if (Pallet.Current == pallet) Pallet.Current = null;
         }
@@ -513,56 +603,70 @@ namespace Game.Runtime.World
             var net = GameBootstrap.Net;
             string n = hit.collider.gameObject.name;
 
-            // A remote player's avatar (host side): the kill goes over the wire.
-            if (net != null && net.IsHost && n.StartsWith("Avatar ", StringComparison.Ordinal) &&
+            // Somebody else's avatar. The host kills directly; a driving CLIENT
+            // asks the host to, because otherwise the docs' "Player: FATAL"
+            // simply never happens in the ordinary multiplayer case.
+            if (net != null && net.Active && DriverRig != null &&
+                n.StartsWith("Avatar ", StringComparison.Ordinal) &&
                 ulong.TryParse(n.Substring(7), NumberStyles.Integer, CultureInfo.InvariantCulture,
                     out ulong clientId))
             {
-                net.HostKillClient(clientId, "was struck by the forklift");
+                if (net.IsHost) net.HostKillClient(clientId, "was struck by the forklift");
+                else net.RequestVehicleKill(clientId);
                 Speed = 0f;
                 return;
             }
 
             // Property damage: one target per two seconds, so a scrape along a
-            // fence is one finding rather than forty.
-            if (Time.time - _lastImpact < 2f && _lastImpactName == n) return;
+            // fence is one finding rather than forty. Keyed on the instance,
+            // because every chiller shares the same GameObject name.
+            int id = hit.collider.GetInstanceID();
+            if (Time.time - _lastImpact < 2f && _lastImpactId == id) return;
 
             if (hit.collider.GetComponentInParent<RackRemount>() != null)
             {
-                Hit(n, new SimCommand { Kind = CommandKind.DestroyNodes, A = FacilityController.NodesPerRack },
+                Hit(id, new SimCommand { Kind = CommandKind.DestroyNodes, A = FacilityController.NodesPerRack },
                     "forklift into a rack (" + FacilityController.NodesPerRack + " nodes destroyed)",
                     "Materials-handling equipment made contact with live hardware. The Program calls it " +
                     "\"an unplanned rack-adjacent logistics event\".");
                 return;
             }
             if (n.StartsWith("EvapTower", StringComparison.Ordinal))
-                Hit(n, new SimCommand { Kind = CommandKind.AddPlant, A = (int)PlantKind.EvapKwTh, B = -FacilityController.EvapUnitKwTh },
+                Hit(id, new SimCommand { Kind = CommandKind.AddPlant, A = (int)PlantKind.EvapKwTh, B = -FacilityController.EvapUnitKwTh },
                     "forklift into an evaporative tower (capacity lost)",
                     "A cooling tower on the site was struck by a works vehicle.");
             else if (n.StartsWith("Chiller", StringComparison.Ordinal))
-                Hit(n, new SimCommand { Kind = CommandKind.AddPlant, A = (int)PlantKind.ChillerKwTh, B = -FacilityController.ChillerUnitKwTh },
+                Hit(id, new SimCommand { Kind = CommandKind.AddPlant, A = (int)PlantKind.ChillerKwTh, B = -FacilityController.ChillerUnitKwTh },
                     "forklift into a chiller (capacity lost)",
                     "A chiller unit was struck by a works vehicle.");
             else if (n.StartsWith("FreecoolUnit", StringComparison.Ordinal))
-                Hit(n, new SimCommand { Kind = CommandKind.AddPlant, A = (int)PlantKind.FreecoolKwTh, B = -FacilityController.FreecoolUnitKwTh },
+                Hit(id, new SimCommand { Kind = CommandKind.AddPlant, A = (int)PlantKind.FreecoolKwTh, B = -FacilityController.FreecoolUnitKwTh },
                     "forklift into a free-cooling unit (capacity lost)",
                     "A cooling unit was struck by a works vehicle.");
             else if (n.StartsWith("Transformer", StringComparison.Ordinal))
-                Hit(n, new SimCommand { Kind = CommandKind.EpoTrip, A = 0.75, B = 4 },
+                Hit(id, new SimCommand { Kind = CommandKind.EpoTrip, A = 0.75, B = 4 },
                     "forklift into the transformer (site de-energised)",
                     "The site's transformer was struck by its own forklift. Power to the site — and " +
                     "to part of the lane — is out while it is inspected.");
             else if (n.StartsWith("Fence", StringComparison.Ordinal))
-                Hit(n, new SimCommand { Kind = CommandKind.AddVisualPoints, A = 5 },
+            {
+                // One section, once: the wreck stays wrecked instead of being
+                // farmable by reversing into the same post forever.
+                var section = hit.collider.GetComponent<FenceSection>();
+                if (section == null || section.Wrecked) return;
+                section.Wrecked = true;
+                hit.collider.enabled = false;          // there is a hole now
+                Hit(id, new SimCommand { Kind = CommandKind.AddVisualPoints, A = 5 },
                     "forklift through the perimeter fence",
                     "A section of the site's blue perimeter fence is flat. Residents describe the " +
                     "view as \"improved, actually\".");
+            }
         }
 
-        private void Hit(string name, SimCommand cmd, string ledger, string news)
+        private void Hit(int colliderId, SimCommand cmd, string ledger, string news)
         {
             _lastImpact = Time.time;
-            _lastImpactName = name;
+            _lastImpactId = colliderId;
             GameBootstrap.SendCommand(cmd, ledger);
             NewsFeed.Post(news);
             Speed = 0f;
@@ -575,6 +679,17 @@ namespace Game.Runtime.World
         private void Update()
         {
             bool authority = IsAuthority();
+
+            // A pending claim that the host never granted must not wedge the
+            // prompt shut forever.
+            if (_claimPending && Time.time - _claimSentAt > 2f) _claimPending = false;
+
+            // Becoming the owner (the driver disconnected, or we just took the
+            // seat) must not delete a delivery the previous owner was holding:
+            // re-create it from the last state we were told about.
+            if (authority && !_wasAuthority && _lastSeenPalletExists && Pallet.Current == null)
+                Pallet.Spawn(_lastSeenPalletPos, "rack");
+            _wasAuthority = authority;
 
             if (!authority && _netValid)
             {
@@ -634,6 +749,8 @@ namespace Game.Runtime.World
 
         public void ApplyPalletState(bool exists, Vector3 pos, float yaw, bool carried)
         {
+            _lastSeenPalletExists = exists;
+            if (exists) _lastSeenPalletPos = pos;
             if (!exists)
             {
                 if (Pallet.Current != null && Load == null) { Destroy(Pallet.Current.gameObject); Pallet.Current = null; }
@@ -643,6 +760,7 @@ namespace Game.Runtime.World
             if (Load != null) return;                  // I am carrying it myself
             Pallet p = Pallet.Current;
             if (p == null) return;
+            if (p.Carried != carried) p.Carried = carried;   // also toggles its collider
             if (carried)
             {
                 p.transform.position = pos;
