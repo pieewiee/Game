@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Runs the SAME test sources that Unity runs as EditMode tests
+       (Assets/Scripts/Sim.Tests), against the SAME sim sources, via dotnet test.
+       NUnit is pinned to the 3.x API surface that Unity Test Framework exposes:
+       tests must not use anything newer or they will not compile in Unity. -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\Assets\Scripts\Sim\**\*.cs" LinkBase="Sim" />
+    <Compile Include="..\..\Assets\Scripts\Sim.Tests\**\*.cs" LinkBase="Tests" />
+  </ItemGroup>
+</Project>

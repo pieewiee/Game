@@ -91,3 +91,7 @@ Unity_lic.ulf
 *.pem
 *.key
 secrets.json
+
+# --- Hand-authored dotnet tooling (exception to the Unity-generated ignores) ---
+!Tools/**/*.csproj
+Tools/**/[Bb]in/

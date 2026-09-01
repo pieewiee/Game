@@ -1,0 +1,149 @@
+# =============================================================================
+# GOOD NEIGHBOR PROGRAM — balance constants
+# Source of truth for names, anchors and confidence: docs/balance-constants.md
+# Format: KEY = value | KEY = x1:y1, x2:y2, ...  (piecewise linear, clamped)
+# '#' starts a comment. Unknown or missing keys are load errors on purpose.
+# =============================================================================
+
+# --- Time & world ------------------------------------------------------------
+TOWN_WATER_DEMAND = 500            # m³/day, 125 L/person × 4000
+WATER_PRICE = 2.50                 # EUR/m³
+DROUGHT_WATER_TARIFF_MULT = 4.0    # punitive tariff while restricted
+
+# --- Hardware ----------------------------------------------------------------
+GPU_NODE_P_PEAK = 10.0             # kW, HGX-class 8-GPU server
+GPU_NODE_P_IDLE = 1.6              # kW
+HEAT_FRACTION = 1.0                # kW_th per kW_e
+AUX_BASE_KW = 15                   # lighting, network, security
+AUX_FRAC_OF_IT = 0.02
+
+# --- Cooling -------------------------------------------------------------
+EVAP_COP = 12:40, 20:15, 25:8, 30:6            # vs T_wb °C
+EVAP_WUE = 12:1.4, 20:1.8, 25:2.2, 30:2.6      # L/kWh_IT vs T_wb °C
+CHILLER_COP = 5:5.0, 20:3.5, 35:2.5            # vs T_db °C
+FREECOOL_T_THRESHOLD = 15          # °C T_db
+FREECOOL_COP = 30
+DROUGHT_ALLOWANCE_FRAC = 0.2       # of TOWN_WATER_DEMAND while restricted
+
+# --- Power ---------------------------------------------------------------
+GRID_PRICE_SEASON = 0:0.235, 19:0.24, 110:0.19, 200:0.14, 290:0.19, 364:0.235   # EUR/kWh vs day-of-year
+GRID_PRICE_DIURNAL = 0:0.78, 4:0.75, 8:1.05, 12:1.10, 18:1.25, 21:1.10, 23:0.85 # multiplier vs hour
+RETAIL_MARKUP = 2.0
+CONGESTION_K = 1.2
+CONGESTION_GAMMA = 2.0
+SCARCITY_EVENT_MULT = 2.5
+SOLAR_YIELD_ANNUAL = 1020          # kWh/kWp/yr calibration target
+WIND_CF_MONTH = 1:0.35, 2:0.33, 3:0.28, 4:0.24, 5:0.20, 6:0.17, 7:0.16, 8:0.17, 9:0.21, 10:0.26, 11:0.31, 12:0.34
+BATTERY_RTE = 0.88
+BATTERY_CYCLE_LIFE = 6000
+DIESEL_COST_PER_KWH = 0.42
+DIESEL_OM = 0.02
+BATTERY_ARBITRAGE_SPREAD = 1.15    # act when price is this far from the seasonal mean
+
+# --- Grid tiers T0..T4 (docs/systems/power.md §2) -------------------------
+GRID_T0_CAP = 250
+GRID_T0_CAPEX = 0
+GRID_T0_LEAD_DAYS = 0
+GRID_T0_SENTIMENT_GATE = 0
+GRID_T0_REGION_CAP = 12000
+GRID_T1_CAP = 1000
+GRID_T1_CAPEX = 450000
+GRID_T1_LEAD_DAYS = 90
+GRID_T1_SENTIMENT_GATE = 45
+GRID_T1_REGION_CAP = 12000
+GRID_T2_CAP = 5000
+GRID_T2_CAPEX = 2400000
+GRID_T2_LEAD_DAYS = 210
+GRID_T2_SENTIMENT_GATE = 55
+GRID_T2_REGION_CAP = 20000
+GRID_T3_CAP = 20000
+GRID_T3_CAPEX = 11000000
+GRID_T3_LEAD_DAYS = 420
+GRID_T3_SENTIMENT_GATE = 65
+GRID_T3_REGION_CAP = 45000
+GRID_T4_CAP = 50000
+GRID_T4_CAPEX = 38000000
+GRID_T4_LEAD_DAYS = 730
+GRID_T4_SENTIMENT_GATE = 75
+GRID_T4_REGION_CAP = 80000
+
+# --- Contracts -----------------------------------------------------------
+RATE_INFERENCE = 1.35              # EUR/kWh_IT billable
+RATE_TRAINING = 2.20
+RATE_SPOT = 0.45
+SLA_INFERENCE = 0.995
+SLA_PENALTY_K = 12
+SLA_PENALTY_CAP = 0.5
+CHECKPOINT_INTERVAL = 1            # h — shortened for co-op, docs Q15
+CHECKPOINT_OVERHEAD = 0.03
+TRAINING_FAIL_PAYOUT_FRAC = 0.10
+TRAINING_REQUIRED_FRAC = 0.92      # required kWh = block × term × this
+REPUTATION_START = 50
+REPUTATION_GAIN_MONTH = 0.5
+REPUTATION_LOSS_BREACH = 8
+REP_GATE_INFERENCE = 40
+REP_GATE_TRAINING_MED = 60
+INFERENCE_DIURNAL_AMP = 0.15
+SPOT_DEPTH_MEAN_KW = 300
+SPOT_DEPTH_VOLATILITY = 0.15
+
+# --- Program indicators (nuisance) — all UNVERIFIED, docs §6 ---------------
+W_NOISE = 0.20
+W_AIR = 0.20
+W_WATER = 0.25
+W_PRICE = 0.20
+W_VISUAL = 0.15
+HALFLIFE_NOISE = 45                # days
+HALFLIFE_AIR = 90
+HALFLIFE_WATER = 120
+HALFLIFE_PRICE = 60
+HALFLIFE_VISUAL = 30
+NIGHT_NOISE_MULT = 2.5
+WIND_TOWARD_MULT = 3.0
+WIND_AWAY_MULT = 0.3
+PRICE_SENSITIVITY = 2.5            # channel pts per 1% resident price rise ≈ 2.5
+PRICE_BASELINE_ADAPT_PER_DAY = 0.01
+NOISE_FAN_REF_KW = 60
+NOISE_CHILLER_WEIGHT = 2.5
+NOISE_DIESEL_WEIGHT = 8.0
+NOISE_SCALE = 3.2
+AIR_EMISSION_FACTOR = 60           # channel pts per MWh diesel before wind mult
+DROUGHT_NUISANCE_MULT_MAX = 3.0
+
+# --- Good Neighbor Index ---------------------------------------------------
+GNI_START = 62
+GNI_ADJUST_RATE = 0.004            # per tick; ~10-day time constant
+ESCALATION_HYSTERESIS = 5
+BAND_CONTENT = 70
+BAND_COMPLAINTS = 55
+BAND_PETITION = 40
+BAND_PROTEST = 25
+BAND_INJUNCTION = 15
+PETITION_RATE_PER_TICK = 0.05      # signatures/tick per GNI point below 55
+PETITION_THRESHOLD = 800           # ~20% of the town
+REFERENDUM_DELAY_DAYS = 90
+REFERENDUM_KEEP_THRESHOLD = 50
+REFERENDUM_DELTA_WEIGHT = 1.5      # a town that sees improvement votes differently
+SABOTAGE_TRIGGER_HOURS = 72        # cumulative hours in the Sabotage band
+FIBRE_CUT_DURATION_H = 8
+LOCAL_HIRE_GNI_PER_FTE = 0.9
+
+# --- Climate ---------------------------------------------------------------
+TOWN_BEARING_DEG = 270             # the town lies west of the site
+TOWN_SECTOR_HALF_DEG = 45
+TEMP_SEASONAL_MEAN = 14            # °C
+TEMP_SEASONAL_AMP = 12             # Jan mean ≈ 2, Jul mean ≈ 26
+TEMP_DIURNAL_AMP = 4
+TEMP_NOISE_AMP = 5
+WETBULB_DEPRESSION = 0:1.5, 100:3.5, 200:6.0, 280:3.5, 364:1.5   # °C below T_db vs day-of-year
+WIND_SPEED_MONTH = 1:7.2, 2:7.0, 3:6.4, 4:5.8, 5:5.2, 6:4.6, 7:4.1, 8:4.3, 9:5.2, 10:6.3, 11:6.8, 12:7.1
+WIND_DIR_NOISE_DEG = 60
+WIND_DIR_SEASON = 0:45, 90:120, 181:270, 273:120, 364:45         # blows-toward bearing: summer easterlies point at the town
+HEATWAVE_THRESHOLD = 30            # °C
+DUNKELFLAUTE_WIND_CF = 0.08
+DUNKELFLAUTE_IRRADIANCE = 0.02
+DROUGHT_DRY_DAYS = 28
+DROUGHT_RECOVER_DAYS = 6
+PRECIP_WET_PROBABILITY = 0.45
+NOISE_TURBINE_WEIGHT = 1.2         # loudness per turbine (nuisance.md par.1)
+TURBINE_UNIT_KW = 3300             # one modelled onshore turbine

@@ -1,0 +1,45 @@
+# =============================================================================
+# Baseline year: a T1 site that lives the loop.
+# Spring: comfortable. Summer: heat, drought, a training deadline, diesel
+# temptation. Autumn: the T2 permit re-check pays for the summer.
+# Start = tick 0 = January 1st, 00:00.
+# =============================================================================
+SEED = 42
+TICKS = 8760
+
+NODES = 85                  # 850 kW billable ceiling
+GRID_TIER = 1               # 1000 kW cap
+FREECOOL_KWTH = 900
+EVAP_KWTH = 900
+CHILLER_KWTH = 0            # the classic first-year mistake: no chillers
+SOLAR_KWP = 400
+WIND_KW = 0
+BATTERY_KWH = 0
+BATTERY_KW = 0
+DIESEL_KW = 500
+DIESEL_POLICY = ProtectSla
+LOCAL_FTE = 8
+VISUAL_POINTS = 10          # fence + exposed plant
+CASH = 800000
+REPUTATION = 62            # a site with history: just past the training gate
+SPOT_ENABLED = 1
+
+# A modest inference floor from day one: 300 kW for 11 months.
+AT 0 SIGN_INFERENCE 300 335
+
+# Spring: more inference as reputation builds.
+AT 1460 SIGN_INFERENCE 200 270      # early March, 200 kW to year end
+
+# Mid May: apply for T2 once the cash is there (needs GNI ≥ 55 now AND at re-check, day ~340).
+AT 3120 APPLY_TIER 2
+
+# May: a 400 kW training block, 18-day deadline. The reason to run hot.
+AT 3240 SIGN_TRAINING 400 18
+
+# August: a second, riskier training run right through the heat.
+AT 5090 SIGN_TRAINING 350 21
+
+# April: the overbuild. 12 more nodes for the training season — which pushes
+# summer peak demand past the 1000 kW grid cap and puts the diesel decision
+# on the table (DIESEL_POLICY covers shortfall automatically).
+AT 2400 ADD_NODES 12
