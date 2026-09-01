@@ -86,6 +86,8 @@ namespace Game.Runtime.Net
         private float _nextAvatarSend;
         private string _lastFacilityJson = "";
         private bool _panelOpen;
+        private Rect _panelWin;
+        private bool _panelPlaced;
 
         public List<string> RosterSnapshot()
         {
@@ -971,12 +973,26 @@ namespace Game.Runtime.Net
         {
             if (!_panelOpen)
             {
-                GUI.Label(new Rect(World.UiScaler.W - 200, World.UiScaler.H - 24, 196, 22),
+                // Above the ticker, not on it — and not under the cab
+                // read-out, which owns that corner while someone drives.
+                var local = GameBootstrap.LocalPlayer;
+                if (local != null && local.Driving != null) return;
+                GUI.Label(new Rect(World.UiScaler.W - 200, World.UiScaler.H - 54, 196, 22),
                     Active ? (IsHost ? "hosting (F2)" : "client (F2)") : "F2: multiplayer");
                 return;
             }
-            GUILayout.BeginArea(new Rect(World.UiScaler.W - 280, World.UiScaler.H - 220, 272, 212), GUI.skin.box);
-            GUILayout.Label("— session —");
+            if (!_panelPlaced)
+            {
+                // Bottom right, clear of the ticker; height 0 lets the layout
+                // size the window to its contents.
+                _panelPlaced = true;
+                _panelWin = new Rect(World.UiScaler.W - 300f, World.UiScaler.H - 280f, 280f, 0f);
+            }
+            _panelWin = World.UiScaler.Clamp(GUILayout.Window(912, _panelWin, DrawPanelWindow, "MULTIPLAYER (F2)"));
+        }
+
+        private void DrawPanelWindow(int id)
+        {
             if (!Active)
             {
                 if (GUILayout.Button("Host (port 7777)")) StartHost();
@@ -993,7 +1009,7 @@ namespace Game.Runtime.Net
                         kv.Value.ToString("0", CultureInfo.InvariantCulture));
                 if (GUILayout.Button("Disconnect")) Disconnect();
             }
-            GUILayout.EndArea();
+            GUI.DragWindow();
         }
     }
 }

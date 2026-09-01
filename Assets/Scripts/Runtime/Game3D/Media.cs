@@ -33,6 +33,8 @@ namespace Game.Runtime.Media
         private readonly Queue<string> _queue = new Queue<string>();
         private string _current = "";
         private float _offset;
+        private float _textW;      // measured on first draw; 0 = not yet
+        private GUIStyle _style;
         private int _lastEventCount;
         private bool _wasDiesel;
 
@@ -83,11 +85,16 @@ namespace Game.Runtime.Media
             {
                 _current = _queue.Dequeue();
                 _offset = World.UiScaler.W;
+                _textW = 0f;
             }
             if (_current.Length > 0)
             {
                 _offset -= Time.unscaledDeltaTime * 120f;
-                if (_offset < -_current.Length * 9f) _current = "";
+                // The item is done once its measured width has scrolled off
+                // the left edge; the character estimate only covers the
+                // frames before the first draw measured it.
+                float end = _textW > 0f ? _textW + 20f : _current.Length * 9f;
+                if (_offset < -end) _current = "";
             }
         }
 
@@ -112,12 +119,13 @@ namespace Game.Runtime.Media
         {
             if (_current.Length == 0) return;
             World.UiScaler.Begin();
-            var style = new GUIStyle(GUI.skin.label);
-            style.fontSize = 16;
+            if (_style == null)
+                _style = new GUIStyle(GUI.skin.label) { fontSize = 16, wordWrap = false };
+            if (_textW <= 0f) _textW = _style.CalcSize(new GUIContent(_current)).x;
             GUI.color = Color.black;
-            GUI.Label(new Rect(0, World.UiScaler.H - 30, 4000, 26), "", GUI.skin.box);
+            GUI.Label(new Rect(0, World.UiScaler.H - 30, World.UiScaler.W, 26), "", GUI.skin.box);
             GUI.color = Palette();
-            GUI.Label(new Rect(_offset, World.UiScaler.H - 28, 4000, 26), _current, style);
+            GUI.Label(new Rect(_offset, World.UiScaler.H - 28, _textW + 8f, 26), _current, _style);
             GUI.color = Color.white;
             World.UiScaler.End();
         }
@@ -145,15 +153,33 @@ namespace Game.Runtime.Media
         public void Open()
         {
             IsOpen = true;
+            // One desk at a time: two editors stacked on each other is how a
+            // click meant for "discard" lands on "PUBLISH".
+            if (ContractEditor.Instance != null) ContractEditor.Instance.Close();
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
+        }
+
+        /// <summary>Closes the editor and hands the mouse back to the player
+        /// unless another modal still owns it. Leaving the cursor free after
+        /// PUBLISH meant the next click did nothing and Escape did the
+        /// opposite of what the player expected.</summary>
+        public void Close()
+        {
+            if (!IsOpen) return;
+            IsOpen = false;
+            if (!World.GameBootstrap.UiWantsCursor)
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
         }
 
         private void Update()
         {
             if (IsOpen && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
             {
-                IsOpen = false;
+                Close();
                 // This Escape belongs to the editor — the player rig must not
                 // also toggle the cursor with it this frame.
                 World.GameBootstrap.EscConsumedFrame = Time.frameCount;
@@ -166,7 +192,7 @@ namespace Game.Runtime.Media
             // GUILayout.Window, not GUI.Window: the window body uses GUILayout
             // controls, which need the layouting window variant.
             World.UiScaler.Begin();
-            _win = GUILayout.Window(913, _win, DrawWindow, "PROGRAM BULLETIN — draft");
+            _win = World.UiScaler.Clamp(GUILayout.Window(913, _win, DrawWindow, "PROGRAM BULLETIN — draft"));
             World.UiScaler.End();
         }
 
@@ -199,9 +225,9 @@ namespace Game.Runtime.Media
                     (named ? " A responsible employee (" + who + ") has been identified." : ""));
                 if (named && World.GameBootstrap.Net != null)
                     World.GameBootstrap.Net.ApplyNamingPenalty(who);
-                IsOpen = false;
+                Close();
             }
-            if (GUILayout.Button("discard", GUILayout.Width(90))) IsOpen = false;
+            if (GUILayout.Button("discard", GUILayout.Width(90))) Close();
             GUILayout.EndHorizontal();
             GUI.DragWindow();
         }
@@ -250,15 +276,27 @@ namespace Game.Runtime.Media
         public void Open()
         {
             IsOpen = true;
+            if (BulletinEditor.Instance != null) BulletinEditor.Instance.Close();
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
+        }
+
+        public void Close()
+        {
+            if (!IsOpen) return;
+            IsOpen = false;
+            if (!World.GameBootstrap.UiWantsCursor)
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
         }
 
         private void Update()
         {
             if (IsOpen && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
             {
-                IsOpen = false;
+                Close();
                 World.GameBootstrap.EscConsumedFrame = Time.frameCount;
             }
         }
@@ -267,7 +305,7 @@ namespace Game.Runtime.Media
         {
             if (!IsOpen) return;
             World.UiScaler.Begin();
-            _win = GUILayout.Window(914, _win, DrawWindow, "COMPUTE CONTRACTS — standard terms");
+            _win = World.UiScaler.Clamp(GUILayout.Window(914, _win, DrawWindow, "COMPUTE CONTRACTS — standard terms"));
             World.UiScaler.End();
         }
 
@@ -309,7 +347,7 @@ namespace Game.Runtime.Media
             GUILayout.Space(10);
 
             GUILayout.Label("Nothing on this desk checks whether the site can deliver.\nThat is your job. The penalty clause is theirs.");
-            if (GUILayout.Button("close", GUILayout.Width(90))) IsOpen = false;
+            if (GUILayout.Button("close", GUILayout.Width(90))) Close();
             GUI.DragWindow();
         }
     }

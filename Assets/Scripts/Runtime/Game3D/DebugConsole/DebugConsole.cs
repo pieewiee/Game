@@ -108,14 +108,17 @@ namespace Game.Runtime.DebugTools
                     // First open: a large but not total window, inside the view.
                     _sized = true;
                     float w = Mathf.Min(1040f, Game.Runtime.World.UiScaler.W - 40f);
-                    float h = Mathf.Min(620f, Game.Runtime.World.UiScaler.H - 40f);
+                    float h = Mathf.Min(620f, Game.Runtime.World.UiScaler.H - 20f - Game.Runtime.World.UiScaler.BottomReserve);
                     _win = new Rect(20, 20, w, h);
                 }
-                Color prev = GUI.color;
-                GUI.color = new Color(1f, 1f, 1f, Game.Runtime.World.PlayerOptions.ConsoleOpacity);
-                _win = GUILayout.Window(910, _win, DrawWindow,
-                    "GNP debug console — F1 closes, drag to move, corner to resize");
-                GUI.color = prev;
+                // Opacity tints the window and control BACKGROUNDS only: a
+                // see-through console still has to be readable, and text at
+                // 40 % alpha over the site is not.
+                Color prev = GUI.backgroundColor;
+                GUI.backgroundColor = new Color(1f, 1f, 1f, Game.Runtime.World.PlayerOptions.ConsoleOpacity);
+                _win = Game.Runtime.World.UiScaler.Clamp(GUILayout.Window(910, _win, DrawWindow,
+                    "GNP debug console — F1 closes, drag to move, corner to resize"));
+                GUI.backgroundColor = prev;
             }
             finally { Game.Runtime.World.UiScaler.End(); }
         }

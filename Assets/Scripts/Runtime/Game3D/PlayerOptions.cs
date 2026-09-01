@@ -29,7 +29,8 @@ namespace Game.Runtime.World
         public static bool HudVisible = true;
 
         public bool IsOpen { get; private set; }
-        private Rect _win = new Rect(60, 60, 360, 330);
+        private Rect _win;
+        private bool _placed;
 
         private void Awake()
         {
@@ -97,7 +98,14 @@ namespace Game.Runtime.World
         {
             if (!IsOpen) return;
             UiScaler.Begin();
-            _win = GUILayout.Window(915, _win, DrawWindow, "OPTIONS (F3)");
+            if (!_placed)
+            {
+                // Top right, under the wind arrow: the console lives top
+                // left, and F3 is mostly pressed to tame the console.
+                _placed = true;
+                _win = new Rect(UiScaler.W - 380f, 150f, 360f, 330f);
+            }
+            _win = UiScaler.Clamp(GUILayout.Window(915, _win, DrawWindow, "OPTIONS (F3)"));
             UiScaler.End();
         }
 
