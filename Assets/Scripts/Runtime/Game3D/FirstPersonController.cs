@@ -29,7 +29,7 @@ namespace Game.Runtime.World
         public const float JumpHeight = 1.05f, GravityMss = 20f, TerminalVelocity = 45f;
         public const float CoyoteTime = 0.12f, JumpBufferTime = 0.15f;
         public const float StandHeight = 1.8f, CrouchHeight = 1.05f;
-        public const float StandEye = 1.62f, CrouchEye = 0.86f;
+        public const float StandEye = 1.62f, CrouchEye = 0.86f, SeatEye = 0.72f;
         public const float InteractRange = 3.2f, InteractRadius = 0.16f;
         public const float HurtFallM = 3.5f, FatalFallM = 6f;
 
@@ -54,8 +54,7 @@ namespace Game.Runtime.World
 
         private CharacterController _cc;
         private Transform _carryAnchor;
-        private AudioSource _foley;
-        private float _yaw, _pitch;
+        private float _yaw, _pitch, _driveYaw;
 
         // body state
         private Vector3 _vel;                 // full velocity, world space
@@ -70,7 +69,6 @@ namespace Game.Runtime.World
         // camera feel
         private float _eye = StandEye;
         private float _bobPhase, _bobAmount, _viewDip, _viewDipVel, _fovKick;
-        private int _lastStepParity;
 
         // interaction
         private IHoldInteractable _holding;
@@ -113,10 +111,6 @@ namespace Game.Runtime.World
             Cam.farClipPlane = 600f;
             Cam.fieldOfView = PlayerOptions.Fov;
             camGo.AddComponent<AudioListener>();
-
-            _foley = camGo.AddComponent<AudioSource>();
-            _foley.spatialBlend = 0f;  // your own boots are not a world sound
-            _foley.playOnAwake = false;
 
             _carryAnchor = new GameObject("Carry").transform;
             _carryAnchor.SetParent(camGo.transform, false);
@@ -161,7 +155,15 @@ namespace Game.Runtime.World
             }
 
             if (IsDead) return;
-            if (Driving != null) { Driving.Drive(this, kb); return; }
+            if (Driving != null)
+            {
+                // Seated, but not blinkered: you can look around the cab,
+                // over your shoulder while reversing, and down at the forks.
+                if (!uiOwnsInput) DriveLook(mouse);
+                CameraFeel(dt);
+                if (!uiOwnsInput) Driving.Drive(this, kb);
+                return;
+            }
 
             if (!uiOwnsInput) Look(mouse);
             Crouch(kb, uiOwnsInput);
@@ -183,6 +185,31 @@ namespace Game.Runtime.World
             _yaw += d.x;
             _pitch = Mathf.Clamp(_pitch + (PlayerOptions.InvertY ? d.y : -d.y), -88f, 88f);
             transform.rotation = Quaternion.Euler(0, _yaw, 0);
+        }
+
+        /// <summary>Look while seated: yaw is relative to the vehicle and
+        /// clamped to what a neck allows, so the forklift still points where
+        /// it drives.</summary>
+        private void DriveLook(Mouse mouse)
+        {
+            if (mouse == null) return;
+            Vector2 d = mouse.delta.ReadValue() * PlayerOptions.Sensitivity;
+            _driveYaw = Mathf.Clamp(_driveYaw + d.x, -150f, 150f);
+            _pitch = Mathf.Clamp(_pitch + (PlayerOptions.InvertY ? d.y : -d.y), -80f, 80f);
+            transform.localRotation = Quaternion.Euler(0, _driveYaw, 0);
+        }
+
+        /// <summary>Called on mounting: face forward, and forget the walking
+        /// yaw so the seat does not start twisted.</summary>
+        public void BeginDriving()
+        {
+            _driveYaw = 0f;
+            _pitch = 0f;
+            _bobAmount = 0f;
+            _viewDip = 0f;
+            _vel = Vector3.zero;          // no walking momentum in the seat
+            _fovKick = 0f;
+            transform.localRotation = Quaternion.identity;
         }
 
         // ------------------------------------------------------------------
@@ -324,7 +351,7 @@ namespace Game.Runtime.World
                 }
             }
 
-            Footsteps(dt);
+            Stride(dt);
         }
 
         /// <summary>Ground truth, independent of the controller's own flag:
@@ -353,14 +380,8 @@ namespace Game.Runtime.World
         {
             float drop = _apexY - transform.position.y;
             _jumping = false;
-
-            if (_foley != null)
-            {
-                float v = Mathf.Clamp01(0.15f + drop * 0.18f) * PlayerOptions.FoleyVolume;
-                _foley.pitch = 1f - Mathf.Clamp01(drop / FatalFallM) * 0.25f;
-                _foley.PlayOneShot(SiteAudio.LandClip(), v);
-            }
-            _viewDip += Mathf.Clamp(drop * 0.045f, 0.01f, 0.32f);
+            // A landing is felt, not heard: the dip is the whole cue.
+            _viewDip += Mathf.Clamp(drop * 0.03f, 0.004f, 0.18f);
 
             if (drop >= FatalFallM)
             {
@@ -377,7 +398,9 @@ namespace Game.Runtime.World
             }
         }
 
-        private void Footsteps(float dt)
+        /// <summary>Walk cadence for the camera only — silent. The bob is a
+        /// speed cue, so it stays subtle enough to read for an hour.</summary>
+        private void Stride(float dt)
         {
             float speed = Speed;
             if (!IsGrounded || speed < 0.6f)
@@ -385,22 +408,9 @@ namespace Game.Runtime.World
                 _bobAmount = Mathf.MoveTowards(_bobAmount, 0f, 4f * dt);
                 return;
             }
-            // One bob cycle per stride, so the sound lands with the low point.
             _bobPhase += speed * dt * 1.55f;
-            float amp = IsCrouched ? 0.018f : ShiftHeld ? 0.055f : 0.032f;
-            _bobAmount = Mathf.MoveTowards(_bobAmount, amp, 0.25f * dt);
-
-            int parity = (int)(_bobPhase * 2f);
-            if (parity != _lastStepParity)
-            {
-                _lastStepParity = parity;
-                if (_foley != null)
-                {
-                    float v = (IsCrouched ? 0.1f : ShiftHeld ? 0.32f : 0.2f) * PlayerOptions.FoleyVolume;
-                    _foley.pitch = 0.92f + (parity % 2 == 0 ? 0.06f : -0.05f);
-                    _foley.PlayOneShot(SiteAudio.StepClip(), v);
-                }
-            }
+            float amp = IsCrouched ? 0.008f : ShiftHeld ? 0.024f : 0.014f;
+            _bobAmount = Mathf.MoveTowards(_bobAmount, amp, 0.12f * dt);
         }
 
         // ------------------------------------------------------------------
@@ -409,24 +419,26 @@ namespace Game.Runtime.World
 
         private void CameraFeel(float dt)
         {
-            float targetEye = IsCrouched ? CrouchEye : StandEye;
+            // Seated in the cab the head is low — otherwise the camera floats
+            // above the safety cage and the forks vanish off the bottom.
+            float targetEye = Driving != null ? SeatEye : IsCrouched ? CrouchEye : StandEye;
             _eye = Mathf.MoveTowards(_eye, targetEye, 6f * dt);
 
             _viewDip = Mathf.SmoothDamp(_viewDip, 0f, ref _viewDipVel, 0.16f);
 
             float bob = _bobAmount * PlayerOptions.BobScale;
             float bobY = Mathf.Sin(_bobPhase * 2f * Mathf.PI) * bob;
-            float bobX = Mathf.Sin(_bobPhase * Mathf.PI) * bob * 0.6f;
+            float bobX = Mathf.Sin(_bobPhase * Mathf.PI) * bob * 0.35f;
             Cam.transform.localPosition = new Vector3(bobX, _eye + bobY - _viewDip, 0f);
 
             // Sprinting widens the view a little — cheap, and the only speed
             // cue that reads at a glance while carrying something.
-            float wantKick = ShiftHeld && IsGrounded && Speed > RunSpeed * 0.6f ? 6f : 0f;
+            float wantKick = Driving == null && ShiftHeld && IsGrounded && Speed > RunSpeed * 0.6f ? 4f : 0f;
             _fovKick = Mathf.MoveTowards(_fovKick, wantKick, 22f * dt);
             Cam.fieldOfView = PlayerOptions.Fov + _fovKick;
 
             // Pitch on the camera; yaw stays on the body so the capsule turns.
-            Cam.transform.localRotation = Quaternion.Euler(_pitch + _viewDip * 22f, 0f, 0f);
+            Cam.transform.localRotation = Quaternion.Euler(_pitch + _viewDip * 9f, 0f, 0f);
         }
 
         // ------------------------------------------------------------------
@@ -569,6 +581,8 @@ namespace Game.Runtime.World
             _cc.enabled = on;
             if (on)
             {
+                // Keep looking where the cab was looking.
+                _yaw = transform.eulerAngles.y;
                 // Stepping off a moving forklift must not read as a fall.
                 _vel = Vector3.zero;
                 _apexY = transform.position.y;

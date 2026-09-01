@@ -203,12 +203,23 @@ delete that file. `Temp/` is git-ignored; nothing to commit.
       and nothing scripted after tick 0. A hands-off year verifiably survives
       (no penalties, town content) — every disaster is player-built. The
       scripted balance-test year is `baseline-year` (Scenario tab in F1).
-      **Controls.** Mouse look, **WASD** move, **Shift** run, **Space** jump,
+      **Controls (on foot).** Mouse look, **WASD** move, **Shift** run, **Space** jump,
       **Ctrl** duck (standing up checks headroom), **E** interact (hold for
       hold-controls: diesel lever, holding a door shut), **Q** drop what you
       carry, **Esc** frees the cursor, **F1** debug console, **F2** network
-      panel, **F5/F9** save/load (host only). The fence gate (amber post caps)
-      is at the south-west corner by the car park. Placement: **1–7** choose
+      panel, **F3** options (sensitivity, FOV, head bob, volume), **F5/F9**
+      save/load (host only). The fence gate (amber post caps) is at the
+      south-west corner by the car park.
+- [ ] **7.2b Controls (forklift).** **E** get in and out, **WASD** drive
+      (rear-wheel steering — it only turns while rolling, and the tail swings
+      wide), **Space/R** raise the mast, **Ctrl/F** lower it, **L** headlights,
+      **H** horn. Reversing sounds like reversing, and the town can hear it.
+      **Racks are no longer placed with a keypress**: pressing **1** orders a
+      pallet of hardware onto the loading dock; drive the forks into it, raise,
+      carry it to the glowing slot in Hall A and lower it to install
+      (`workplace-accidents.md` §4.4 — "you cannot install a rack without it").
+      Turning at speed with the mast raised **tips the forklift over and kills
+      the driver**, which is the single most common real forklift fatality. Placement: **1–7** choose
       rack/evap/chiller/freecool/solar/battery/diesel, click a highlighted
       slot; **8/9/0** route power/cooling/network runs (left-click waypoints,
       right-click finishes — length becomes electrical loss).

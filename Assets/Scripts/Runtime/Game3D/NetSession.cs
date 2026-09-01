@@ -31,10 +31,11 @@ namespace Game.Runtime.Net
     public sealed class NetSession : MonoBehaviour
     {
         private const byte MsgHello = 1, MsgCmd = 2, MsgAvatar = 3, MsgTime = 4, MsgNamed = 5,
-                           MsgHazard = 6, MsgPanel = 7, MsgRoute = 8;
+                           MsgHazard = 6, MsgPanel = 7, MsgRoute = 8, MsgVehicle = 9;
         private const byte MsgSnapshot = 20, MsgLedger = 21, MsgRoster = 22,
                            MsgFacility = 23, MsgKill = 24, MsgNews = 25, MsgStanding = 26,
-                           MsgAvatars = 27, MsgHazardEvent = 28, MsgHazardState = 29;
+                           MsgAvatars = 27, MsgHazardEvent = 28, MsgHazardState = 29,
+                           MsgVehicleState = 30, MsgVehicleOrder = 31;
         private const string Channel = "GNP";
         private const double StandingLossNamed = 14.0;   // coop-griefing.md §4
         private const double StandingStart = 50.0;
@@ -47,6 +48,30 @@ namespace Game.Runtime.Net
         public long RemoteTick;
         public bool RemoteTimePaused = true;
         public float RemoteTps = 24f;
+
+        // --- forklift: one driver at a time, whoever asked first ---
+        private const ulong NoDriver = ulong.MaxValue;
+        private ulong _vehicleDriver = NoDriver;
+        private float _nextVehicleSend;
+        private VehicleState _vehicle;
+
+        private struct VehicleState
+        {
+            public Vector3 Pos; public float Yaw, Roll, Fork;
+            public bool PalletExists, PalletCarried;
+            public Vector3 PalletPos; public float PalletYaw;
+        }
+
+        /// <summary>True when the forklift is occupied by somebody else — used
+        /// for the prompt and to decide who simulates it.</summary>
+        public bool SomeoneElseDriving
+        {
+            get
+            {
+                return Active && _nm != null && _vehicleDriver != NoDriver &&
+                       _vehicleDriver != _nm.LocalClientId;
+            }
+        }
         public bool PanelOpen { get { return _panelOpen; } }
         private bool _cursorWasLockedBeforePanel;
 
@@ -159,6 +184,7 @@ namespace Game.Runtime.Net
             _avatarPos.Clear();
             _roster.Clear();
             _standings.Clear();
+            _vehicleDriver = NoDriver;
             RemoteReport = default;
             RemoteTick = 0;
             RemoteTimePaused = true;
@@ -194,6 +220,7 @@ namespace Game.Runtime.Net
             if (_roster.TryGetValue(id, out string name))
                 GameBootstrap.AddLedger("system", name + " disconnected");
             _roster.Remove(id);
+            if (_vehicleDriver == id) _vehicleDriver = NoDriver;   // the forklift is free again
             if (_avatars.TryGetValue(id, out GameObject go) && go != null) Destroy(go);
             _avatars.Remove(id);
             _avatarPos.Remove(id);
@@ -321,6 +348,61 @@ namespace Game.Runtime.Net
                         if (_avatars[id] != null) Destroy(_avatars[id]);
                         _avatars.Remove(id);
                         _avatarPos.Remove(id);
+                    }
+                    break;
+                }
+                case MsgVehicle when IsHost:
+                {
+                    reader.ReadValueSafe(out byte kind);
+                    string vactor = _roster.TryGetValue(sender, out string vn)
+                        ? vn : "P" + sender.ToString(CultureInfo.InvariantCulture);
+                    if (kind == 0)
+                    {
+                        if (_vehicleDriver == NoDriver)
+                        {
+                            _vehicleDriver = sender;
+                            GameBootstrap.AddLedger(vactor, "took the forklift");
+                        }
+                    }
+                    else if (kind == 1)
+                    {
+                        if (_vehicleDriver == sender) _vehicleDriver = NoDriver;
+                    }
+                    else if (kind == 2)
+                    {
+                        var st = ReadVehicle(ref reader);
+                        if (_vehicleDriver == sender) _vehicle = st;   // the driver owns it
+                    }
+                    else if (kind == 3)
+                    {
+                        GameBootstrap.AddLedger(vactor, "ordered a pallet of rack hardware");
+                        if (_vehicleDriver == NoDriver || _vehicleDriver == _nm.LocalClientId)
+                        {
+                            World.Forklift.SpawnDelivery();
+                        }
+                        else
+                        {
+                            using var fw = BeginMsg(MsgVehicleOrder);
+                            Send(fw, _vehicleDriver);   // the authority spawns it
+                        }
+                    }
+                    break;
+                }
+                case MsgVehicleOrder when IsClient:
+                {
+                    World.Forklift.SpawnDelivery();
+                    break;
+                }
+                case MsgVehicleState when IsClient:
+                {
+                    reader.ReadValueSafe(out ulong driver);
+                    _vehicleDriver = driver;
+                    var st = ReadVehicle(ref reader);
+                    var fl = World.Forklift.Instance;
+                    if (fl != null && !fl.IsAuthority())
+                    {
+                        fl.ApplyState(st.Pos, st.Yaw, st.Roll, st.Fork);
+                        fl.ApplyPalletState(st.PalletExists, st.PalletPos, st.PalletYaw, st.PalletCarried);
                     }
                     break;
                 }
@@ -584,6 +666,35 @@ namespace Game.Runtime.Net
                 Broadcast(w);
             }
 
+            // --- forklift: the authority publishes, everyone else follows ---
+            if (Time.unscaledTime >= _nextVehicleSend)
+            {
+                _nextVehicleSend = Time.unscaledTime + 0.1f;
+                var fl = World.Forklift.Instance;
+                if (fl != null && fl.IsAuthority()) _vehicle = LocalVehicle();
+                if (IsHost)
+                {
+                    using var w = BeginMsg(MsgVehicleState);
+                    w.WriteValueSafe(_vehicleDriver);
+                    WriteVehicle(w, _vehicle);
+                    Broadcast(w);
+                    // The host follows a client-driven forklift like anyone else.
+                    if (fl != null && !fl.IsAuthority())
+                    {
+                        fl.ApplyState(_vehicle.Pos, _vehicle.Yaw, _vehicle.Roll, _vehicle.Fork);
+                        fl.ApplyPalletState(_vehicle.PalletExists, _vehicle.PalletPos,
+                            _vehicle.PalletYaw, _vehicle.PalletCarried);
+                    }
+                }
+                else if (fl != null && fl.IsAuthority())
+                {
+                    using var w = BeginMsg(MsgVehicle);
+                    w.WriteValueSafe((byte)2);
+                    WriteVehicle(w, _vehicle);
+                    Send(w, NetworkManager.ServerClientId);
+                }
+            }
+
             if (IsClient && Time.unscaledTime >= _nextAvatarSend)
             {
                 _nextAvatarSend = Time.unscaledTime + 0.1f;
@@ -614,6 +725,31 @@ namespace Game.Runtime.Net
             Send(w, NetworkManager.ServerClientId);
         }
 
+        /// <summary>Take or release the forklift. The host arbitrates; a
+        /// client's claim is a request, not a fact.</summary>
+        public void ClaimVehicle(bool claim)
+        {
+            if (!Active || _nm == null) return;
+            if (IsHost)
+            {
+                if (claim && _vehicleDriver != NoDriver && _vehicleDriver != _nm.LocalClientId) return;
+                _vehicleDriver = claim ? _nm.LocalClientId : NoDriver;
+                return;
+            }
+            using var w = BeginMsg(MsgVehicle);
+            w.WriteValueSafe((byte)(claim ? 0 : 1));
+            Send(w, NetworkManager.ServerClientId);
+        }
+
+        /// <summary>Ask whoever owns the vehicle to put a delivery on the dock.</summary>
+        public void RequestDelivery()
+        {
+            if (!Active || _nm == null || IsHost) return;
+            using var w = BeginMsg(MsgVehicle);
+            w.WriteValueSafe((byte)3);
+            Send(w, NetworkManager.ServerClientId);
+        }
+
         public void SendHazard(int stationIndex, byte action)
         {
             if (!IsClient) return;
@@ -641,6 +777,50 @@ namespace Game.Runtime.Net
             w.WriteValueSafe(paused);
             w.WriteValueSafe(ticksPerSecond);
             Send(w, NetworkManager.ServerClientId);
+        }
+
+        private static VehicleState ReadVehicle(ref FastBufferReader reader)
+        {
+            var s = new VehicleState();
+            reader.ReadValueSafe(out s.Pos);
+            reader.ReadValueSafe(out s.Yaw);
+            reader.ReadValueSafe(out s.Roll);
+            reader.ReadValueSafe(out s.Fork);
+            reader.ReadValueSafe(out s.PalletExists);
+            reader.ReadValueSafe(out s.PalletPos);
+            reader.ReadValueSafe(out s.PalletYaw);
+            reader.ReadValueSafe(out s.PalletCarried);
+            return s;
+        }
+
+        private static void WriteVehicle(FastBufferWriter w, VehicleState s)
+        {
+            w.WriteValueSafe(s.Pos);
+            w.WriteValueSafe(s.Yaw);
+            w.WriteValueSafe(s.Roll);
+            w.WriteValueSafe(s.Fork);
+            w.WriteValueSafe(s.PalletExists);
+            w.WriteValueSafe(s.PalletPos);
+            w.WriteValueSafe(s.PalletYaw);
+            w.WriteValueSafe(s.PalletCarried);
+        }
+
+        /// <summary>Read the local forklift, whoever owns it right now.</summary>
+        private static VehicleState LocalVehicle()
+        {
+            var s = new VehicleState();
+            var fl = World.Forklift.Instance;
+            if (fl == null) return s;
+            fl.WriteState(out s.Pos, out s.Yaw, out s.Roll, out s.Fork);
+            var p = World.Pallet.Current;
+            s.PalletExists = p != null;
+            if (p != null)
+            {
+                s.PalletPos = p.transform.position;
+                s.PalletYaw = p.transform.eulerAngles.y;
+                s.PalletCarried = p.Carried;
+            }
+            return s;
         }
 
         private void BroadcastNews(string item)

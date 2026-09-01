@@ -19,8 +19,9 @@ namespace Game.Runtime.World
         private static AudioClip _noiseLoop;
         private static AudioClip _dieselLoop;
         private static AudioClip _sirenClip;
-        private static AudioClip _stepClip;
-        private static AudioClip _landClip;
+        private static AudioClip _engineClip;
+        private static AudioClip _beepClip;
+        private static AudioClip _hornClip;
 
         private void Start()
         {
@@ -133,51 +134,72 @@ namespace Game.Runtime.World
             return _dieselLoop;
         }
 
-        /// <summary>A boot on concrete: a short noise burst with a fast decay
-        /// and a little body. Pitch-shifted per step so it never sounds like a
-        /// metronome.</summary>
-        public static AudioClip StepClip()
+        /// <summary>A small diesel engine at idle: a low pulse train with a
+        /// rough harmonic. Pitched by speed at the source.</summary>
+        public static AudioClip EngineClip()
         {
-            if (_stepClip != null) return _stepClip;
+            if (_engineClip != null) return _engineClip;
             const int rate = 22050;
-            var data = new float[rate / 8];               // 125 ms
-            uint seed = 9187;
+            var data = new float[rate];            // 1 s, loops seamlessly at 18 Hz
             for (int i = 0; i < data.Length; i++)
             {
-                seed = seed * 1664525u + 1013904223u;
-                float white = (seed >> 9) / 4194304f - 1f;
                 float t = i / (float)rate;
-                float env = Mathf.Clamp01(1f - t * 26f);
-                env *= env;
-                float body = Mathf.Sin(t * 2f * Mathf.PI * 150f) * 0.35f;
-                data[i] = (white * 0.55f + body) * env;
+                float fire = Mathf.Sin(t * 2f * Mathf.PI * 18f);
+                float rough = Mathf.Sin(t * 2f * Mathf.PI * 54f) * 0.3f;
+                float whine = Mathf.Sin(t * 2f * Mathf.PI * 210f) * 0.08f;
+                data[i] = Mathf.Clamp(fire * Mathf.Abs(fire) + rough + whine, -1f, 1f) * 0.6f;
             }
-            _stepClip = AudioClip.Create("step", data.Length, 1, rate, false);
-            _stepClip.SetData(data, 0);
-            return _stepClip;
+            _engineClip = AudioClip.Create("engine", data.Length, 1, rate, false);
+            _engineClip.SetData(data, 0);
+            return _engineClip;
         }
 
-        /// <summary>Landing: the same idea an octave down, with more thud and a
-        /// longer tail. Loud landings are how a fall announces itself.</summary>
-        public static AudioClip LandClip()
+        /// <summary>The reverse alarm. Every site has one, every neighbour
+        /// knows it, and it carries much further than the operator thinks.</summary>
+        public static AudioClip BeepClip()
         {
-            if (_landClip != null) return _landClip;
+            if (_beepClip != null) return _beepClip;
             const int rate = 22050;
-            var data = new float[rate / 4];               // 250 ms
-            uint seed = 55127;
+            var data = new float[rate];            // 1 s: 0.35 on, 0.65 off
             for (int i = 0; i < data.Length; i++)
             {
-                seed = seed * 1664525u + 1013904223u;
-                float white = (seed >> 9) / 4194304f - 1f;
                 float t = i / (float)rate;
-                float env = Mathf.Clamp01(1f - t * 9f);
-                env *= env;
-                float body = Mathf.Sin(t * 2f * Mathf.PI * 68f) * 0.8f;
-                data[i] = (white * 0.3f + body) * env;
+                data[i] = t < 0.35f ? Mathf.Sin(t * 2f * Mathf.PI * 1100f) * 0.5f : 0f;
             }
-            _landClip = AudioClip.Create("land", data.Length, 1, rate, false);
-            _landClip.SetData(data, 0);
-            return _landClip;
+            _beepClip = AudioClip.Create("reverseAlarm", data.Length, 1, rate, false);
+            _beepClip.SetData(data, 0);
+            return _beepClip;
+        }
+
+        private static AudioClip HornClip()
+        {
+            if (_hornClip != null) return _hornClip;
+            const int rate = 22050;
+            var data = new float[rate / 2];
+            for (int i = 0; i < data.Length; i++)
+            {
+                float t = i / (float)rate;
+                float env = Mathf.Clamp01(1f - t * 2.2f);
+                data[i] = (Mathf.Sin(t * 2f * Mathf.PI * 420f) +
+                           Mathf.Sin(t * 2f * Mathf.PI * 525f) * 0.7f) * 0.35f * env;
+            }
+            _hornClip = AudioClip.Create("horn", data.Length, 1, rate, false);
+            _hornClip.SetData(data, 0);
+            return _hornClip;
+        }
+
+        public static void PlayHorn(Vector3 pos)
+        {
+            var go = new GameObject("Horn");
+            go.transform.position = pos;
+            var src = go.AddComponent<AudioSource>();
+            src.clip = HornClip();
+            src.spatialBlend = 1f;
+            src.maxDistance = 90f;
+            src.rolloffMode = AudioRolloffMode.Linear;
+            src.volume = 0.8f * PlayerOptions.MachineryVolume;
+            src.Play();
+            Destroy(go, 1.2f);
         }
 
         private static AudioClip Siren()

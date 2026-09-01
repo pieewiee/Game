@@ -229,6 +229,11 @@ namespace Game.Sim
                 case CommandKind.SetVisualPoints:
                     s.VisualPoints = cmd.A;
                     break;
+                case CommandKind.AddVisualPoints:
+                    // Delta, so damage from any machine composes (the forklift
+                    // into the fence, per workplace-accidents.md §4.4).
+                    s.VisualPoints = Math.Max(0.0, s.VisualPoints + cmd.A);
+                    break;
 
                 // --- Milestones 3-5 -----------------------------------------
                 case CommandKind.AddPlant:

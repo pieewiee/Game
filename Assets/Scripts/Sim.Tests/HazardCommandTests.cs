@@ -186,6 +186,25 @@ namespace Game.Sim.Tests
         }
 
         [Test]
+        public void FenceDamageRaisesTheVisualChannelAndComposes()
+        {
+            Simulation sim = NewSim();
+            TickReport before = sim.Tick();
+            // Two forklift impacts in the same tick, from two machines.
+            Cmd(sim, CommandKind.AddVisualPoints, 5);
+            Cmd(sim, CommandKind.AddVisualPoints, 5);
+            TickReport after = sim.Tick();
+            Assert.That(sim.State.VisualPoints, Is.EqualTo(10), "deltas must compose");
+            Assert.That(after.NVisual, Is.GreaterThan(before.NVisual),
+                "wrecked fence must show up on the visual nuisance channel");
+            // Repairs are the same command with a negative delta, and the
+            // total never goes below zero.
+            Cmd(sim, CommandKind.AddVisualPoints, -999);
+            sim.Tick();
+            Assert.That(sim.State.VisualPoints, Is.EqualTo(0));
+        }
+
+        [Test]
         public void AccidentsPenaliseGoodwillAndDecay()
         {
             Balance b = TestData.LoadBalance();

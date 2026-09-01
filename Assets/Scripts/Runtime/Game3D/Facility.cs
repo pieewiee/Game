@@ -63,6 +63,7 @@ namespace Game.Runtime.World
         private GameObject _draftGo;
         private Aggregates _lastSynced;
         private bool _syncDirty = true;
+        private GameObject _slotGhost;
         public string PlacementHint { get; private set; } = "";
 
         private static readonly string[] PlaceKinds =
@@ -127,6 +128,35 @@ namespace Game.Runtime.World
             Aggregates a = CurrentAggregates();
             if (_syncDirty || !AggregatesEqual(a, _lastSynced)) SyncFromSim(false);
             HandlePlacementInput();
+            UpdateSlotGhost(a);
+        }
+
+        /// <summary>While a delivery is on site, the next rack position glows:
+        /// nobody should have to guess where a pallet is supposed to go.</summary>
+        private void UpdateSlotGhost(Aggregates a)
+        {
+            bool want = Pallet.Current != null;
+            if (!want)
+            {
+                if (_slotGhost != null) _slotGhost.SetActive(false);
+                return;
+            }
+            int used = (a.Nodes + NodesPerRack - 1) / NodesPerRack;
+            if (used >= Site.RackSlots.Count)
+            {
+                if (_slotGhost != null) _slotGhost.SetActive(false);
+                return;
+            }
+            if (_slotGhost == null)
+            {
+                var pm = new ProcMesh();
+                var c = Palette.Amber; c.a = 0.28f;
+                pm.Box(new Vector3(0, 1.1f, 0), new Vector3(0.9f, 2.2f, 1.2f), c);
+                _slotGhost = MatLib.Spawn("NextRackSlot", pm.Build("slotghost"),
+                    Site.Root, Site.RackSlots[used], false, true);
+            }
+            _slotGhost.SetActive(true);
+            _slotGhost.transform.localPosition = Site.RackSlots[used];
         }
 
         /// <summary>Rebuilds racks and plant visuals from the CURRENT
@@ -327,12 +357,19 @@ namespace Game.Runtime.World
             for (int i = 0; i < PlaceKinds.Length; i++)
             {
                 Key key = (Key)((int)Key.Digit1 + i);
-                if (kb[key].wasPressedThisFrame)
+                if (!kb[key].wasPressedThisFrame) continue;
+                if (PlaceKinds[i] == "rack")
                 {
-                    _placeKind = _placeKind == PlaceKinds[i] ? null : PlaceKinds[i];
+                    // Racks are not placed, they are DELIVERED and then
+                    // installed with the forklift (workplace-accidents.md §4.4).
+                    _placeKind = null;
                     _draftRoute = null;
-                    UpdateHint();
+                    PlacementHint = Forklift.OrderDelivery();
+                    continue;
                 }
+                _placeKind = _placeKind == PlaceKinds[i] ? null : PlaceKinds[i];
+                _draftRoute = null;
+                UpdateHint();
             }
             if (kb.digit8Key.wasPressedThisFrame) StartRoute("power");
             if (kb.digit9Key.wasPressedThisFrame) StartRoute("cooling");
@@ -380,11 +417,7 @@ namespace Game.Runtime.World
             switch (kind)
             {
                 case "rack":
-                    if ((s.Nodes + NodesPerRack + NodesPerRack - 1) / NodesPerRack > Site.RackSlots.Count)
-                    { PlacementHint = "no free rack slots"; return; }
-                    GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.AddNodes, A = NodesPerRack },
-                        "rack placed (+10 nodes)");
-                    break;
+                    return;   // deliveries only; see HandlePlacementInput
                 case "evap":
                     if (PlantSlotsFull(s)) return;
                     Place(PlantKind.EvapKwTh, EvapUnitKwTh, "evaporative tower placed");

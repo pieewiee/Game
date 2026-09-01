@@ -28,6 +28,8 @@ namespace Game.Runtime.World
         public List<Vector3> PlantSlots = new List<Vector3>();     // Plant room
         public List<Vector3> SolarSlots = new List<Vector3>();     // south field
         public Vector3 TurbinePos = new Vector3(70, 0, 30);
+        /// <summary>Where hardware deliveries land, beside the delivery door.</summary>
+        public Vector3 DockPos = new Vector3(-6.5f, 0, 13f);
         public Transform GroundTf;
         public Mesh GroundSummer, GroundWinter;
     }
@@ -56,6 +58,7 @@ namespace Game.Runtime.World
             BuildBuilding(root, refs);
             BuildYard(root, refs);
             BuildFence(root);
+            BuildDock(root, refs);
             BuildTown(root);
             CollectSlots(refs);
             return refs;
@@ -192,6 +195,21 @@ namespace Game.Runtime.World
                 tm.Box(new Vector3(0.6f, 24f, 0) + dir * 4.5f, new Vector3(0.25f, 0.6f + Mathf.Abs(dir.y) * 8f, 0.6f + Mathf.Abs(dir.z) * 8f), Palette.Render);
             }
             MatLib.Spawn("Turbine", tm.Build("turbine"), root, refs.TurbinePos);
+        }
+
+        /// <summary>The loading dock: a painted rectangle by the delivery door.
+        /// Everything the site ever installs arrives here on a pallet.</summary>
+        private static void BuildDock(Transform root, SiteRefs refs)
+        {
+            var pm = new ProcMesh();
+            Vector3 c = refs.DockPos;
+            pm.Box(new Vector3(c.x, 0.02f, c.z), new Vector3(4.4f, 0.04f, 4.4f), Palette.Slate);
+            pm.Box(new Vector3(c.x, 0.03f, c.z), new Vector3(3.6f, 0.04f, 3.6f), Palette.Earth);
+            // Hatched edge in Program Blue, because everything here is branded.
+            for (int i = -2; i <= 2; i++)
+                pm.Box(new Vector3(c.x + i * 1.0f, 0.04f, c.z + 2.3f),
+                    new Vector3(0.5f, 0.04f, 0.4f), Palette.ProgramBlue);
+            MatLib.Spawn("LoadingDock", pm.Build("dock"), root, Vector3.zero, false);
         }
 
         private static void BuildFence(Transform root)

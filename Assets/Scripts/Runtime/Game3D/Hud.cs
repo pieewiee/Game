@@ -64,6 +64,12 @@ namespace Game.Runtime.World
             // --- wind arrow -------------------------------------------------
             DrawWindArrow(new Vector2(Screen.width - 70, 70), r);
 
+            // --- driving ----------------------------------------------------
+            if (player != null && player.Driving != null)
+            {
+                DrawDriving(player.Driving, ci);
+            }
+
             // --- interact prompt -------------------------------------------
             if (player != null && !player.IsDead)
             {
@@ -86,6 +92,35 @@ namespace Game.Runtime.World
                         "IT IS VERY COLD IN HERE", _centre);
                 }
             }
+        }
+
+        /// <summary>The cab instruments: speed, mast height, load, and the two
+        /// numbers that decide whether the next corner tips you over.</summary>
+        private void DrawDriving(Forklift f, CultureInfo ci)
+        {
+            float w = 300f, h = 96f;
+            var box = new Rect(Screen.width / 2f - w / 2f, Screen.height - h - 44f, w, h);
+            GUI.Box(box, "");
+            float kmh = Mathf.Abs(f.Speed) * 3.6f;
+            string gear = f.Speed < -0.2f ? "REVERSE" : f.Speed > 0.2f ? "FORWARD" : "IDLE";
+            GUI.Label(new Rect(box.x + 12, box.y + 6, w - 24, 20),
+                gear + "   " + kmh.ToString("0.0", ci) + " km/h" +
+                (f.HeadlightsOn ? "   lights on" : ""), _big);
+            GUI.Label(new Rect(box.x + 12, box.y + 26, w - 24, 20),
+                "mast " + f.ForkHeight.ToString("0.00", ci) + " m" +
+                (f.Load != null ? "   LOADED" : "   empty"), _big);
+
+            // The tip-over warning is the whole safety briefing.
+            bool risky = f.ForkHeight > Forklift.TipForkH && Mathf.Abs(f.Speed) > 1.2f;
+            if (risky)
+            {
+                GUI.color = new Color(1f, 0.5f, 0.3f);
+                GUI.Label(new Rect(box.x + 12, box.y + 46, w - 24, 20),
+                    "LOAD RAISED — DO NOT TURN AT SPEED", _big);
+                GUI.color = Color.white;
+            }
+            GUI.Label(new Rect(box.x + 12, box.y + 68, w - 24, 20),
+                "WASD drive · Space/Ctrl mast · L lights · H horn · E out");
         }
 
         /// <summary>Four ticks around a gap, opening up and turning amber when

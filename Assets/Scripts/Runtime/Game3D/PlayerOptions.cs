@@ -21,8 +21,8 @@ namespace Game.Runtime.World
         public static float Sensitivity = 0.08f;
         public static bool InvertY;
         public static float Fov = 68f;
-        public static float BobScale = 1f;
-        public static float FoleyVolume = 0.8f;
+        public static float BobScale = 1f;   // 1 = the calm default
+        public static float MachineryVolume = 0.8f;
         public static float MasterVolume = 1f;
 
         public bool IsOpen { get; private set; }
@@ -35,7 +35,7 @@ namespace Game.Runtime.World
             InvertY = PlayerPrefs.GetInt("gnp.invertY", 0) == 1;
             Fov = PlayerPrefs.GetFloat("gnp.fov", 68f);
             BobScale = PlayerPrefs.GetFloat("gnp.bob", 1f);
-            FoleyVolume = PlayerPrefs.GetFloat("gnp.foley", 0.8f);
+            MachineryVolume = PlayerPrefs.GetFloat("gnp.machinery", 0.8f);
             MasterVolume = PlayerPrefs.GetFloat("gnp.volume", 1f);
             AudioListener.volume = MasterVolume;
         }
@@ -46,7 +46,7 @@ namespace Game.Runtime.World
             PlayerPrefs.SetInt("gnp.invertY", InvertY ? 1 : 0);
             PlayerPrefs.SetFloat("gnp.fov", Fov);
             PlayerPrefs.SetFloat("gnp.bob", BobScale);
-            PlayerPrefs.SetFloat("gnp.foley", FoleyVolume);
+            PlayerPrefs.SetFloat("gnp.machinery", MachineryVolume);
             PlayerPrefs.SetFloat("gnp.volume", MasterVolume);
             PlayerPrefs.Save();
         }
@@ -106,7 +106,7 @@ namespace Game.Runtime.World
             InvertY = GUILayout.Toggle(InvertY, " invert vertical look");
             Fov = Row("Field of view", Fov, 55f, 100f, "0");
             BobScale = Row("Head bob", BobScale, 0f, 2f, "0.00");
-            FoleyVolume = Row("Footsteps", FoleyVolume, 0f, 1f, "0.00");
+            MachineryVolume = Row("Machinery", MachineryVolume, 0f, 1f, "0.00");
             MasterVolume = Row("Master volume", MasterVolume, 0f, 1f, "0.00");
 
             GUILayout.Space(8);
@@ -117,7 +117,7 @@ namespace Game.Runtime.World
             if (GUILayout.Button("defaults", GUILayout.Width(90)))
             {
                 Sensitivity = 0.08f; InvertY = false; Fov = 68f;
-                BobScale = 1f; FoleyVolume = 0.8f; MasterVolume = 1f;
+                BobScale = 1f; MachineryVolume = 0.8f; MasterVolume = 1f;
             }
             GUILayout.EndHorizontal();
             GUI.DragWindow();

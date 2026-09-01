@@ -25,7 +25,8 @@ namespace Game.Sim
         SetSetpoint,     // A = supply air degC (informational for the sim)
         SetDieselManual, // A = 1 lever held on / 0 off
         IssueBulletin,   // A = 1 if a responsible employee is named, else 0
-        ReportAccident   // one recordable incident (a player became one)
+        ReportAccident,  // one recordable incident (a player became one)
+        AddVisualPoints  // A = DELTA fortification points (forklift into the fence...)
     }
 
     /// <summary>A scheduled player action. In M2+ these come from the UI/intents.</summary>
