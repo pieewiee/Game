@@ -122,7 +122,13 @@ These were deliberately left out of the scaffold rather than guessed at.
       2. *Window > MCP for Unity*: transport **HTTP** (default,
          `http://127.0.0.1:8080/mcp`), press **Start Server** — or enable
          *Advanced Settings > Auto-Start on Editor Load* so it comes up with the
-         editor. The status panel must say *Connected*.
+         editor. The status panel must say *Connected*. (The owner's machine
+         has auto-start on: the package keeps it in the Unity EditorPrefs,
+         i.e. the registry key `HKCU\Software\Unity Technologies\Unity Editor 5.x`,
+         value `MCPForUnity.AutoStartOnLoad_h2539145689` = 1, plus
+         `MCPForUnity.UseHttpTransport_h3850471145` = 1; the editor connects
+         itself on the next domain reload. Until the editor has connected once,
+         every tool answers `no_unity_session`.)
       3. Register the server in Claude Code once:
          `claude mcp add --scope user --transport http unityMCP http://127.0.0.1:8080/mcp`
          (already done on the owner's machine). Claude Code only picks up new
@@ -232,8 +238,9 @@ delete that file. `Temp/` is git-ignored; nothing to commit.
       hold-controls: diesel lever, holding a door shut), **Q** drop what you
       carry, **Esc** frees the cursor, **F1** debug console, **F2** network
       panel, **F3** options (sensitivity, FOV, head bob, volume), **F5/F9**
-      save/load (host only). The fence gate (amber post caps) is at the
-      south-west corner by the car park.
+      save/load (host only). You start on the pavement of the street south of
+      the site, facing the pedestrian gate (amber post caps) and, straight
+      behind it, the main entrance: 24 m through one gate to the door.
 - [ ] **7.2a The site.** Three levels. **Ground floor**: goods receiving (the
       delivery door and the dock), **Hall A** and **Hall 2** (the compute
       halls), the plant room, the **LV switch room (NSHV)** with the main
@@ -246,14 +253,25 @@ delete that file. `Temp/` is git-ignored; nothing to commit.
       balustrades; the down flight and the up flight sit side by side in it.
       Cooling towers and chillers stand OUTDOORS in the yard, because that is
       where they live; the diesel start lever is on the genset in the yard.
-      Two fences: an outer site boundary (solar field and turbine inside, the
-      visitor car park outside, gate on the west) and an inner compound fence
-      around the datacentre itself (gate on the south, guard post beside it,
-      window on the gateway). Both gates are marked with amber caps on the
-      gate posts; posts sit on every corner and the gate edges, never in the
-      opening. The apron and the car park carry colliders of their own, so
-      feet stand ON them, and a pallet set down anywhere lands on whatever
-      surface is under it.
+      One blue perimeter fence (x −12..70, z −20..50) with two gates: the
+      **pedestrian gate** on the south line straight below the main entrance
+      (guard post beside it) and the **vehicle gate** on the west line on the
+      dock axis, where the forklift leaves the site over a dropped kerb. The
+      solar field lies north inside the fence, genset and transformer in the
+      east strip out of the walking line, the turbine in the north-east yard
+      with a rotor that actually turns with the sim's wind. Both gates are
+      marked with amber caps on the gate posts; posts sit on every corner and
+      the gate edges, never in the opening. The apron carries a collider of
+      its own, so feet stand ON it, and a pallet set down anywhere lands on
+      whatever surface is under it.
+      **Outside the fence** the old car-park slab is gone: a ring road with
+      kerbed pavements, a zebra crossing, visitor bays, a bus stop, lamps,
+      trees and parked cars runs around the site, and four city blocks close
+      it in — the houses and a church to the west (the sim's town sector),
+      apartments north, shops and a petrol station east, row houses and a
+      playground south. `CityBuilder.cs` builds all of it as one merged mesh
+      per block; the outer pavement loop, the fence-line spots and the picket
+      spots it exposes on `SiteRefs` are what the residents use (7.2f).
       **Doors** slide (the goods door is a 3.9 m roller shutter). **E** opens
       or closes; a door refuses to close on a player, a forklift or a pallet
       standing in it and says so in the prompt. Door state is LOCAL — it is
@@ -300,6 +318,56 @@ delete that file. `Temp/` is git-ignored; nothing to commit.
       the wind arrow, **F2** multiplayer bottom right above the ticker. The
       bulletin desk and the contract desk never open on top of each other,
       and closing either hands the mouse straight back to the player.
+      All windows live in one host (`UiWindows`), so they z-order and
+      click-to-front like real windows; there is no dead button in an overlap
+      any more.
+- [ ] **7.2d Pause menu and the full build-out.** **Esc** closes the front
+      window if one is open, otherwise it opens the pause menu: *Resume*,
+      *Options (F3)*, *Network (F2)*, *Save (F5)*, *Load (F9)*, a two-click
+      *Quit*, and — in the editor and debug builds only — *Full build-out
+      (debug)*. Solo, the menu pauses the simulation; in a network session it
+      keeps running (the label says so). The F1 console's *Full build* row has
+      two halves: **preview** shows translucent ghosts in every empty rack,
+      plant and solar slot (local, works on clients, touches nothing), and
+      **Apply full build-out** (host/solo only) expands `DebugPresets.PlanFullBuild`
+      into ordinary AddNodes/AddPlant commands, so it lands in the save's
+      command log and a paused sim steps one tick to show it. During Protest
+      it skips the node delivery and says so in the ledger, exactly as the
+      forklift's delivery is turned away. Grid tier is deliberately untouched.
+      The scripted scenario `full-build` starts from that state.
+- [ ] **7.2e Weather and sky.** `Weather.cs` owns the sun light, a
+      camera-following sky dome, sun and moon discs placed by real solar
+      geometry (51° N, solar noon 13:00, declination from the sim's own
+      season), 28 cloud blobs drifting with the replicated wind, rain or snow
+      particles (snow below 0.5 °C, nothing under a roof) and a fog curve
+      (dawn, autumn, wet air, cloud; wind thins it). Two new report meters
+      feed it, `cloud_frac` and `rain_mm_h` (`docs/systems/seasons.md`); both
+      are presentation-only and reach clients with the snapshot. The lamp
+      heads, the town's windows, the figures' phones and the car headlights
+      all switch on the same "is it dark" verdict as the sky, so nothing
+      flips a frame early. The HUD's fourth line is the weather.
+- [ ] **7.2f The residents.** The town is present but never close: distant,
+      faceless figures on the outer pavement loop (walkers, an umbrella when
+      it rains), filming figures at the fence line whose phones glow at night,
+      a picket of blank placards at the vehicle gate from the Protest stage
+      on (in-fiction the fight moves to court, so fewer at Injunction and
+      Sabotage), and four cars driving the ring road on the right, braking
+      for the corners and easing past parked cars. Head-counts are a pure
+      function of the replicated report (hour, escalation stage, a diesel
+      plume over town, an outage, a fresh accident), re-evaluated every few
+      real seconds, so every machine shows the same crowd for the same
+      reasons. Nobody appears within 20 m of you, walkers turn back at 14 m,
+      standing figures turn their backs at 9 m and leave at 5 m; none has a
+      collider, and the sim never hears about any of them. Two interactions
+      only: **E** at the **intercom** beside the pedestrian gate answers in the
+      Program's voice, to you alone, once per 30 s; **E** at the small sign on
+      the south verge puts your ear on the town's side of the wire (the site's
+      plant ducks, the gate crowd comes forward) until you walk off. **F3 →
+      ambient figures** switches the whole layer off. Placards are blank by
+      decision (`docs/open-questions.md` Q27). Presence warnings in the
+      console (`[Presence] … dropped`) mean a spot or route in `CityBuilder`
+      violates the layout rules and was left out — fix the coordinates, not
+      the rule.
 - [ ] **7.3 The 5-player test needs standalone builds** (one project folder
       cannot be opened by five editors, and no third-party clone tool was added
       without asking). Both game shaders (`GNP/VertexColor` and
