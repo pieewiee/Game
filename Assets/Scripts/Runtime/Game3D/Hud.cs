@@ -26,7 +26,9 @@ namespace Game.Runtime.World
             if (driver == null) return;
             // The console is a workbench, not an overlay: while it is open the
             // site HUD gets out of the way instead of fighting it for pixels.
-            if (!PlayerOptions.HudVisible || DebugTools.DebugConsole.IsOpen) return;
+            if (!PlayerOptions.HudVisible || DebugTools.DebugConsole.IsOpen || PauseMenu.IsOpen) return;
+            // Behind the windows (UiWindows draws at depth 0).
+            GUI.depth = 10;
             UiScaler.Begin();
             try { DrawHud(driver, player, ci); } finally { UiScaler.End(); }
         }
@@ -56,7 +58,7 @@ namespace Game.Runtime.World
             }
 
             // --- top-left block --------------------------------------------
-            GUI.Box(new Rect(8, 8, 330, 110), "");
+            GUI.Box(new Rect(8, 8, 330, 130), "");
             GUI.Label(new Rect(16, 12, 320, 22),
                 "Day " + SimClock.DayIndex(tick).ToString("0", ci) +
                 "  " + SimClock.HourOfDay(tick).ToString("00", ci) + ":00" +
@@ -69,10 +71,11 @@ namespace Game.Runtime.World
                 "   Water " + (r.WaterLPerH * 24.0 / 1000.0).ToString("0.0", ci) + " m³/d", _big);
             bool isClient = GameBootstrap.Net != null && GameBootstrap.Net.IsClient;
             GUI.Label(new Rect(16, 76, 322, 20), isClient
-                ? "F1 console · F2 net · F3 options · Esc cursor"
-                : "F1 console · F2 net · F3 options · F5/F9 save · Esc cursor");
+                ? "F1 console · F2 net · F3 options · Esc menu"
+                : "F1 console · F2 net · F3 options · F5/F9 save · Esc menu");
             GUI.Label(new Rect(16, 94, 322, 20),
                 "E use · Q drop · Space jump · Ctrl duck · 1-7 build · 8-0 route");
+            GUI.Label(new Rect(16, 112, 322, 20), Weather.Instance != null ? Weather.Instance.HudLine : "");
 
             // --- wind arrow -------------------------------------------------
             DrawWindArrow(new Vector2(UiScaler.W - 70, 70), r);

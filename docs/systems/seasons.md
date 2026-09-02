@@ -26,6 +26,20 @@ but not identical between sessions.
 | **Wind direction** | sector | SW dominant | variable | E/NE more common | SW dominant | **Nuisance (air)** |
 | Irradiance | kWh/m²/d | 0.8 | 3.9 | 5.4 | 1.7 | Power (solar) |
 | Precipitation | mm/mo | 55 | 45 | 70 | 60 | Drought state |
+| `cloud_frac` | 0..1 | — | — | — | — | Presentation only: sky dome, cloud blobs, sun light and shadow strength |
+| `rain_mm_h` | mm/h | — | — | — | — | Presentation only: rain (≥ 0.5 °C) or snow particles, wet-air fog |
+
+`cloud_frac` is the same noise channel that scales solar output, sampled
+continuously (`tick / 48`) instead of once per two days, so the sky changes
+smoothly and can differ from the solar factor by at most one noise step
+between the shared anchors. `rain_mm_h` is a 3-hour shower texture inside a
+wet day, tapered over the first and last two hours when the neighbouring day
+is dry; drought keeps reading the per-day wet flag, not this meter.
+
+Wind is capped near 10 m/s: the monthly means (`WIND_SPEED_MONTH`, 4.1–7.2)
+times the ±40 % modulation never exceed ~10.1 m/s. The turbine curve and the
+HUD's "windy" flag (≥ 8.5 m/s, the top decile) are tuned to that range; a
+storm event needs a future balance key before any storm visuals exist.
 
 `T_wb` is **derived** from `T_db` and a seasonal humidity curve, never generated
 independently, so the two cannot contradict each other. Wet-bulb must never

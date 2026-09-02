@@ -54,6 +54,9 @@ namespace Game.Runtime.DebugTools
         private int _histHead;
         private double _accum;
 
+        /// <summary>Fraction 0..1 of the way from the last tick to the next; visuals interpolate on it.</summary>
+        public double SubTick { get { return _accum; } }
+
         public string BalancePath
         {
             get { return Path.Combine(Application.streamingAssetsPath, "Tuning", "balance.tuning"); }
