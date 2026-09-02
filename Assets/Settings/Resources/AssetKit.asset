@@ -13,7 +13,638 @@ MonoBehaviour:
   m_Name: AssetKit
   m_EditorClassIdentifier: 
   Meshes:
+  - Key: kenney/blocky-characters/character-a
+    Model: {fileID: 919132149155446097, guid: 740b920549cf65a4e8c52b7ae84a691e, type: 3}
+    Parts:
+    - Mesh: {fileID: -5358347504117812314, guid: 740b920549cf65a4e8c52b7ae84a691e, type: 3}
+      LocalPosition: {x: -0.19999999, y: 1, z: 2.0348876e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -5360215149166325840, guid: 740b920549cf65a4e8c52b7ae84a691e, type: 3}
+      LocalPosition: {x: 0.19999999, y: 1, z: 2.1837819e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: 6297267204642607378, guid: 740b920549cf65a4e8c52b7ae84a691e, type: 3}
+      LocalPosition: {x: 0, y: 0.7, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8874681911190372166, guid: 740b920549cf65a4e8c52b7ae84a691e, type: 3}
+      LocalPosition: {x: -0.39999983, y: 1.8, z: -0.09999999}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8061574662316577874, guid: 740b920549cf65a4e8c52b7ae84a691e, type: 3}
+      LocalPosition: {x: 0.40000007, y: 1.8, z: -0.09999999}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -7070831255929112694, guid: 740b920549cf65a4e8c52b7ae84a691e, type: 3}
+      LocalPosition: {x: 0, y: 1.9000001, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+    Attachments:
+    - Name: root
+      LocalPosition: {x: 0, y: 0, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+    Bounds:
+      m_Center: {x: 0.00000011920929, y: 1.3500001, z: 0}
+      m_Extent: {x: 0.79999995, y: 1.3500001, z: 0.4}
+    Triangles: 72
+  - Key: kenney/blocky-characters/character-b
+    Model: {fileID: 919132149155446097, guid: 19d4ee3471022874282d4c608204d86c, type: 3}
+    Parts:
+    - Mesh: {fileID: -5358347504117812314, guid: 19d4ee3471022874282d4c608204d86c, type: 3}
+      LocalPosition: {x: -0.19999999, y: 1, z: 2.0348876e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -5360215149166325840, guid: 19d4ee3471022874282d4c608204d86c, type: 3}
+      LocalPosition: {x: 0.19999999, y: 1, z: 2.1837819e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: 6297267204642607378, guid: 19d4ee3471022874282d4c608204d86c, type: 3}
+      LocalPosition: {x: 0, y: 0.7, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8874681911190372166, guid: 19d4ee3471022874282d4c608204d86c, type: 3}
+      LocalPosition: {x: -0.40000007, y: 1.8, z: -0.09999999}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8061574662316577874, guid: 19d4ee3471022874282d4c608204d86c, type: 3}
+      LocalPosition: {x: 0.39999995, y: 1.8, z: -0.09999999}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -7070831255929112694, guid: 19d4ee3471022874282d4c608204d86c, type: 3}
+      LocalPosition: {x: 0, y: 1.9000001, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+    Attachments:
+    - Name: root
+      LocalPosition: {x: 0, y: 0, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+    Bounds:
+      m_Center: {x: -0.000000059604645, y: 1.3500001, z: 0}
+      m_Extent: {x: 0.8, y: 1.3500001, z: 0.4}
+    Triangles: 72
+  - Key: kenney/blocky-characters/character-c
+    Model: {fileID: 919132149155446097, guid: af8406812a9035f45845adb07039cffa, type: 3}
+    Parts:
+    - Mesh: {fileID: -5358347504117812314, guid: af8406812a9035f45845adb07039cffa, type: 3}
+      LocalPosition: {x: -0.19999999, y: 1, z: 2.0348876e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -5360215149166325840, guid: af8406812a9035f45845adb07039cffa, type: 3}
+      LocalPosition: {x: 0.19999999, y: 1, z: 2.1837819e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: 6297267204642607378, guid: af8406812a9035f45845adb07039cffa, type: 3}
+      LocalPosition: {x: 0, y: 0.7, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8874681911190372166, guid: af8406812a9035f45845adb07039cffa, type: 3}
+      LocalPosition: {x: -0.39999998, y: 1.8, z: -0.09999999}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8061574662316577874, guid: af8406812a9035f45845adb07039cffa, type: 3}
+      LocalPosition: {x: 0.39999998, y: 1.8, z: -0.09999999}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -7070831255929112694, guid: af8406812a9035f45845adb07039cffa, type: 3}
+      LocalPosition: {x: 0, y: 1.9000001, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+    Attachments:
+    - Name: root
+      LocalPosition: {x: 0, y: 0, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+    Bounds:
+      m_Center: {x: 0.000000059604645, y: 1.3500001, z: 0}
+      m_Extent: {x: 0.8, y: 1.3500001, z: 0.4}
+    Triangles: 72
+  - Key: kenney/blocky-characters/character-d
+    Model: {fileID: 919132149155446097, guid: e72046ac8147a1a47af85d0325890efb, type: 3}
+    Parts:
+    - Mesh: {fileID: -5358347504117812314, guid: e72046ac8147a1a47af85d0325890efb, type: 3}
+      LocalPosition: {x: -0.19999999, y: 1, z: 2.0348876e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -5360215149166325840, guid: e72046ac8147a1a47af85d0325890efb, type: 3}
+      LocalPosition: {x: 0.19999999, y: 1, z: 2.1837819e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: 6297267204642607378, guid: e72046ac8147a1a47af85d0325890efb, type: 3}
+      LocalPosition: {x: 0, y: 0.7, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8874681911190372166, guid: e72046ac8147a1a47af85d0325890efb, type: 3}
+      LocalPosition: {x: -0.39999995, y: 1.8, z: -0.09999999}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8061574662316577874, guid: e72046ac8147a1a47af85d0325890efb, type: 3}
+      LocalPosition: {x: 0.40000007, y: 1.8, z: -0.09999999}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -7070831255929112694, guid: e72046ac8147a1a47af85d0325890efb, type: 3}
+      LocalPosition: {x: 0, y: 1.9000001, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+    Attachments:
+    - Name: root
+      LocalPosition: {x: 0, y: 0, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+    Bounds:
+      m_Center: {x: 0.000000059604645, y: 1.3500001, z: 0}
+      m_Extent: {x: 0.8, y: 1.3500001, z: 0.4}
+    Triangles: 72
+  - Key: kenney/blocky-characters/character-e
+    Model: {fileID: 919132149155446097, guid: efb349be83a62df40bb15b7ccbee60ca, type: 3}
+    Parts:
+    - Mesh: {fileID: -5358347504117812314, guid: efb349be83a62df40bb15b7ccbee60ca, type: 3}
+      LocalPosition: {x: -0.19999999, y: 1, z: 2.0348876e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -5360215149166325840, guid: efb349be83a62df40bb15b7ccbee60ca, type: 3}
+      LocalPosition: {x: 0.19999999, y: 1, z: 2.1837819e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: 6297267204642607378, guid: efb349be83a62df40bb15b7ccbee60ca, type: 3}
+      LocalPosition: {x: 0, y: 0.7, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8874681911190372166, guid: efb349be83a62df40bb15b7ccbee60ca, type: 3}
+      LocalPosition: {x: -0.40000007, y: 1.8, z: -0.09999999}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8061574662316577874, guid: efb349be83a62df40bb15b7ccbee60ca, type: 3}
+      LocalPosition: {x: 0.39999983, y: 1.8, z: -0.09999999}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -7070831255929112694, guid: efb349be83a62df40bb15b7ccbee60ca, type: 3}
+      LocalPosition: {x: 0, y: 1.9000001, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+    Attachments:
+    - Name: root
+      LocalPosition: {x: 0, y: 0, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+    Bounds:
+      m_Center: {x: -0.00000011920929, y: 1.3500001, z: 0}
+      m_Extent: {x: 0.79999995, y: 1.3500001, z: 0.4}
+    Triangles: 72
+  - Key: kenney/blocky-characters/character-f
+    Model: {fileID: 919132149155446097, guid: 0555f4f9655fe9f4bbc0cf04eedde0ad, type: 3}
+    Parts:
+    - Mesh: {fileID: -5358347504117812314, guid: 0555f4f9655fe9f4bbc0cf04eedde0ad, type: 3}
+      LocalPosition: {x: -0.19999999, y: 1, z: 2.0348876e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -5360215149166325840, guid: 0555f4f9655fe9f4bbc0cf04eedde0ad, type: 3}
+      LocalPosition: {x: 0.19999999, y: 1, z: 2.1837819e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: 6297267204642607378, guid: 0555f4f9655fe9f4bbc0cf04eedde0ad, type: 3}
+      LocalPosition: {x: 0, y: 0.7, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8874681911190372166, guid: 0555f4f9655fe9f4bbc0cf04eedde0ad, type: 3}
+      LocalPosition: {x: -0.40000007, y: 1.8, z: -0.09999999}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8061574662316577874, guid: 0555f4f9655fe9f4bbc0cf04eedde0ad, type: 3}
+      LocalPosition: {x: 0.40000007, y: 1.8, z: -0.09999999}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -7070831255929112694, guid: 0555f4f9655fe9f4bbc0cf04eedde0ad, type: 3}
+      LocalPosition: {x: 0, y: 1.9000001, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+    Attachments:
+    - Name: root
+      LocalPosition: {x: 0, y: 0, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+    Bounds:
+      m_Center: {x: 0, y: 1.3500001, z: 0}
+      m_Extent: {x: 0.8000001, y: 1.3500001, z: 0.4}
+    Triangles: 72
+  - Key: kenney/blocky-characters/character-g
+    Model: {fileID: 919132149155446097, guid: 124daa119733eef448a44870825c241e, type: 3}
+    Parts:
+    - Mesh: {fileID: -5358347504117812314, guid: 124daa119733eef448a44870825c241e, type: 3}
+      LocalPosition: {x: -0.19999999, y: 1, z: 2.0348876e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -5360215149166325840, guid: 124daa119733eef448a44870825c241e, type: 3}
+      LocalPosition: {x: 0.19999999, y: 1, z: 2.1837819e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: 6297267204642607378, guid: 124daa119733eef448a44870825c241e, type: 3}
+      LocalPosition: {x: 0, y: 0.7, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8874681911190372166, guid: 124daa119733eef448a44870825c241e, type: 3}
+      LocalPosition: {x: -0.40000007, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8061574662316577874, guid: 124daa119733eef448a44870825c241e, type: 3}
+      LocalPosition: {x: 0.40000007, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -7070831255929112694, guid: 124daa119733eef448a44870825c241e, type: 3}
+      LocalPosition: {x: 0, y: 1.9000001, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+    Attachments:
+    - Name: root
+      LocalPosition: {x: 0, y: 0, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+    Bounds:
+      m_Center: {x: 0, y: 1.3500001, z: 0}
+      m_Extent: {x: 0.8000001, y: 1.3500001, z: 0.4}
+    Triangles: 72
+  - Key: kenney/blocky-characters/character-h
+    Model: {fileID: 919132149155446097, guid: 4fdb40398cc7f5f4db85002bfb7a52e8, type: 3}
+    Parts:
+    - Mesh: {fileID: -5358347504117812314, guid: 4fdb40398cc7f5f4db85002bfb7a52e8, type: 3}
+      LocalPosition: {x: -0.19999999, y: 1, z: 2.0348876e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -5360215149166325840, guid: 4fdb40398cc7f5f4db85002bfb7a52e8, type: 3}
+      LocalPosition: {x: 0.19999999, y: 1, z: 2.1837819e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: 6297267204642607378, guid: 4fdb40398cc7f5f4db85002bfb7a52e8, type: 3}
+      LocalPosition: {x: 0, y: 0.7, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8874681911190372166, guid: 4fdb40398cc7f5f4db85002bfb7a52e8, type: 3}
+      LocalPosition: {x: -0.40000007, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8061574662316577874, guid: 4fdb40398cc7f5f4db85002bfb7a52e8, type: 3}
+      LocalPosition: {x: 0.39999983, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -7070831255929112694, guid: 4fdb40398cc7f5f4db85002bfb7a52e8, type: 3}
+      LocalPosition: {x: 0, y: 1.9000001, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+    Attachments:
+    - Name: root
+      LocalPosition: {x: 0, y: 0, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+    Bounds:
+      m_Center: {x: -0.00000011920929, y: 1.3500001, z: 0}
+      m_Extent: {x: 0.79999995, y: 1.3500001, z: 0.4}
+    Triangles: 72
+  - Key: kenney/blocky-characters/character-i
+    Model: {fileID: 919132149155446097, guid: 7f83ea1a85e886a48be02558212d3fdd, type: 3}
+    Parts:
+    - Mesh: {fileID: -5358347504117812314, guid: 7f83ea1a85e886a48be02558212d3fdd, type: 3}
+      LocalPosition: {x: -0.19999999, y: 1, z: 2.0348876e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -5360215149166325840, guid: 7f83ea1a85e886a48be02558212d3fdd, type: 3}
+      LocalPosition: {x: 0.19999999, y: 1, z: 2.1837819e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: 6297267204642607378, guid: 7f83ea1a85e886a48be02558212d3fdd, type: 3}
+      LocalPosition: {x: 0, y: 0.7, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8874681911190372166, guid: 7f83ea1a85e886a48be02558212d3fdd, type: 3}
+      LocalPosition: {x: -0.39999995, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8061574662316577874, guid: 7f83ea1a85e886a48be02558212d3fdd, type: 3}
+      LocalPosition: {x: 0.40000007, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -7070831255929112694, guid: 7f83ea1a85e886a48be02558212d3fdd, type: 3}
+      LocalPosition: {x: 0, y: 1.9000001, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+    Attachments:
+    - Name: root
+      LocalPosition: {x: 0, y: 0, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+    Bounds:
+      m_Center: {x: 0.000000059604645, y: 1.3500001, z: 0}
+      m_Extent: {x: 0.8, y: 1.3500001, z: 0.4}
+    Triangles: 72
+  - Key: kenney/blocky-characters/character-j
+    Model: {fileID: 919132149155446097, guid: 3c127f03be175584bab9d314e2fc7f33, type: 3}
+    Parts:
+    - Mesh: {fileID: -5358347504117812314, guid: 3c127f03be175584bab9d314e2fc7f33, type: 3}
+      LocalPosition: {x: -0.19999999, y: 1, z: 2.0348876e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -5360215149166325840, guid: 3c127f03be175584bab9d314e2fc7f33, type: 3}
+      LocalPosition: {x: 0.19999999, y: 1, z: 2.1837819e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: 6297267204642607378, guid: 3c127f03be175584bab9d314e2fc7f33, type: 3}
+      LocalPosition: {x: 0, y: 0.7, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8874681911190372166, guid: 3c127f03be175584bab9d314e2fc7f33, type: 3}
+      LocalPosition: {x: -0.39999998, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8061574662316577874, guid: 3c127f03be175584bab9d314e2fc7f33, type: 3}
+      LocalPosition: {x: 0.39999998, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -7070831255929112694, guid: 3c127f03be175584bab9d314e2fc7f33, type: 3}
+      LocalPosition: {x: 0, y: 1.9000001, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+    Attachments:
+    - Name: root
+      LocalPosition: {x: 0, y: 0, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+    Bounds:
+      m_Center: {x: 0.000000059604645, y: 1.3500001, z: 0}
+      m_Extent: {x: 0.8, y: 1.3500001, z: 0.4}
+    Triangles: 72
+  - Key: kenney/blocky-characters/character-k
+    Model: {fileID: 919132149155446097, guid: 9e25ae3d9e5000648a7ddb979a953fee, type: 3}
+    Parts:
+    - Mesh: {fileID: -5358347504117812314, guid: 9e25ae3d9e5000648a7ddb979a953fee, type: 3}
+      LocalPosition: {x: -0.19999999, y: 1, z: 2.0348876e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -5360215149166325840, guid: 9e25ae3d9e5000648a7ddb979a953fee, type: 3}
+      LocalPosition: {x: 0.19999999, y: 1, z: 2.1837819e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: 6297267204642607378, guid: 9e25ae3d9e5000648a7ddb979a953fee, type: 3}
+      LocalPosition: {x: 0, y: 0.7, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8874681911190372166, guid: 9e25ae3d9e5000648a7ddb979a953fee, type: 3}
+      LocalPosition: {x: -0.40000007, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8061574662316577874, guid: 9e25ae3d9e5000648a7ddb979a953fee, type: 3}
+      LocalPosition: {x: 0.39999995, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -7070831255929112694, guid: 9e25ae3d9e5000648a7ddb979a953fee, type: 3}
+      LocalPosition: {x: 0, y: 1.9000001, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+    Attachments:
+    - Name: root
+      LocalPosition: {x: 0, y: 0, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+    Bounds:
+      m_Center: {x: -0.000000059604645, y: 1.3500001, z: 0}
+      m_Extent: {x: 0.8, y: 1.3500001, z: 0.4}
+    Triangles: 72
+  - Key: kenney/blocky-characters/character-l
+    Model: {fileID: 919132149155446097, guid: e2e3166c01ab28a4587c31a0ef236b61, type: 3}
+    Parts:
+    - Mesh: {fileID: -5358347504117812314, guid: e2e3166c01ab28a4587c31a0ef236b61, type: 3}
+      LocalPosition: {x: -0.19999999, y: 1, z: 2.0348876e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -5360215149166325840, guid: e2e3166c01ab28a4587c31a0ef236b61, type: 3}
+      LocalPosition: {x: 0.19999999, y: 1, z: 2.1837819e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: 6297267204642607378, guid: e2e3166c01ab28a4587c31a0ef236b61, type: 3}
+      LocalPosition: {x: 0, y: 0.7, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8874681911190372166, guid: e2e3166c01ab28a4587c31a0ef236b61, type: 3}
+      LocalPosition: {x: -0.39999983, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8061574662316577874, guid: e2e3166c01ab28a4587c31a0ef236b61, type: 3}
+      LocalPosition: {x: 0.40000007, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -7070831255929112694, guid: e2e3166c01ab28a4587c31a0ef236b61, type: 3}
+      LocalPosition: {x: 0, y: 1.9000001, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+    Attachments:
+    - Name: root
+      LocalPosition: {x: 0, y: 0, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+    Bounds:
+      m_Center: {x: 0.00000011920929, y: 1.3500001, z: 0}
+      m_Extent: {x: 0.79999995, y: 1.3500001, z: 0.4}
+    Triangles: 72
+  - Key: kenney/blocky-characters/character-m
+    Model: {fileID: 919132149155446097, guid: c7fcbcabbeb68b64d94861e595c9a0c9, type: 3}
+    Parts:
+    - Mesh: {fileID: -5358347504117812314, guid: c7fcbcabbeb68b64d94861e595c9a0c9, type: 3}
+      LocalPosition: {x: -0.19999999, y: 1, z: 2.0348876e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -5360215149166325840, guid: c7fcbcabbeb68b64d94861e595c9a0c9, type: 3}
+      LocalPosition: {x: 0.19999999, y: 1, z: 2.1837819e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: 6297267204642607378, guid: c7fcbcabbeb68b64d94861e595c9a0c9, type: 3}
+      LocalPosition: {x: 0, y: 0.7, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8874681911190372166, guid: c7fcbcabbeb68b64d94861e595c9a0c9, type: 3}
+      LocalPosition: {x: -0.40000007, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8061574662316577874, guid: c7fcbcabbeb68b64d94861e595c9a0c9, type: 3}
+      LocalPosition: {x: 0.40000007, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -7070831255929112694, guid: c7fcbcabbeb68b64d94861e595c9a0c9, type: 3}
+      LocalPosition: {x: 0, y: 1.9000001, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+    Attachments:
+    - Name: root
+      LocalPosition: {x: 0, y: 0, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+    Bounds:
+      m_Center: {x: 0, y: 1.3500001, z: 0}
+      m_Extent: {x: 0.8000001, y: 1.3500001, z: 0.4}
+    Triangles: 72
+  - Key: kenney/blocky-characters/character-n
+    Model: {fileID: 919132149155446097, guid: bda84e3431b5da14cacb8bd690afc17b, type: 3}
+    Parts:
+    - Mesh: {fileID: -5358347504117812314, guid: bda84e3431b5da14cacb8bd690afc17b, type: 3}
+      LocalPosition: {x: -0.19999999, y: 1, z: 2.0348876e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -5360215149166325840, guid: bda84e3431b5da14cacb8bd690afc17b, type: 3}
+      LocalPosition: {x: 0.19999999, y: 1, z: 2.1837819e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: 6297267204642607378, guid: bda84e3431b5da14cacb8bd690afc17b, type: 3}
+      LocalPosition: {x: 0, y: 0.7, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8874681911190372166, guid: bda84e3431b5da14cacb8bd690afc17b, type: 3}
+      LocalPosition: {x: -0.40000007, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8061574662316577874, guid: bda84e3431b5da14cacb8bd690afc17b, type: 3}
+      LocalPosition: {x: 0.39999983, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -7070831255929112694, guid: bda84e3431b5da14cacb8bd690afc17b, type: 3}
+      LocalPosition: {x: 0, y: 1.9000001, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+    Attachments:
+    - Name: root
+      LocalPosition: {x: 0, y: 0, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+    Bounds:
+      m_Center: {x: -0.00000011920929, y: 1.3500001, z: 0}
+      m_Extent: {x: 0.79999995, y: 1.3500001, z: 0.4}
+    Triangles: 72
+  - Key: kenney/blocky-characters/character-o
+    Model: {fileID: 919132149155446097, guid: 069888581bff85b4a80ee78639276295, type: 3}
+    Parts:
+    - Mesh: {fileID: -5358347504117812314, guid: 069888581bff85b4a80ee78639276295, type: 3}
+      LocalPosition: {x: -0.19999999, y: 1, z: 2.0348876e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -5360215149166325840, guid: 069888581bff85b4a80ee78639276295, type: 3}
+      LocalPosition: {x: 0.19999999, y: 1, z: 2.1837819e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: 6297267204642607378, guid: 069888581bff85b4a80ee78639276295, type: 3}
+      LocalPosition: {x: 0, y: 0.7, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8874681911190372166, guid: 069888581bff85b4a80ee78639276295, type: 3}
+      LocalPosition: {x: -0.39999995, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8061574662316577874, guid: 069888581bff85b4a80ee78639276295, type: 3}
+      LocalPosition: {x: 0.40000007, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -7070831255929112694, guid: 069888581bff85b4a80ee78639276295, type: 3}
+      LocalPosition: {x: 0, y: 1.9000001, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+    Attachments:
+    - Name: root
+      LocalPosition: {x: 0, y: 0, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+    Bounds:
+      m_Center: {x: 0.000000059604645, y: 1.3500001, z: 0}
+      m_Extent: {x: 0.8, y: 1.3500001, z: 0.4}
+    Triangles: 72
+  - Key: kenney/blocky-characters/character-p
+    Model: {fileID: 919132149155446097, guid: 978ccd86e59c1204790f426553857d06, type: 3}
+    Parts:
+    - Mesh: {fileID: -5358347504117812314, guid: 978ccd86e59c1204790f426553857d06, type: 3}
+      LocalPosition: {x: -0.19999999, y: 1, z: 2.0348876e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -5360215149166325840, guid: 978ccd86e59c1204790f426553857d06, type: 3}
+      LocalPosition: {x: 0.19999999, y: 1, z: 2.1837819e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: 6297267204642607378, guid: 978ccd86e59c1204790f426553857d06, type: 3}
+      LocalPosition: {x: 0, y: 0.7, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8874681911190372166, guid: 978ccd86e59c1204790f426553857d06, type: 3}
+      LocalPosition: {x: -0.39999998, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8061574662316577874, guid: 978ccd86e59c1204790f426553857d06, type: 3}
+      LocalPosition: {x: 0.39999998, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -7070831255929112694, guid: 978ccd86e59c1204790f426553857d06, type: 3}
+      LocalPosition: {x: 0, y: 1.9000001, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+    Attachments:
+    - Name: root
+      LocalPosition: {x: 0, y: 0, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+    Bounds:
+      m_Center: {x: 0.000000059604645, y: 1.3500001, z: 0}
+      m_Extent: {x: 0.8, y: 1.3500001, z: 0.4}
+    Triangles: 72
+  - Key: kenney/blocky-characters/character-q
+    Model: {fileID: 919132149155446097, guid: ecd8f421cdc7a304fa533922064d3073, type: 3}
+    Parts:
+    - Mesh: {fileID: -5358347504117812314, guid: ecd8f421cdc7a304fa533922064d3073, type: 3}
+      LocalPosition: {x: -0.19999999, y: 1, z: 2.0348876e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -5360215149166325840, guid: ecd8f421cdc7a304fa533922064d3073, type: 3}
+      LocalPosition: {x: 0.19999999, y: 1, z: 2.1837819e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: 6297267204642607378, guid: ecd8f421cdc7a304fa533922064d3073, type: 3}
+      LocalPosition: {x: 0, y: 0.7, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8874681911190372166, guid: ecd8f421cdc7a304fa533922064d3073, type: 3}
+      LocalPosition: {x: -0.40000007, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8061574662316577874, guid: ecd8f421cdc7a304fa533922064d3073, type: 3}
+      LocalPosition: {x: 0.39999995, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -7070831255929112694, guid: ecd8f421cdc7a304fa533922064d3073, type: 3}
+      LocalPosition: {x: 0, y: 1.9000001, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+    Attachments:
+    - Name: root
+      LocalPosition: {x: 0, y: 0, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+    Bounds:
+      m_Center: {x: -0.000000059604645, y: 1.3500001, z: 0}
+      m_Extent: {x: 0.8, y: 1.3500001, z: 0.4}
+    Triangles: 72
+  - Key: kenney/blocky-characters/character-r
+    Model: {fileID: 919132149155446097, guid: 4ff9141ab38ff9a48a5707b02c716685, type: 3}
+    Parts:
+    - Mesh: {fileID: -5358347504117812314, guid: 4ff9141ab38ff9a48a5707b02c716685, type: 3}
+      LocalPosition: {x: -0.19999999, y: 1, z: 2.0348876e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -5360215149166325840, guid: 4ff9141ab38ff9a48a5707b02c716685, type: 3}
+      LocalPosition: {x: 0.19999999, y: 1, z: 2.1837819e-14}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: 6297267204642607378, guid: 4ff9141ab38ff9a48a5707b02c716685, type: 3}
+      LocalPosition: {x: 0, y: 0.7, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8874681911190372166, guid: 4ff9141ab38ff9a48a5707b02c716685, type: 3}
+      LocalPosition: {x: -0.39999983, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -8061574662316577874, guid: 4ff9141ab38ff9a48a5707b02c716685, type: 3}
+      LocalPosition: {x: 0.40000007, y: 1.8, z: -0.099999905}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 1, y: 1, z: 1}
+    - Mesh: {fileID: -7070831255929112694, guid: 4ff9141ab38ff9a48a5707b02c716685, type: 3}
+      LocalPosition: {x: 0, y: 1.9000001, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+      LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+    Attachments:
+    - Name: root
+      LocalPosition: {x: 0, y: 0, z: 0}
+      LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+    Bounds:
+      m_Center: {x: 0.00000011920929, y: 1.3500001, z: 0}
+      m_Extent: {x: 0.79999995, y: 1.3500001, z: 0.4}
+    Triangles: 72
   - Key: kenney/car-kit/ambulance
+    Model: {fileID: 919132149155446097, guid: 3663ae8985151074fa815b819e013b73, type: 3}
     Parts:
     - Mesh: {fileID: -8545447256379345787, guid: 3663ae8985151074fa815b819e013b73, type: 3}
       LocalPosition: {x: 0, y: 0.32000002, z: -0.040000003}
@@ -49,6 +680,7 @@ MonoBehaviour:
       m_Extent: {x: 1.2, y: 1.44, z: 2.6}
     Triangles: 2804
   - Key: kenney/car-kit/box
+    Model: {fileID: 919132149155446097, guid: dc9f60e3fc257e646af1352b3254f656, type: 3}
     Parts:
     - Mesh: {fileID: 9009893830714642796, guid: dc9f60e3fc257e646af1352b3254f656, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -60,6 +692,7 @@ MonoBehaviour:
       m_Extent: {x: 0.572, y: 0.572, z: 0.572}
     Triangles: 124
   - Key: kenney/car-kit/cone
+    Model: {fileID: 919132149155446097, guid: f1bf7002f36a327408e5da3bebb51f6d, type: 3}
     Parts:
     - Mesh: {fileID: -4432124805086160128, guid: f1bf7002f36a327408e5da3bebb51f6d, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -71,6 +704,7 @@ MonoBehaviour:
       m_Extent: {x: 0.38095558, y: 0.4761945, z: 0.38095558}
     Triangles: 172
   - Key: kenney/car-kit/cone-flat
+    Model: {fileID: 919132149155446097, guid: 8711a009fd6d6e440afb65492b9f1e48, type: 3}
     Parts:
     - Mesh: {fileID: 8476337139298378336, guid: 8711a009fd6d6e440afb65492b9f1e48, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -82,6 +716,7 @@ MonoBehaviour:
       m_Extent: {x: 0.38095558, y: 0.22476381, z: 0.38095558}
     Triangles: 172
   - Key: kenney/car-kit/debris-bolt
+    Model: {fileID: 919132149155446097, guid: 24ef0e37991e4a540983d6b67af7bd35, type: 3}
     Parts:
     - Mesh: {fileID: -4673352110080566379, guid: 24ef0e37991e4a540983d6b67af7bd35, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -93,6 +728,7 @@ MonoBehaviour:
       m_Extent: {x: 0.13856407, y: 0.208, z: 0.16000001}
     Triangles: 36
   - Key: kenney/car-kit/debris-bumper
+    Model: {fileID: 919132149155446097, guid: 47259af6696c2484bbec151531d75637, type: 3}
     Parts:
     - Mesh: {fileID: 6162596661149149783, guid: 47259af6696c2484bbec151531d75637, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -104,6 +740,7 @@ MonoBehaviour:
       m_Extent: {x: 1.0400001, y: 0.32000002, z: 0.36}
     Triangles: 116
   - Key: kenney/car-kit/debris-door
+    Model: {fileID: 919132149155446097, guid: 6e543b3da9d9a1341ba7bdba6d910a33, type: 3}
     Parts:
     - Mesh: {fileID: -3024938288485773964, guid: 6e543b3da9d9a1341ba7bdba6d910a33, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -115,6 +752,7 @@ MonoBehaviour:
       m_Extent: {x: 0.1504, y: 0.72, z: 0.64000005}
     Triangles: 68
   - Key: kenney/car-kit/debris-door-window
+    Model: {fileID: 919132149155446097, guid: cb4294230a5e53d46a9f6c91724e10df, type: 3}
     Parts:
     - Mesh: {fileID: -4489475831233450458, guid: cb4294230a5e53d46a9f6c91724e10df, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -126,6 +764,7 @@ MonoBehaviour:
       m_Extent: {x: 0.1504, y: 0.72, z: 0.64000005}
     Triangles: 74
   - Key: kenney/car-kit/debris-drivetrain
+    Model: {fileID: 919132149155446097, guid: d24d8665dcf02624a83fae69c097808c, type: 3}
     Parts:
     - Mesh: {fileID: 82514289238438122, guid: d24d8665dcf02624a83fae69c097808c, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -137,6 +776,7 @@ MonoBehaviour:
       m_Extent: {x: 0.96332, y: 0.23680001, z: 1.5359999}
     Triangles: 412
   - Key: kenney/car-kit/debris-drivetrain-axle
+    Model: {fileID: 919132149155446097, guid: 442feeadc5a47024db149676fbdc5a8b, type: 3}
     Parts:
     - Mesh: {fileID: -673449711726517029, guid: 442feeadc5a47024db149676fbdc5a8b, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -148,6 +788,7 @@ MonoBehaviour:
       m_Extent: {x: 0.96332, y: 0.23680001, z: 0.2784}
     Triangles: 200
   - Key: kenney/car-kit/debris-nut
+    Model: {fileID: 919132149155446097, guid: 00e8aa2a012cc2b4e9b0498a125b334c, type: 3}
     Parts:
     - Mesh: {fileID: -6797352132523249864, guid: 00e8aa2a012cc2b4e9b0498a125b334c, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -159,6 +800,7 @@ MonoBehaviour:
       m_Extent: {x: 0.13856407, y: 0.080000006, z: 0.16000001}
     Triangles: 40
   - Key: kenney/car-kit/debris-plate-a
+    Model: {fileID: 919132149155446097, guid: d58483f91c881ad46af0850d8458f1b1, type: 3}
     Parts:
     - Mesh: {fileID: -2051087862765086677, guid: d58483f91c881ad46af0850d8458f1b1, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -170,6 +812,7 @@ MonoBehaviour:
       m_Extent: {x: 0.72, y: 0.080000006, z: 0.72}
     Triangles: 40
   - Key: kenney/car-kit/debris-plate-b
+    Model: {fileID: 919132149155446097, guid: 2aa51474125fb014bb6371c1738b0f57, type: 3}
     Parts:
     - Mesh: {fileID: 5552232214882548639, guid: 2aa51474125fb014bb6371c1738b0f57, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -181,6 +824,7 @@ MonoBehaviour:
       m_Extent: {x: 0.72, y: 0.16000001, z: 0.72}
     Triangles: 44
   - Key: kenney/car-kit/debris-plate-small-a
+    Model: {fileID: 919132149155446097, guid: a9abf02c73d467645963c6c4b8a8c8f6, type: 3}
     Parts:
     - Mesh: {fileID: -7081674146592238783, guid: a9abf02c73d467645963c6c4b8a8c8f6, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -192,6 +836,7 @@ MonoBehaviour:
       m_Extent: {x: 0.36, y: 0.080000006, z: 0.36}
     Triangles: 28
   - Key: kenney/car-kit/debris-plate-small-b
+    Model: {fileID: 919132149155446097, guid: 3eaf6ce6eeb37d641beb9e6bac23f394, type: 3}
     Parts:
     - Mesh: {fileID: -6213498728782989254, guid: 3eaf6ce6eeb37d641beb9e6bac23f394, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -203,6 +848,7 @@ MonoBehaviour:
       m_Extent: {x: 0.36, y: 0.16000001, z: 0.36}
     Triangles: 44
   - Key: kenney/car-kit/debris-spoiler-a
+    Model: {fileID: 919132149155446097, guid: 4243a0c7783b6d1449e23c5420edab81, type: 3}
     Parts:
     - Mesh: {fileID: 1734975347130473326, guid: 4243a0c7783b6d1449e23c5420edab81, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -214,6 +860,7 @@ MonoBehaviour:
       m_Extent: {x: 0.88000005, y: 0.24000002, z: 0.18989791}
     Triangles: 48
   - Key: kenney/car-kit/debris-spoiler-b
+    Model: {fileID: 919132149155446097, guid: 626143ab509c19247ad5a63507f56835, type: 3}
     Parts:
     - Mesh: {fileID: 3539096795158176705, guid: 626143ab509c19247ad5a63507f56835, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -225,6 +872,7 @@ MonoBehaviour:
       m_Extent: {x: 0.8, y: 0.28, z: 0.26989794}
     Triangles: 88
   - Key: kenney/car-kit/debris-tire
+    Model: {fileID: 919132149155446097, guid: 3a48fdfac7563e242bf042790ec11a8e, type: 3}
     Parts:
     - Mesh: {fileID: -462611653543392389, guid: 3a48fdfac7563e242bf042790ec11a8e, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -236,6 +884,7 @@ MonoBehaviour:
       m_Extent: {x: 0.28, y: 0.48000005, z: 0.48000005}
     Triangles: 288
   - Key: kenney/car-kit/delivery
+    Model: {fileID: 919132149155446097, guid: 6752e9ce3dd355c44bf0a710cf076af5, type: 3}
     Parts:
     - Mesh: {fileID: -8545447256379345787, guid: 6752e9ce3dd355c44bf0a710cf076af5, type: 3}
       LocalPosition: {x: 0, y: 0.24000002, z: -0.040000003}
@@ -267,6 +916,7 @@ MonoBehaviour:
       m_Extent: {x: 1.2, y: 1.3199999, z: 2.6}
     Triangles: 2476
   - Key: kenney/car-kit/delivery-flat
+    Model: {fileID: 919132149155446097, guid: aab6d338ecd31584fabe89339f7d1a60, type: 3}
     Parts:
     - Mesh: {fileID: -8545447256379345787, guid: aab6d338ecd31584fabe89339f7d1a60, type: 3}
       LocalPosition: {x: 0, y: 0.24000002, z: -0.040000003}
@@ -294,6 +944,7 @@ MonoBehaviour:
       m_Extent: {x: 1.2, y: 1.08, z: 2.6}
     Triangles: 2574
   - Key: kenney/car-kit/firetruck
+    Model: {fileID: 919132149155446097, guid: 21735cb06cebbd54c8ec0f445b44be65, type: 3}
     Parts:
     - Mesh: {fileID: -8545447256379345787, guid: 21735cb06cebbd54c8ec0f445b44be65, type: 3}
       LocalPosition: {x: 2.3101166e-15, y: 0.32000002, z: -3.2341636e-14}
@@ -325,6 +976,7 @@ MonoBehaviour:
       m_Extent: {x: 1.2, y: 1.3600001, z: 2.7199998}
     Triangles: 2767
   - Key: kenney/car-kit/garbage-truck
+    Model: {fileID: 919132149155446097, guid: ebeaf9eb10a30c341a745ea3e700523d, type: 3}
     Parts:
     - Mesh: {fileID: 5690975394302024261, guid: ebeaf9eb10a30c341a745ea3e700523d, type: 3}
       LocalPosition: {x: -4.620233e-15, y: 0.7714232, z: 0.5195859}
@@ -360,6 +1012,7 @@ MonoBehaviour:
       m_Extent: {x: 1.2800001, y: 1.2800001, z: 2.76}
     Triangles: 3124
   - Key: kenney/car-kit/hatchback-sports
+    Model: {fileID: 919132149155446097, guid: 8837f24061fc9a64ea9d7799be037055, type: 3}
     Parts:
     - Mesh: {fileID: -8545447256379345787, guid: 8837f24061fc9a64ea9d7799be037055, type: 3}
       LocalPosition: {x: 0, y: 0.24000002, z: -0.040000003}
@@ -387,6 +1040,7 @@ MonoBehaviour:
       m_Extent: {x: 1.0400001, y: 0.88000023, z: 2.2800002}
     Triangles: 2088
   - Key: kenney/car-kit/kart-oobi
+    Model: {fileID: 919132149155446097, guid: f0ec524648624d7458d3767a1c175c8b, type: 3}
     Parts:
     - Mesh: {fileID: -2036945874042525193, guid: f0ec524648624d7458d3767a1c175c8b, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -418,6 +1072,7 @@ MonoBehaviour:
       m_Extent: {x: 0.77943945, y: 1.0633059, z: 1.1422038}
     Triangles: 2884
   - Key: kenney/car-kit/kart-oodi
+    Model: {fileID: 919132149155446097, guid: d4c4d0e6e52fe7d49aa5a3bf4b51939c, type: 3}
     Parts:
     - Mesh: {fileID: -6832907506296186100, guid: d4c4d0e6e52fe7d49aa5a3bf4b51939c, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -449,6 +1104,7 @@ MonoBehaviour:
       m_Extent: {x: 0.77943945, y: 1.0633059, z: 1.1422038}
     Triangles: 2726
   - Key: kenney/car-kit/kart-ooli
+    Model: {fileID: 919132149155446097, guid: 38cbcfa557e69ee47b2a5449186970da, type: 3}
     Parts:
     - Mesh: {fileID: 2451758371209658071, guid: 38cbcfa557e69ee47b2a5449186970da, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -480,6 +1136,7 @@ MonoBehaviour:
       m_Extent: {x: 0.77943945, y: 1.0633059, z: 1.1422038}
     Triangles: 2706
   - Key: kenney/car-kit/kart-oopi
+    Model: {fileID: 919132149155446097, guid: 22717942948394a468e2a0640a63876d, type: 3}
     Parts:
     - Mesh: {fileID: 7994411343647243908, guid: 22717942948394a468e2a0640a63876d, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -511,6 +1168,7 @@ MonoBehaviour:
       m_Extent: {x: 0.77943945, y: 1.0633059, z: 1.1422038}
     Triangles: 2726
   - Key: kenney/car-kit/kart-oozi
+    Model: {fileID: 919132149155446097, guid: d1c435d9ca752e9499dfcc55dd70a3c0, type: 3}
     Parts:
     - Mesh: {fileID: 5789624589016545078, guid: d1c435d9ca752e9499dfcc55dd70a3c0, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -542,6 +1200,7 @@ MonoBehaviour:
       m_Extent: {x: 0.77943945, y: 1.0633059, z: 1.1422038}
     Triangles: 2726
   - Key: kenney/car-kit/police
+    Model: {fileID: 919132149155446097, guid: d8c3b376e5b84f14baa96ee4b319941b, type: 3}
     Parts:
     - Mesh: {fileID: -8545447256379345787, guid: d8c3b376e5b84f14baa96ee4b319941b, type: 3}
       LocalPosition: {x: 0, y: 0.32000002, z: -0.040000003}
@@ -573,6 +1232,7 @@ MonoBehaviour:
       m_Extent: {x: 1.2, y: 1.0400001, z: 2.4799998}
     Triangles: 2304
   - Key: kenney/car-kit/race
+    Model: {fileID: 919132149155446097, guid: bfae8dcb8dc34d742a62994feea44cb2, type: 3}
     Parts:
     - Mesh: {fileID: -8545447256379345787, guid: bfae8dcb8dc34d742a62994feea44cb2, type: 3}
       LocalPosition: {x: 2.159959e-13, y: 0.16000001, z: -5.7752914e-16}
@@ -600,6 +1260,7 @@ MonoBehaviour:
       m_Extent: {x: 1.0400001, y: 0.5860355, z: 2.0478182}
     Triangles: 1952
   - Key: kenney/car-kit/race-future
+    Model: {fileID: 919132149155446097, guid: 529320bddcda7bb4baffcd05c14b55b0, type: 3}
     Parts:
     - Mesh: {fileID: -8545447256379345787, guid: 529320bddcda7bb4baffcd05c14b55b0, type: 3}
       LocalPosition: {x: 0, y: 0.32000002, z: -1.1550583e-15}
@@ -627,6 +1288,7 @@ MonoBehaviour:
       m_Extent: {x: 0.9600001, y: 0.6660355, z: 2.1278179}
     Triangles: 2068
   - Key: kenney/car-kit/sedan
+    Model: {fileID: 919132149155446097, guid: 801049a9b5a4c534897b6b8af00ce208, type: 3}
     Parts:
     - Mesh: {fileID: -8545447256379345787, guid: 801049a9b5a4c534897b6b8af00ce208, type: 3}
       LocalPosition: {x: 0, y: 0.24000002, z: -0.040000003}
@@ -654,6 +1316,7 @@ MonoBehaviour:
       m_Extent: {x: 1.2, y: 1.0400001, z: 2.0400002}
     Triangles: 2032
   - Key: kenney/car-kit/sedan-sports
+    Model: {fileID: 919132149155446097, guid: aea5a233bdde83f4187bd18e7a60d17b, type: 3}
     Parts:
     - Mesh: {fileID: -8545447256379345787, guid: aea5a233bdde83f4187bd18e7a60d17b, type: 3}
       LocalPosition: {x: 0, y: 0.24000002, z: -0.040000003}
@@ -685,6 +1348,7 @@ MonoBehaviour:
       m_Extent: {x: 1.0400001, y: 0.88, z: 2.0400002}
     Triangles: 2088
   - Key: kenney/car-kit/suv
+    Model: {fileID: 919132149155446097, guid: 658a06302ecae70479696c39c4e6e510, type: 3}
     Parts:
     - Mesh: {fileID: -8545447256379345787, guid: 658a06302ecae70479696c39c4e6e510, type: 3}
       LocalPosition: {x: 0, y: 0.32000002, z: -4.620233e-15}
@@ -716,6 +1380,7 @@ MonoBehaviour:
       m_Extent: {x: 1.2, y: 1.0400001, z: 2.16}
     Triangles: 2474
   - Key: kenney/car-kit/suv-luxury
+    Model: {fileID: 919132149155446097, guid: 783c593fdbcb8bd45b5c0a512877585d, type: 3}
     Parts:
     - Mesh: {fileID: -8545447256379345787, guid: 783c593fdbcb8bd45b5c0a512877585d, type: 3}
       LocalPosition: {x: 0, y: 0.2, z: 0.040000003}
@@ -743,6 +1408,7 @@ MonoBehaviour:
       m_Extent: {x: 1.2, y: 1.04, z: 2.2800002}
     Triangles: 2086
   - Key: kenney/car-kit/taxi
+    Model: {fileID: 919132149155446097, guid: 3a89ccc8146d6264ab0ed1aed554560e, type: 3}
     Parts:
     - Mesh: {fileID: -8545447256379345787, guid: 3a89ccc8146d6264ab0ed1aed554560e, type: 3}
       LocalPosition: {x: 0, y: 0.24000002, z: -0.040000003}
@@ -770,6 +1436,7 @@ MonoBehaviour:
       m_Extent: {x: 1.2, y: 1.1999999, z: 2.1999998}
     Triangles: 2072
   - Key: kenney/car-kit/tractor
+    Model: {fileID: 919132149155446097, guid: 739f248b7ef37784f9a632a1a44c3d72, type: 3}
     Parts:
     - Mesh: {fileID: -8545447256379345787, guid: 739f248b7ef37784f9a632a1a44c3d72, type: 3}
       LocalPosition: {x: 0.0000000059387375, y: 0.30128506, z: 0.17510404}
@@ -797,6 +1464,7 @@ MonoBehaviour:
       m_Extent: {x: 1.0736617, y: 1.2816426, z: 1.7612422}
     Triangles: 2044
   - Key: kenney/car-kit/tractor-police
+    Model: {fileID: 919132149155446097, guid: 85a062d35f0537c4a81325bbadb8e75f, type: 3}
     Parts:
     - Mesh: {fileID: -8545447256379345787, guid: 85a062d35f0537c4a81325bbadb8e75f, type: 3}
       LocalPosition: {x: 0.000000005938737, y: 0.30128506, z: 0.25510404}
@@ -828,6 +1496,7 @@ MonoBehaviour:
       m_Extent: {x: 1.0736619, y: 1.3616426, z: 1.8412422}
     Triangles: 2278
   - Key: kenney/car-kit/tractor-shovel
+    Model: {fileID: 919132149155446097, guid: 0610a8228bfc03b429c9d6efcd23bfb9, type: 3}
     Parts:
     - Mesh: {fileID: -8545447256379345787, guid: 0610a8228bfc03b429c9d6efcd23bfb9, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -859,6 +1528,7 @@ MonoBehaviour:
       m_Extent: {x: 1.328448, y: 1.20962, z: 1.9760494}
     Triangles: 2646
   - Key: kenney/car-kit/truck
+    Model: {fileID: 919132149155446097, guid: 0327c4f09efcb944483b6190054d4c06, type: 3}
     Parts:
     - Mesh: {fileID: -8545447256379345787, guid: 0327c4f09efcb944483b6190054d4c06, type: 3}
       LocalPosition: {x: 0, y: 0.24000002, z: -0.040000003}
@@ -886,6 +1556,7 @@ MonoBehaviour:
       m_Extent: {x: 1.2, y: 1.0400001, z: 2.36}
     Triangles: 2082
   - Key: kenney/car-kit/truck-flat
+    Model: {fileID: 919132149155446097, guid: d41092006c1e26f4a8730d1e92a77502, type: 3}
     Parts:
     - Mesh: {fileID: -8545447256379345787, guid: d41092006c1e26f4a8730d1e92a77502, type: 3}
       LocalPosition: {x: 0, y: 0.24000002, z: -1.1550583e-15}
@@ -913,6 +1584,7 @@ MonoBehaviour:
       m_Extent: {x: 1.2, y: 1.0400001, z: 2.1960917}
     Triangles: 2488
   - Key: kenney/car-kit/van
+    Model: {fileID: 919132149155446097, guid: 077098521292aa74ea06d548888b81dc, type: 3}
     Parts:
     - Mesh: {fileID: -8545447256379345787, guid: 077098521292aa74ea06d548888b81dc, type: 3}
       LocalPosition: {x: 0, y: 0.32000002, z: 0.16000001}
@@ -940,6 +1612,7 @@ MonoBehaviour:
       m_Extent: {x: 1.2, y: 1.08, z: 2.2000003}
     Triangles: 2082
   - Key: kenney/car-kit/wheel-dark
+    Model: {fileID: 919132149155446097, guid: 5b4679c5cb876c44b9aa838ac7ebcb51, type: 3}
     Parts:
     - Mesh: {fileID: 7971318722069477454, guid: 5b4679c5cb876c44b9aa838ac7ebcb51, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -951,6 +1624,7 @@ MonoBehaviour:
       m_Extent: {x: 0.32000002, y: 0.48000005, z: 0.48000005}
     Triangles: 332
   - Key: kenney/car-kit/wheel-default
+    Model: {fileID: 919132149155446097, guid: 5470b450d4c8468488f49053e1dfc5f1, type: 3}
     Parts:
     - Mesh: {fileID: -22088845735486011, guid: 5470b450d4c8468488f49053e1dfc5f1, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -962,6 +1636,7 @@ MonoBehaviour:
       m_Extent: {x: 0.32000002, y: 0.48000005, z: 0.48000005}
     Triangles: 332
   - Key: kenney/car-kit/wheel-racing
+    Model: {fileID: 919132149155446097, guid: b99f55968f8d36648a838580ad162a11, type: 3}
     Parts:
     - Mesh: {fileID: -4358753419632545560, guid: b99f55968f8d36648a838580ad162a11, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -973,6 +1648,7 @@ MonoBehaviour:
       m_Extent: {x: 0.32000002, y: 0.48000005, z: 0.48000005}
     Triangles: 332
   - Key: kenney/car-kit/wheel-tractor-back
+    Model: {fileID: 919132149155446097, guid: 896222e2231a69545972224a548a2cfa, type: 3}
     Parts:
     - Mesh: {fileID: 3838304593241400722, guid: 896222e2231a69545972224a548a2cfa, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -984,6 +1660,7 @@ MonoBehaviour:
       m_Extent: {x: 0.43006405, y: 0.70012796, z: 0.7001281}
     Triangles: 428
   - Key: kenney/car-kit/wheel-tractor-dark-back
+    Model: {fileID: 919132149155446097, guid: d900a750c640bae479b9131d4c1d743d, type: 3}
     Parts:
     - Mesh: {fileID: -3850520759402087207, guid: d900a750c640bae479b9131d4c1d743d, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -995,6 +1672,7 @@ MonoBehaviour:
       m_Extent: {x: 0.430064, y: 0.70012796, z: 0.70012796}
     Triangles: 428
   - Key: kenney/car-kit/wheel-tractor-dark-front
+    Model: {fileID: 919132149155446097, guid: ed34053b544445648bd0d80eaa53bed3, type: 3}
     Parts:
     - Mesh: {fileID: 6973463616822656227, guid: ed34053b544445648bd0d80eaa53bed3, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1006,6 +1684,7 @@ MonoBehaviour:
       m_Extent: {x: 0.295424, y: 0.430848, z: 0.430848}
     Triangles: 332
   - Key: kenney/car-kit/wheel-tractor-front
+    Model: {fileID: 919132149155446097, guid: 51683179b4619124f9533c90ebdb94b9, type: 3}
     Parts:
     - Mesh: {fileID: -8696732082133410395, guid: 51683179b4619124f9533c90ebdb94b9, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1017,6 +1696,7 @@ MonoBehaviour:
       m_Extent: {x: 0.295424, y: 0.430848, z: 0.430848}
     Triangles: 332
   - Key: kenney/car-kit/wheel-truck
+    Model: {fileID: 919132149155446097, guid: af49aeabe20c7704bb4d6294c849a72b, type: 3}
     Parts:
     - Mesh: {fileID: -8184948499459801688, guid: af49aeabe20c7704bb4d6294c849a72b, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1028,6 +1708,7 @@ MonoBehaviour:
       m_Extent: {x: 0.28000003, y: 0.48000005, z: 0.48000005}
     Triangles: 428
   - Key: kenney/city-kit-commercial/building-a
+    Model: {fileID: 919132149155446097, guid: 661d601fd3085a44fb0124807912445a, type: 3}
     Parts:
     - Mesh: {fileID: 1319789488962769195, guid: 661d601fd3085a44fb0124807912445a, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1039,6 +1720,7 @@ MonoBehaviour:
       m_Extent: {x: 3.5343513, y: 5.172, z: 3.7599998}
     Triangles: 1252
   - Key: kenney/city-kit-commercial/building-b
+    Model: {fileID: 919132149155446097, guid: 82b05a5fbcf0e194197c0dd99e3bdcdd, type: 3}
     Parts:
     - Mesh: {fileID: 125537006511059787, guid: 82b05a5fbcf0e194197c0dd99e3bdcdd, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1050,6 +1732,7 @@ MonoBehaviour:
       m_Extent: {x: 3.88, y: 5.172, z: 3.7599998}
     Triangles: 1276
   - Key: kenney/city-kit-commercial/building-c
+    Model: {fileID: 919132149155446097, guid: 2a035e3279a374c4b9a1ba8fe4c96afc, type: 3}
     Parts:
     - Mesh: {fileID: 2050420899888615663, guid: 2a035e3279a374c4b9a1ba8fe4c96afc, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1061,6 +1744,7 @@ MonoBehaviour:
       m_Extent: {x: 3.5343513, y: 3.572, z: 4.3600006}
     Triangles: 1195
   - Key: kenney/city-kit-commercial/building-d
+    Model: {fileID: 919132149155446097, guid: ecb14f4398d176f45a5777405b554fb5, type: 3}
     Parts:
     - Mesh: {fileID: -4078782287222455703, guid: ecb14f4398d176f45a5777405b554fb5, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1072,6 +1756,7 @@ MonoBehaviour:
       m_Extent: {x: 3.3600001, y: 5.172, z: 3.5999994}
     Triangles: 1100
   - Key: kenney/city-kit-commercial/building-e
+    Model: {fileID: 919132149155446097, guid: 05e05b60576f2a246a9b36f3a64cddbf, type: 3}
     Parts:
     - Mesh: {fileID: -5994799043917569566, guid: 05e05b60576f2a246a9b36f3a64cddbf, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1083,6 +1768,7 @@ MonoBehaviour:
       m_Extent: {x: 6.5600004, y: 3.572, z: 4.031566}
     Triangles: 1509
   - Key: kenney/city-kit-commercial/building-f
+    Model: {fileID: 919132149155446097, guid: 245b4e3e91de6fd4c99017f05a66f355, type: 3}
     Parts:
     - Mesh: {fileID: 7534085653682730532, guid: 245b4e3e91de6fd4c99017f05a66f355, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1094,6 +1780,7 @@ MonoBehaviour:
       m_Extent: {x: 3.36, y: 6.772, z: 4.120001}
     Triangles: 1794
   - Key: kenney/city-kit-commercial/building-g
+    Model: {fileID: 919132149155446097, guid: 16222ca7b82fd944d8176b260b192aed, type: 3}
     Parts:
     - Mesh: {fileID: -2066283601509773235, guid: 16222ca7b82fd944d8176b260b192aed, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1105,6 +1792,7 @@ MonoBehaviour:
       m_Extent: {x: 3.8799999, y: 6.772, z: 3.6880007}
     Triangles: 2006
   - Key: kenney/city-kit-commercial/building-h
+    Model: {fileID: 919132149155446097, guid: aa355feebf1c714439422ed2e4e4676b, type: 3}
     Parts:
     - Mesh: {fileID: 1776480164161600223, guid: aa355feebf1c714439422ed2e4e4676b, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1116,6 +1804,7 @@ MonoBehaviour:
       m_Extent: {x: 3.534351, y: 5.172, z: 4.0315647}
     Triangles: 1512
   - Key: kenney/city-kit-commercial/building-i
+    Model: {fileID: 919132149155446097, guid: ea8071aebc0953c4ea1ecabdb98192b4, type: 3}
     Parts:
     - Mesh: {fileID: 2500970965421349609, guid: ea8071aebc0953c4ea1ecabdb98192b4, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1127,6 +1816,7 @@ MonoBehaviour:
       m_Extent: {x: 4.96, y: 6.72, z: 5.208}
     Triangles: 2544
   - Key: kenney/city-kit-commercial/building-j
+    Model: {fileID: 919132149155446097, guid: a1cd7fbe1f71a8943917aec7ba67b4b7, type: 3}
     Parts:
     - Mesh: {fileID: -4977559526909546488, guid: a1cd7fbe1f71a8943917aec7ba67b4b7, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1138,6 +1828,7 @@ MonoBehaviour:
       m_Extent: {x: 8.3343525, y: 6.772, z: 5.3599997}
     Triangles: 5246
   - Key: kenney/city-kit-commercial/building-k
+    Model: {fileID: 919132149155446097, guid: 2ad13d7ee6a2c82419c0ba4ff4f9f07f, type: 3}
     Parts:
     - Mesh: {fileID: -6432255094336885367, guid: 2ad13d7ee6a2c82419c0ba4ff4f9f07f, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1149,6 +1840,7 @@ MonoBehaviour:
       m_Extent: {x: 8.3343525, y: 5.8799996, z: 3.7679992}
     Triangles: 2960
   - Key: kenney/city-kit-commercial/building-l
+    Model: {fileID: 919132149155446097, guid: cc6e704d7e325ab4d974a78585111b21, type: 3}
     Parts:
     - Mesh: {fileID: -3590769080075980909, guid: cc6e704d7e325ab4d974a78585111b21, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1160,6 +1852,7 @@ MonoBehaviour:
       m_Extent: {x: 5.48, y: 9.08, z: 5.608}
     Triangles: 3512
   - Key: kenney/city-kit-commercial/building-m
+    Model: {fileID: 919132149155446097, guid: a13824f8ad0bd8e448f492bdae679e13, type: 3}
     Parts:
     - Mesh: {fileID: -7825783252185135, guid: a13824f8ad0bd8e448f492bdae679e13, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1171,6 +1864,7 @@ MonoBehaviour:
       m_Extent: {x: 4.9600005, y: 12.599999, z: 4.9680004}
     Triangles: 3740
   - Key: kenney/city-kit-commercial/building-n
+    Model: {fileID: 919132149155446097, guid: dbcb28f342e706d419828e6fc4ff4104, type: 3}
     Parts:
     - Mesh: {fileID: -450011462663963342, guid: dbcb28f342e706d419828e6fc4ff4104, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1182,6 +1876,7 @@ MonoBehaviour:
       m_Extent: {x: 9.280001, y: 9.92, z: 7.2799997}
     Triangles: 4350
   - Key: kenney/city-kit-commercial/building-skyscraper-a
+    Model: {fileID: 919132149155446097, guid: b20fee7b07613454781131b44ca3d85a, type: 3}
     Parts:
     - Mesh: {fileID: -2843237350243111150, guid: b20fee7b07613454781131b44ca3d85a, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1193,6 +1888,7 @@ MonoBehaviour:
       m_Extent: {x: 5.4399986, y: 11.5199995, z: 5.4400005}
     Triangles: 1292
   - Key: kenney/city-kit-commercial/building-skyscraper-b
+    Model: {fileID: 919132149155446097, guid: 390749c402115ca4abe3d16b009c8736, type: 3}
     Parts:
     - Mesh: {fileID: -439350453000807455, guid: 390749c402115ca4abe3d16b009c8736, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1204,6 +1900,7 @@ MonoBehaviour:
       m_Extent: {x: 5.439999, y: 17.92, z: 5.4399996}
     Triangles: 1592
   - Key: kenney/city-kit-commercial/building-skyscraper-c
+    Model: {fileID: 919132149155446097, guid: 29117b325733133498540f67f3efccc2, type: 3}
     Parts:
     - Mesh: {fileID: 3873243663718610209, guid: 29117b325733133498540f67f3efccc2, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1215,6 +1912,7 @@ MonoBehaviour:
       m_Extent: {x: 5.119999, y: 16.32, z: 5.551565}
     Triangles: 1704
   - Key: kenney/city-kit-commercial/building-skyscraper-d
+    Model: {fileID: 919132149155446097, guid: 022f36d52d9b4ac4ea4499e229fc55bb, type: 3}
     Parts:
     - Mesh: {fileID: 2864774077581168330, guid: 022f36d52d9b4ac4ea4499e229fc55bb, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1226,6 +1924,7 @@ MonoBehaviour:
       m_Extent: {x: 5.119999, y: 21.879997, z: 5.551565}
     Triangles: 1892
   - Key: kenney/city-kit-commercial/building-skyscraper-e
+    Model: {fileID: 919132149155446097, guid: 270b003362f98bc4ba223c481b141c97, type: 3}
     Parts:
     - Mesh: {fileID: 471836023069485021, guid: 270b003362f98bc4ba223c481b141c97, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1237,6 +1936,7 @@ MonoBehaviour:
       m_Extent: {x: 5.179999, y: 16.32, z: 4.968001}
     Triangles: 1156
   - Key: kenney/city-kit-commercial/detail-awning
+    Model: {fileID: 919132149155446097, guid: 8243edd88e96e8d4d9ad9465c07427af, type: 3}
     Parts:
     - Mesh: {fileID: 2437445790409129291, guid: 8243edd88e96e8d4d9ad9465c07427af, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1248,6 +1948,7 @@ MonoBehaviour:
       m_Extent: {x: 1.5999999, y: 1.5999999, z: 0.59156525}
     Triangles: 40
   - Key: kenney/city-kit-commercial/detail-awning-wide
+    Model: {fileID: 919132149155446097, guid: 1c5a6fe8dd8975245bb9d3e5de7d6f58, type: 3}
     Parts:
     - Mesh: {fileID: 3182884605836604818, guid: 1c5a6fe8dd8975245bb9d3e5de7d6f58, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1259,6 +1960,7 @@ MonoBehaviour:
       m_Extent: {x: 3.1999998, y: 1.5999999, z: 0.59156525}
     Triangles: 40
   - Key: kenney/city-kit-commercial/detail-overhang
+    Model: {fileID: 919132149155446097, guid: 6962dd70471a12c48b54bef47e757ad7, type: 3}
     Parts:
     - Mesh: {fileID: -2512139349076357349, guid: 6962dd70471a12c48b54bef47e757ad7, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1270,6 +1972,7 @@ MonoBehaviour:
       m_Extent: {x: 2, y: 1.5999999, z: 0.79999995}
     Triangles: 64
   - Key: kenney/city-kit-commercial/detail-overhang-wide
+    Model: {fileID: 919132149155446097, guid: 5ae181c79f0b7ce4e9ef06c55f881da0, type: 3}
     Parts:
     - Mesh: {fileID: 5339740818984298558, guid: 5ae181c79f0b7ce4e9ef06c55f881da0, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1281,6 +1984,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 1.5999999, z: 0.79999995}
     Triangles: 64
   - Key: kenney/city-kit-commercial/detail-parasol-a
+    Model: {fileID: 919132149155446097, guid: 04cd7fd4e0c75b64f8402cfada2d577a, type: 3}
     Parts:
     - Mesh: {fileID: 7690951674739159930, guid: 04cd7fd4e0c75b64f8402cfada2d577a, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1292,6 +1996,7 @@ MonoBehaviour:
       m_Extent: {x: 1.3856405, y: 1.8, z: 1.5999999}
     Triangles: 96
   - Key: kenney/city-kit-commercial/detail-parasol-b
+    Model: {fileID: 919132149155446097, guid: f40cbb214e1c5964eb6c098d02c593b3, type: 3}
     Parts:
     - Mesh: {fileID: -5069835097100385382, guid: f40cbb214e1c5964eb6c098d02c593b3, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1303,6 +2008,7 @@ MonoBehaviour:
       m_Extent: {x: 1.3856405, y: 1.8, z: 1.5999999}
     Triangles: 120
   - Key: kenney/city-kit-commercial/low-detail-building-a
+    Model: {fileID: 919132149155446097, guid: 06b089f62e872964a8eb6f41fe014fac, type: 3}
     Parts:
     - Mesh: {fileID: -2671653112737270756, guid: 06b089f62e872964a8eb6f41fe014fac, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1314,6 +2020,7 @@ MonoBehaviour:
       m_Extent: {x: 2, y: 8, z: 2}
     Triangles: 188
   - Key: kenney/city-kit-commercial/low-detail-building-b
+    Model: {fileID: 919132149155446097, guid: 9c64d14ee38b3144891ac84940008454, type: 3}
     Parts:
     - Mesh: {fileID: -3017946880544813418, guid: 9c64d14ee38b3144891ac84940008454, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1325,6 +2032,7 @@ MonoBehaviour:
       m_Extent: {x: 2, y: 8.900001, z: 2}
     Triangles: 200
   - Key: kenney/city-kit-commercial/low-detail-building-c
+    Model: {fileID: 919132149155446097, guid: 62f9fd05e1e6b0a418b69d99295e752c, type: 3}
     Parts:
     - Mesh: {fileID: 7214272799000459086, guid: 62f9fd05e1e6b0a418b69d99295e752c, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1336,6 +2044,7 @@ MonoBehaviour:
       m_Extent: {x: 2.0000005, y: 9, z: 2.0000005}
     Triangles: 142
   - Key: kenney/city-kit-commercial/low-detail-building-d
+    Model: {fileID: 919132149155446097, guid: 1890c5b7fd6482c4ba33379d1389399a, type: 3}
     Parts:
     - Mesh: {fileID: 8411640436937501369, guid: 1890c5b7fd6482c4ba33379d1389399a, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1347,6 +2056,7 @@ MonoBehaviour:
       m_Extent: {x: 2, y: 7, z: 2}
     Triangles: 106
   - Key: kenney/city-kit-commercial/low-detail-building-e
+    Model: {fileID: 919132149155446097, guid: b83d25ac1ae23e64582edcaa1413c251, type: 3}
     Parts:
     - Mesh: {fileID: 3641067684536073851, guid: b83d25ac1ae23e64582edcaa1413c251, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1358,6 +2068,7 @@ MonoBehaviour:
       m_Extent: {x: 2.0000005, y: 7.2, z: 2.0000005}
     Triangles: 96
   - Key: kenney/city-kit-commercial/low-detail-building-f
+    Model: {fileID: 919132149155446097, guid: af05f030bf08df349a070c4c63b593c4, type: 3}
     Parts:
     - Mesh: {fileID: 6297618570657705216, guid: af05f030bf08df349a070c4c63b593c4, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1369,6 +2080,7 @@ MonoBehaviour:
       m_Extent: {x: 2, y: 8, z: 2}
     Triangles: 88
   - Key: kenney/city-kit-commercial/low-detail-building-g
+    Model: {fileID: 919132149155446097, guid: f9362f166f91b9d44a622d6fe5d0e4e7, type: 3}
     Parts:
     - Mesh: {fileID: -7230089957197666738, guid: f9362f166f91b9d44a622d6fe5d0e4e7, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1380,6 +2092,7 @@ MonoBehaviour:
       m_Extent: {x: 2, y: 8, z: 2}
     Triangles: 200
   - Key: kenney/city-kit-commercial/low-detail-building-h
+    Model: {fileID: 919132149155446097, guid: 614091f1c89f2c44cb66d37cb9e442b7, type: 3}
     Parts:
     - Mesh: {fileID: -5312904153420491340, guid: 614091f1c89f2c44cb66d37cb9e442b7, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1391,6 +2104,7 @@ MonoBehaviour:
       m_Extent: {x: 2, y: 8.4, z: 2}
     Triangles: 378
   - Key: kenney/city-kit-commercial/low-detail-building-i
+    Model: {fileID: 919132149155446097, guid: 40fec186c3031c24dbc72a242b99ca0b, type: 3}
     Parts:
     - Mesh: {fileID: 3245498210100842659, guid: 40fec186c3031c24dbc72a242b99ca0b, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1402,6 +2116,7 @@ MonoBehaviour:
       m_Extent: {x: 2, y: 7.1, z: 2}
     Triangles: 152
   - Key: kenney/city-kit-commercial/low-detail-building-j
+    Model: {fileID: 919132149155446097, guid: 3cabedd428c1b454bb162f808fb6660a, type: 3}
     Parts:
     - Mesh: {fileID: -7518334777886728829, guid: 3cabedd428c1b454bb162f808fb6660a, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1413,6 +2128,7 @@ MonoBehaviour:
       m_Extent: {x: 2.0000005, y: 7, z: 2.0000005}
     Triangles: 188
   - Key: kenney/city-kit-commercial/low-detail-building-k
+    Model: {fileID: 919132149155446097, guid: b3c18a703e0a1c14a9fe64e64a6134c9, type: 3}
     Parts:
     - Mesh: {fileID: 2848376161733798630, guid: b3c18a703e0a1c14a9fe64e64a6134c9, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1424,6 +2140,7 @@ MonoBehaviour:
       m_Extent: {x: 2, y: 6.2, z: 2}
     Triangles: 86
   - Key: kenney/city-kit-commercial/low-detail-building-l
+    Model: {fileID: 919132149155446097, guid: 19adb0cd53df46b409f5c57fd1e951a3, type: 3}
     Parts:
     - Mesh: {fileID: 4963539152125558527, guid: 19adb0cd53df46b409f5c57fd1e951a3, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1435,6 +2152,7 @@ MonoBehaviour:
       m_Extent: {x: 2, y: 7.399999, z: 2}
     Triangles: 150
   - Key: kenney/city-kit-commercial/low-detail-building-m
+    Model: {fileID: 919132149155446097, guid: 9b9708a9e4769cd46ac31eaaf43f9256, type: 3}
     Parts:
     - Mesh: {fileID: 3466999957434495593, guid: 9b9708a9e4769cd46ac31eaaf43f9256, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1446,6 +2164,7 @@ MonoBehaviour:
       m_Extent: {x: 2, y: 7.8999996, z: 2}
     Triangles: 188
   - Key: kenney/city-kit-commercial/low-detail-building-n
+    Model: {fileID: 919132149155446097, guid: 3f163eb637c24a640b094fa82e69fcef, type: 3}
     Parts:
     - Mesh: {fileID: -2441425693267723808, guid: 3f163eb637c24a640b094fa82e69fcef, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1457,6 +2176,7 @@ MonoBehaviour:
       m_Extent: {x: 2, y: 2.8, z: 2}
     Triangles: 62
   - Key: kenney/city-kit-commercial/low-detail-building-wide-a
+    Model: {fileID: 919132149155446097, guid: 5be56c5d90dacc34e9db84f9fcdcd124, type: 3}
     Parts:
     - Mesh: {fileID: 852208000624443197, guid: 5be56c5d90dacc34e9db84f9fcdcd124, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1468,6 +2188,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 4.4, z: 2}
     Triangles: 156
   - Key: kenney/city-kit-commercial/low-detail-building-wide-b
+    Model: {fileID: 919132149155446097, guid: 4ed54b34c5edb6d45b6726150e3206af, type: 3}
     Parts:
     - Mesh: {fileID: -687230159585541093, guid: 4ed54b34c5edb6d45b6726150e3206af, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1479,6 +2200,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 4.6, z: 2}
     Triangles: 246
   - Key: kenney/city-kit-roads/bridge-pillar
+    Model: {fileID: 919132149155446097, guid: 414e947986d2de141aedfdb500e64cea, type: 3}
     Parts:
     - Mesh: {fileID: 5740247743024910477, guid: 414e947986d2de141aedfdb500e64cea, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1490,6 +2212,7 @@ MonoBehaviour:
       m_Extent: {x: 0.39999998, y: 2, z: 0.39999998}
     Triangles: 38
   - Key: kenney/city-kit-roads/bridge-pillar-wide
+    Model: {fileID: 919132149155446097, guid: da64153a66f28dd498dfe38d02fcbf3b, type: 3}
     Parts:
     - Mesh: {fileID: -756882471605902439, guid: da64153a66f28dd498dfe38d02fcbf3b, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1501,6 +2224,7 @@ MonoBehaviour:
       m_Extent: {x: 0.56, y: 2, z: 0.56}
     Triangles: 38
   - Key: kenney/city-kit-roads/construction-barrier
+    Model: {fileID: 919132149155446097, guid: 24deb6a1decfe0d44ae97c47b9ddda38, type: 3}
     Parts:
     - Mesh: {fileID: -3383677435166317660, guid: 24deb6a1decfe0d44ae97c47b9ddda38, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1512,6 +2236,7 @@ MonoBehaviour:
       m_Extent: {x: 0.542, y: 0.52, z: 0.9}
     Triangles: 60
   - Key: kenney/city-kit-roads/construction-cone
+    Model: {fileID: 919132149155446097, guid: b39e11a1478bde942969ff71422eae2c, type: 3}
     Parts:
     - Mesh: {fileID: -6975138644988533352, guid: b39e11a1478bde942969ff71422eae2c, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1523,6 +2248,7 @@ MonoBehaviour:
       m_Extent: {x: 0.3, y: 0.375, z: 0.3}
     Triangles: 66
   - Key: kenney/city-kit-roads/construction-fence
+    Model: {fileID: 919132149155446097, guid: 90a098a674853144997f743804e1260c, type: 3}
     Parts:
     - Mesh: {fileID: 327182537178675643, guid: 90a098a674853144997f743804e1260c, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1534,6 +2260,7 @@ MonoBehaviour:
       m_Extent: {x: 0.3, y: 0.715, z: 1.5000007}
     Triangles: 136
   - Key: kenney/city-kit-roads/construction-light
+    Model: {fileID: 919132149155446097, guid: 59e4353bee9c1c2438153694705ca396, type: 3}
     Parts:
     - Mesh: {fileID: -3376400128832458048, guid: 59e4353bee9c1c2438153694705ca396, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1545,6 +2272,7 @@ MonoBehaviour:
       m_Extent: {x: 0.3, y: 0.9349999, z: 0.3}
     Triangles: 144
   - Key: kenney/city-kit-roads/dumpster
+    Model: {fileID: 919132149155446097, guid: 6055bf98c040bb5488642b51280625af, type: 3}
     Parts:
     - Mesh: {fileID: -6836397680486811369, guid: 6055bf98c040bb5488642b51280625af, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1564,6 +2292,7 @@ MonoBehaviour:
       m_Extent: {x: 1.1000001, y: 0.8377671, z: 1.4800005}
     Triangles: 234
   - Key: kenney/city-kit-roads/electricity-pole
+    Model: {fileID: 919132149155446097, guid: f277fc9ea43ef7440bc2299fa6476b2a, type: 3}
     Parts:
     - Mesh: {fileID: -5099218895508731624, guid: f277fc9ea43ef7440bc2299fa6476b2a, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1575,6 +2304,7 @@ MonoBehaviour:
       m_Extent: {x: 2.31634, y: 2.1, z: 0.8568999}
     Triangles: 416
   - Key: kenney/city-kit-roads/electricity-pole-single
+    Model: {fileID: 919132149155446097, guid: 8f4147cee1bef4b4e85bef0fb7df3727, type: 3}
     Parts:
     - Mesh: {fileID: 4518587015685750142, guid: 8f4147cee1bef4b4e85bef0fb7df3727, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1586,6 +2316,7 @@ MonoBehaviour:
       m_Extent: {x: 0.31633997, y: 2.1, z: 0.8568999}
     Triangles: 176
   - Key: kenney/city-kit-roads/electricity-pole-wide
+    Model: {fileID: 919132149155446097, guid: 747edec1fc4ab0a4ba26889ff6c2b572, type: 3}
     Parts:
     - Mesh: {fileID: 8299269858088947413, guid: 747edec1fc4ab0a4ba26889ff6c2b572, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1597,6 +2328,7 @@ MonoBehaviour:
       m_Extent: {x: 4.31634, y: 2.1, z: 0.8568999}
     Triangles: 544
   - Key: kenney/city-kit-roads/electricity-side
+    Model: {fileID: 919132149155446097, guid: 095d998479341dd4ca6f2aba743a0b41, type: 3}
     Parts:
     - Mesh: {fileID: -7974733552189786177, guid: 095d998479341dd4ca6f2aba743a0b41, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1608,6 +2340,7 @@ MonoBehaviour:
       m_Extent: {x: 2.2538, y: 2.1, z: 1.72225}
     Triangles: 416
   - Key: kenney/city-kit-roads/electricity-side-single
+    Model: {fileID: 919132149155446097, guid: a56ac8b86d74c224287915c3ed1f4ae9, type: 3}
     Parts:
     - Mesh: {fileID: -6436984461553712696, guid: a56ac8b86d74c224287915c3ed1f4ae9, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1619,6 +2352,7 @@ MonoBehaviour:
       m_Extent: {x: 0.25379997, y: 2.1, z: 1.7222481}
     Triangles: 176
   - Key: kenney/city-kit-roads/electricity-side-wide
+    Model: {fileID: 919132149155446097, guid: 0390cc6ba9ff7a54ba7b9820c19b106a, type: 3}
     Parts:
     - Mesh: {fileID: -1423012738618536286, guid: 0390cc6ba9ff7a54ba7b9820c19b106a, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1630,6 +2364,7 @@ MonoBehaviour:
       m_Extent: {x: 4.2538, y: 2.1, z: 1.72225}
     Triangles: 544
   - Key: kenney/city-kit-roads/electricity-wires
+    Model: {fileID: 919132149155446097, guid: e3448f4dceb1b8f49aa01b84dd86833c, type: 3}
     Parts:
     - Mesh: {fileID: -7628063184571466529, guid: e3448f4dceb1b8f49aa01b84dd86833c, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1641,6 +2376,7 @@ MonoBehaviour:
       m_Extent: {x: 2.0236065, y: 0.25874424, z: 0.74000126}
     Triangles: 72
   - Key: kenney/city-kit-roads/electricity-wires-wide
+    Model: {fileID: 919132149155446097, guid: b04963e045b04b14ba973684ec5893cd, type: 3}
     Parts:
     - Mesh: {fileID: 5467010434711055798, guid: b04963e045b04b14ba973684ec5893cd, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1652,6 +2388,7 @@ MonoBehaviour:
       m_Extent: {x: 4.0287127, y: 0.417912, z: 0.74000126}
     Triangles: 200
   - Key: kenney/city-kit-roads/light-curved
+    Model: {fileID: 919132149155446097, guid: 3b968594bd2cdea42818bd3388379c79, type: 3}
     Parts:
     - Mesh: {fileID: -7146952539455394416, guid: 3b968594bd2cdea42818bd3388379c79, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1663,6 +2400,7 @@ MonoBehaviour:
       m_Extent: {x: 0.19999999, y: 2.6999996, z: 0.9}
     Triangles: 92
   - Key: kenney/city-kit-roads/light-curved-cross
+    Model: {fileID: 919132149155446097, guid: 4401ab62c5b388845978ac58f3acf43a, type: 3}
     Parts:
     - Mesh: {fileID: 4124698772235185501, guid: 4401ab62c5b388845978ac58f3acf43a, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1674,6 +2412,7 @@ MonoBehaviour:
       m_Extent: {x: 1.5999999, y: 2.6999996, z: 1.5999999}
     Triangles: 270
   - Key: kenney/city-kit-roads/light-curved-double
+    Model: {fileID: 919132149155446097, guid: 51e1887ed63ea35419f7dc4f6188c034, type: 3}
     Parts:
     - Mesh: {fileID: -5318456422208493253, guid: 51e1887ed63ea35419f7dc4f6188c034, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1685,6 +2424,7 @@ MonoBehaviour:
       m_Extent: {x: 0.19999999, y: 2.6999996, z: 1.5999999}
     Triangles: 152
   - Key: kenney/city-kit-roads/light-square
+    Model: {fileID: 919132149155446097, guid: 4957aadd81ddd1848a0e91f2bcc73aa9, type: 3}
     Parts:
     - Mesh: {fileID: 3419904119993623603, guid: 4957aadd81ddd1848a0e91f2bcc73aa9, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1696,6 +2436,7 @@ MonoBehaviour:
       m_Extent: {x: 0.19999999, y: 2.4, z: 0.95000005}
     Triangles: 60
   - Key: kenney/city-kit-roads/light-square-cross
+    Model: {fileID: 919132149155446097, guid: 2a1e53e6c7d93fe479a0cd28ca1b9241, type: 3}
     Parts:
     - Mesh: {fileID: 2987012530862741630, guid: 2a1e53e6c7d93fe479a0cd28ca1b9241, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1707,6 +2448,7 @@ MonoBehaviour:
       m_Extent: {x: 1.6999999, y: 2.4, z: 1.6999999}
     Triangles: 134
   - Key: kenney/city-kit-roads/light-square-double
+    Model: {fileID: 919132149155446097, guid: 64675d89c6765c64a9176d59b9898430, type: 3}
     Parts:
     - Mesh: {fileID: 9048847720147162361, guid: 64675d89c6765c64a9176d59b9898430, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1718,6 +2460,7 @@ MonoBehaviour:
       m_Extent: {x: 0.20000002, y: 2.4, z: 1.6999999}
     Triangles: 88
   - Key: kenney/city-kit-roads/road-bend
+    Model: {fileID: 919132149155446097, guid: 9f6d5b304b0003b43a2b98c9875c4a2b, type: 3}
     Parts:
     - Mesh: {fileID: 114778512065557776, guid: 9f6d5b304b0003b43a2b98c9875c4a2b, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1729,6 +2472,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.08, z: 4}
     Triangles: 260
   - Key: kenney/city-kit-roads/road-bend-barrier
+    Model: {fileID: 919132149155446097, guid: b3c192e345d53194caa6012c1800f05f, type: 3}
     Parts:
     - Mesh: {fileID: -6664675976406557389, guid: b3c192e345d53194caa6012c1800f05f, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1740,6 +2484,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.32, z: 4}
     Triangles: 128
   - Key: kenney/city-kit-roads/road-bend-sidewalk
+    Model: {fileID: 919132149155446097, guid: b5632c713cf717045aea7ad5e261440e, type: 3}
     Parts:
     - Mesh: {fileID: 870736336091481525, guid: b5632c713cf717045aea7ad5e261440e, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1751,6 +2496,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.08, z: 4}
     Triangles: 220
   - Key: kenney/city-kit-roads/road-bend-square
+    Model: {fileID: 919132149155446097, guid: 5e56fbe3241a50045bcdffcbc18ecdd3, type: 3}
     Parts:
     - Mesh: {fileID: -4229768463983562769, guid: 5e56fbe3241a50045bcdffcbc18ecdd3, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1762,6 +2508,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.08, z: 4}
     Triangles: 60
   - Key: kenney/city-kit-roads/road-bend-square-barrier
+    Model: {fileID: 919132149155446097, guid: c25967b761822e54199baeaedc6c167e, type: 3}
     Parts:
     - Mesh: {fileID: 8328853887628673976, guid: c25967b761822e54199baeaedc6c167e, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1773,6 +2520,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.32, z: 4}
     Triangles: 48
   - Key: kenney/city-kit-roads/road-bridge
+    Model: {fileID: 919132149155446097, guid: 4bd495e9020f83e43ae244e4457a9825, type: 3}
     Parts:
     - Mesh: {fileID: -2049702037016573339, guid: 4bd495e9020f83e43ae244e4457a9825, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1784,6 +2532,7 @@ MonoBehaviour:
       m_Extent: {x: 4.000002, y: 2.08, z: 4.000002}
     Triangles: 240
   - Key: kenney/city-kit-roads/road-crossing
+    Model: {fileID: 919132149155446097, guid: 3094888d20e1d7b4f8290037f1530c5a, type: 3}
     Parts:
     - Mesh: {fileID: -1288185598507278496, guid: 3094888d20e1d7b4f8290037f1530c5a, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1795,6 +2544,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.08, z: 4}
     Triangles: 104
   - Key: kenney/city-kit-roads/road-crossroad
+    Model: {fileID: 919132149155446097, guid: 1f2284d1c13d2fa49aa2b1dd0e2105b0, type: 3}
     Parts:
     - Mesh: {fileID: 1388170237736735635, guid: 1f2284d1c13d2fa49aa2b1dd0e2105b0, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1806,6 +2556,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.08, z: 4}
     Triangles: 116
   - Key: kenney/city-kit-roads/road-crossroad-barrier
+    Model: {fileID: 919132149155446097, guid: 920e532efea68714ebc7d950bf4121b1, type: 3}
     Parts:
     - Mesh: {fileID: 5641840778335441632, guid: 920e532efea68714ebc7d950bf4121b1, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1817,6 +2568,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.32, z: 4}
     Triangles: 112
   - Key: kenney/city-kit-roads/road-crossroad-line
+    Model: {fileID: 919132149155446097, guid: 1b548f9c3f5767047804672ef9861611, type: 3}
     Parts:
     - Mesh: {fileID: -440829525626842880, guid: 1b548f9c3f5767047804672ef9861611, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1828,6 +2580,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.08, z: 4}
     Triangles: 108
   - Key: kenney/city-kit-roads/road-crossroad-path
+    Model: {fileID: 919132149155446097, guid: 440af5b6bca4d884cb95844bc4c6fc32, type: 3}
     Parts:
     - Mesh: {fileID: -290162869528085743, guid: 440af5b6bca4d884cb95844bc4c6fc32, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1839,6 +2592,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.08, z: 4}
     Triangles: 276
   - Key: kenney/city-kit-roads/road-curve
+    Model: {fileID: 919132149155446097, guid: 9d8a330efd23c21428fc8c8901f2fbfa, type: 3}
     Parts:
     - Mesh: {fileID: 103405191620377775, guid: 9d8a330efd23c21428fc8c8901f2fbfa, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1850,6 +2604,7 @@ MonoBehaviour:
       m_Extent: {x: 8, y: 0.08, z: 8}
     Triangles: 308
   - Key: kenney/city-kit-roads/road-curve-barrier
+    Model: {fileID: 919132149155446097, guid: 259d95259e059af4f8bc47ba0e814d2c, type: 3}
     Parts:
     - Mesh: {fileID: -2942818866571299152, guid: 259d95259e059af4f8bc47ba0e814d2c, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1861,6 +2616,7 @@ MonoBehaviour:
       m_Extent: {x: 8, y: 0.32, z: 8}
     Triangles: 200
   - Key: kenney/city-kit-roads/road-curve-intersection
+    Model: {fileID: 919132149155446097, guid: 27e3432c515caa14db9d55cfec239389, type: 3}
     Parts:
     - Mesh: {fileID: -2033046535480193167, guid: 27e3432c515caa14db9d55cfec239389, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1872,6 +2628,7 @@ MonoBehaviour:
       m_Extent: {x: 8, y: 0.08, z: 8}
     Triangles: 298
   - Key: kenney/city-kit-roads/road-curve-intersection-barrier
+    Model: {fileID: 919132149155446097, guid: c43e1466c13e3af40b7a4c53d6bdf740, type: 3}
     Parts:
     - Mesh: {fileID: -7756438046553079975, guid: c43e1466c13e3af40b7a4c53d6bdf740, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1883,6 +2640,7 @@ MonoBehaviour:
       m_Extent: {x: 8, y: 0.32, z: 8}
     Triangles: 166
   - Key: kenney/city-kit-roads/road-curve-pavement
+    Model: {fileID: 919132149155446097, guid: c8b28e237e7991543b5ab5f4da22b2f0, type: 3}
     Parts:
     - Mesh: {fileID: 1566337023049458368, guid: c8b28e237e7991543b5ab5f4da22b2f0, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1894,6 +2652,7 @@ MonoBehaviour:
       m_Extent: {x: 8, y: 0.08, z: 8}
     Triangles: 220
   - Key: kenney/city-kit-roads/road-driveway-double
+    Model: {fileID: 919132149155446097, guid: 1aac5a271314b5e4f9ca35fef88fe820, type: 3}
     Parts:
     - Mesh: {fileID: 37862998894455644, guid: 1aac5a271314b5e4f9ca35fef88fe820, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1905,6 +2664,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.08, z: 4}
     Triangles: 72
   - Key: kenney/city-kit-roads/road-driveway-double-barrier
+    Model: {fileID: 919132149155446097, guid: a583da397b09c464d86ef61642533afd, type: 3}
     Parts:
     - Mesh: {fileID: -3924638646867895927, guid: a583da397b09c464d86ef61642533afd, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1916,6 +2676,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.32, z: 4}
     Triangles: 72
   - Key: kenney/city-kit-roads/road-driveway-single
+    Model: {fileID: 919132149155446097, guid: fdf99e45366898940b3a7ee74b11360a, type: 3}
     Parts:
     - Mesh: {fileID: 4071995872049839818, guid: fdf99e45366898940b3a7ee74b11360a, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1927,6 +2688,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.08, z: 4}
     Triangles: 60
   - Key: kenney/city-kit-roads/road-driveway-single-barrier
+    Model: {fileID: 919132149155446097, guid: 1dda46b6c8e3e2b4db5ef0aa9ab904fb, type: 3}
     Parts:
     - Mesh: {fileID: 4788759265719724323, guid: 1dda46b6c8e3e2b4db5ef0aa9ab904fb, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1938,6 +2700,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.32, z: 4}
     Triangles: 48
   - Key: kenney/city-kit-roads/road-end
+    Model: {fileID: 919132149155446097, guid: 3ebdc462ff4b25f45977a51a2a40a732, type: 3}
     Parts:
     - Mesh: {fileID: -2062320268280499068, guid: 3ebdc462ff4b25f45977a51a2a40a732, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1949,6 +2712,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.08, z: 4}
     Triangles: 42
   - Key: kenney/city-kit-roads/road-end-barrier
+    Model: {fileID: 919132149155446097, guid: dea02a0e7292cff49b4d13e548521201, type: 3}
     Parts:
     - Mesh: {fileID: -4838039333457296643, guid: dea02a0e7292cff49b4d13e548521201, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1960,6 +2724,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.32, z: 4}
     Triangles: 28
   - Key: kenney/city-kit-roads/road-end-round
+    Model: {fileID: 919132149155446097, guid: af95215d7ae0013469ebd0a3805f8b56, type: 3}
     Parts:
     - Mesh: {fileID: 8087690630191597413, guid: af95215d7ae0013469ebd0a3805f8b56, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1971,6 +2736,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.08, z: 4}
     Triangles: 218
   - Key: kenney/city-kit-roads/road-end-round-barrier
+    Model: {fileID: 919132149155446097, guid: ee5c97b38e5d9a84da63104fbe0e1018, type: 3}
     Parts:
     - Mesh: {fileID: -3910907618943861964, guid: ee5c97b38e5d9a84da63104fbe0e1018, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1982,6 +2748,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.32, z: 4}
     Triangles: 160
   - Key: kenney/city-kit-roads/road-intersection
+    Model: {fileID: 919132149155446097, guid: 108f2275caafec842b0b484220d1a752, type: 3}
     Parts:
     - Mesh: {fileID: 1888365906695794392, guid: 108f2275caafec842b0b484220d1a752, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -1993,6 +2760,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.08, z: 4.0000005}
     Triangles: 84
   - Key: kenney/city-kit-roads/road-intersection-barrier
+    Model: {fileID: 919132149155446097, guid: facd448e2c7035b47ac1d9d58398afc5, type: 3}
     Parts:
     - Mesh: {fileID: 1935040426044751874, guid: facd448e2c7035b47ac1d9d58398afc5, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2004,6 +2772,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.32, z: 4}
     Triangles: 68
   - Key: kenney/city-kit-roads/road-intersection-line
+    Model: {fileID: 919132149155446097, guid: f49f025d41dffdf4799f69bb1abae2bc, type: 3}
     Parts:
     - Mesh: {fileID: -496329911560726882, guid: f49f025d41dffdf4799f69bb1abae2bc, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2015,6 +2784,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.08, z: 4}
     Triangles: 76
   - Key: kenney/city-kit-roads/road-intersection-path
+    Model: {fileID: 919132149155446097, guid: dd315428ce227b94593d449f3c678b87, type: 3}
     Parts:
     - Mesh: {fileID: -4535945468909293990, guid: dd315428ce227b94593d449f3c678b87, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2026,6 +2796,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.08, z: 4}
     Triangles: 204
   - Key: kenney/city-kit-roads/road-roundabout
+    Model: {fileID: 919132149155446097, guid: 7f486c7a6ff72334a9e79ca260edfcd4, type: 3}
     Parts:
     - Mesh: {fileID: 2083375915920286552, guid: 7f486c7a6ff72334a9e79ca260edfcd4, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2037,6 +2808,7 @@ MonoBehaviour:
       m_Extent: {x: 12, y: 0.08, z: 12}
     Triangles: 1636
   - Key: kenney/city-kit-roads/road-roundabout-barrier
+    Model: {fileID: 919132149155446097, guid: b3c058e35d93d9744af2b8b8747b5097, type: 3}
     Parts:
     - Mesh: {fileID: 7990441575307973924, guid: b3c058e35d93d9744af2b8b8747b5097, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2048,6 +2820,7 @@ MonoBehaviour:
       m_Extent: {x: 12, y: 0.32, z: 12}
     Triangles: 754
   - Key: kenney/city-kit-roads/road-side
+    Model: {fileID: 919132149155446097, guid: 7be73068e98ef714298f3176589e0efc, type: 3}
     Parts:
     - Mesh: {fileID: 8959771557018241835, guid: 7be73068e98ef714298f3176589e0efc, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2059,6 +2832,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.08, z: 5.24}
     Triangles: 44
   - Key: kenney/city-kit-roads/road-side-barrier
+    Model: {fileID: 919132149155446097, guid: e5727c75451242e45957437d7bd72ac5, type: 3}
     Parts:
     - Mesh: {fileID: 3766824172746453240, guid: e5727c75451242e45957437d7bd72ac5, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2070,6 +2844,7 @@ MonoBehaviour:
       m_Extent: {x: 5.240001, y: 0.32, z: 4.000001}
     Triangles: 24
   - Key: kenney/city-kit-roads/road-side-entry
+    Model: {fileID: 919132149155446097, guid: fe708b7eec38c1b489a1e3ebefea4267, type: 3}
     Parts:
     - Mesh: {fileID: 2296203306782993354, guid: fe708b7eec38c1b489a1e3ebefea4267, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2081,6 +2856,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.08, z: 5.24}
     Triangles: 306
   - Key: kenney/city-kit-roads/road-side-entry-barrier
+    Model: {fileID: 919132149155446097, guid: bf59f9adf0244cd49a607ff5a5f71fe3, type: 3}
     Parts:
     - Mesh: {fileID: -1475877230684587279, guid: bf59f9adf0244cd49a607ff5a5f71fe3, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2092,6 +2868,7 @@ MonoBehaviour:
       m_Extent: {x: 5.240001, y: 0.32, z: 4.000001}
     Triangles: 232
   - Key: kenney/city-kit-roads/road-side-exit
+    Model: {fileID: 919132149155446097, guid: ed254edfffa359d43a69f4d1a9e7ea50, type: 3}
     Parts:
     - Mesh: {fileID: -1419044065074876370, guid: ed254edfffa359d43a69f4d1a9e7ea50, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2103,6 +2880,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.08, z: 5.24}
     Triangles: 306
   - Key: kenney/city-kit-roads/road-side-exit-barrier
+    Model: {fileID: 919132149155446097, guid: 1e26a2845411b59479ae242c0d15a3cc, type: 3}
     Parts:
     - Mesh: {fileID: 2844117799365369053, guid: 1e26a2845411b59479ae242c0d15a3cc, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2114,6 +2892,7 @@ MonoBehaviour:
       m_Extent: {x: 5.2400007, y: 0.32, z: 4.000001}
     Triangles: 232
   - Key: kenney/city-kit-roads/road-sign-empty
+    Model: {fileID: 919132149155446097, guid: 582924b1e2daf694eb2965b0b1d4f3f6, type: 3}
     Parts:
     - Mesh: {fileID: 8200627913935738570, guid: 582924b1e2daf694eb2965b0b1d4f3f6, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2125,6 +2904,7 @@ MonoBehaviour:
       m_Extent: {x: 0.19999999, y: 1.9000001, z: 0.19999999}
     Triangles: 42
   - Key: kenney/city-kit-roads/road-sign-empty-hanging
+    Model: {fileID: 919132149155446097, guid: 391a36d5fe710e841a2ccb6f6dd008f6, type: 3}
     Parts:
     - Mesh: {fileID: -6432109200370719969, guid: 391a36d5fe710e841a2ccb6f6dd008f6, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2136,6 +2916,7 @@ MonoBehaviour:
       m_Extent: {x: 0.35999998, y: 1.8999999, z: 1.18}
     Triangles: 112
   - Key: kenney/city-kit-roads/road-sign-object-stop
+    Model: {fileID: 919132149155446097, guid: 4483dd737814e1b4a95140281f0cdf1e, type: 3}
     Parts:
     - Mesh: {fileID: 3575047648809406825, guid: 4483dd737814e1b4a95140281f0cdf1e, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2147,6 +2928,7 @@ MonoBehaviour:
       m_Extent: {x: 0.31, y: 0.5025904, z: 0.5025904}
     Triangles: 62
   - Key: kenney/city-kit-roads/road-sign-object-street
+    Model: {fileID: 919132149155446097, guid: 68fc5099ebbc1d04d95cfe405db730c0, type: 3}
     Parts:
     - Mesh: {fileID: -5674656895636364711, guid: 68fc5099ebbc1d04d95cfe405db730c0, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2158,6 +2940,7 @@ MonoBehaviour:
       m_Extent: {x: 0.17, y: 0.24000007, z: 0.76999915}
     Triangles: 56
   - Key: kenney/city-kit-roads/road-sign-object-warning
+    Model: {fileID: 919132149155446097, guid: afe7486a08ad4284baf7952c08e02afe, type: 3}
     Parts:
     - Mesh: {fileID: -1307377767302170956, guid: afe7486a08ad4284baf7952c08e02afe, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2169,6 +2952,7 @@ MonoBehaviour:
       m_Extent: {x: 0.30938414, y: 0.53522635, z: 0.53522635}
     Triangles: 62
   - Key: kenney/city-kit-roads/road-sign-stop
+    Model: {fileID: 919132149155446097, guid: 7218baf685e159d4f845e56caef52cfb, type: 3}
     Parts:
     - Mesh: {fileID: -5269049748596400216, guid: 7218baf685e159d4f845e56caef52cfb, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2180,6 +2964,7 @@ MonoBehaviour:
       m_Extent: {x: 0.31, y: 1.9762995, z: 0.5528495}
     Triangles: 104
   - Key: kenney/city-kit-roads/road-sign-street
+    Model: {fileID: 919132149155446097, guid: 8e5f0ccdd6b5c2d46aa0d2007ac44edd, type: 3}
     Parts:
     - Mesh: {fileID: -8102300150351496734, guid: 8e5f0ccdd6b5c2d46aa0d2007ac44edd, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2191,6 +2976,7 @@ MonoBehaviour:
       m_Extent: {x: 0.7850001, y: 1.9000001, z: 0.78499913}
     Triangles: 154
   - Key: kenney/city-kit-roads/road-sign-warning
+    Model: {fileID: 919132149155446097, guid: 74aeb182af2d5ce49b9aa8f837ef1225, type: 3}
     Parts:
     - Mesh: {fileID: -1990795766888560360, guid: 74aeb182af2d5ce49b9aa8f837ef1225, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2202,6 +2988,7 @@ MonoBehaviour:
       m_Extent: {x: 0.30938408, y: 1.9942492, z: 0.58874893}
     Triangles: 104
   - Key: kenney/city-kit-roads/road-slant
+    Model: {fileID: 919132149155446097, guid: c6361a51635bac947982e10f434b5591, type: 3}
     Parts:
     - Mesh: {fileID: 1834015914348924163, guid: c6361a51635bac947982e10f434b5591, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2213,6 +3000,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 1.0799999, z: 4}
     Triangles: 44
   - Key: kenney/city-kit-roads/road-slant-barrier
+    Model: {fileID: 919132149155446097, guid: 65ffe5d551c07ed4aad096748650455d, type: 3}
     Parts:
     - Mesh: {fileID: -439047899018532666, guid: 65ffe5d551c07ed4aad096748650455d, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2224,6 +3012,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 1.3199999, z: 4}
     Triangles: 24
   - Key: kenney/city-kit-roads/road-slant-curve
+    Model: {fileID: 919132149155446097, guid: 9cd8b4ad2059ea24bb4f4beda609d5b5, type: 3}
     Parts:
     - Mesh: {fileID: -159414292715325243, guid: 9cd8b4ad2059ea24bb4f4beda609d5b5, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2235,6 +3024,7 @@ MonoBehaviour:
       m_Extent: {x: 8, y: 2.08, z: 4}
     Triangles: 544
   - Key: kenney/city-kit-roads/road-slant-curve-barrier
+    Model: {fileID: 919132149155446097, guid: bdf9e5a072a79d346a55111ae3266a33, type: 3}
     Parts:
     - Mesh: {fileID: 7670262991909302713, guid: bdf9e5a072a79d346a55111ae3266a33, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2246,6 +3036,7 @@ MonoBehaviour:
       m_Extent: {x: 8, y: 2.32, z: 4}
     Triangles: 420
   - Key: kenney/city-kit-roads/road-slant-flat
+    Model: {fileID: 919132149155446097, guid: 4a2b8c18f5601224a8b92305a6b0b816, type: 3}
     Parts:
     - Mesh: {fileID: -3037768993702345142, guid: 4a2b8c18f5601224a8b92305a6b0b816, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2257,6 +3048,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 1.0799999, z: 4}
     Triangles: 44
   - Key: kenney/city-kit-roads/road-slant-flat-curve
+    Model: {fileID: 919132149155446097, guid: 2672e74bed3bf624bb05412a241dae86, type: 3}
     Parts:
     - Mesh: {fileID: -973858668208527721, guid: 2672e74bed3bf624bb05412a241dae86, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2268,6 +3060,7 @@ MonoBehaviour:
       m_Extent: {x: 8, y: 2.08, z: 4}
     Triangles: 648
   - Key: kenney/city-kit-roads/road-slant-flat-high
+    Model: {fileID: 919132149155446097, guid: 67ee36a2dd1167541bdaa6f77f90afe5, type: 3}
     Parts:
     - Mesh: {fileID: -5551140860952222229, guid: 67ee36a2dd1167541bdaa6f77f90afe5, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2279,6 +3072,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 2.08, z: 4}
     Triangles: 44
   - Key: kenney/city-kit-roads/road-slant-high
+    Model: {fileID: 919132149155446097, guid: b15e9c66720f0994fb434903ab4e0d99, type: 3}
     Parts:
     - Mesh: {fileID: -7180918864873735353, guid: b15e9c66720f0994fb434903ab4e0d99, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2290,6 +3084,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 2.08, z: 4}
     Triangles: 44
   - Key: kenney/city-kit-roads/road-slant-high-barrier
+    Model: {fileID: 919132149155446097, guid: 3292f59fc4e5d5f45b827135d7006141, type: 3}
     Parts:
     - Mesh: {fileID: -2536929444835074451, guid: 3292f59fc4e5d5f45b827135d7006141, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2301,6 +3096,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 2.32, z: 4}
     Triangles: 24
   - Key: kenney/city-kit-roads/road-split
+    Model: {fileID: 919132149155446097, guid: 2db98635045d1e445a417cd0e96357bc, type: 3}
     Parts:
     - Mesh: {fileID: -5743825196923042663, guid: 2db98635045d1e445a417cd0e96357bc, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2312,6 +3108,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.08, z: 8}
     Triangles: 862
   - Key: kenney/city-kit-roads/road-split-barrier
+    Model: {fileID: 919132149155446097, guid: 4b3017999aedea14082130b7f09c8791, type: 3}
     Parts:
     - Mesh: {fileID: 3895614010584885847, guid: 4b3017999aedea14082130b7f09c8791, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2323,6 +3120,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.32, z: 8}
     Triangles: 512
   - Key: kenney/city-kit-roads/road-square
+    Model: {fileID: 919132149155446097, guid: 85dcd9d60200b344b945d76920c79651, type: 3}
     Parts:
     - Mesh: {fileID: -4632849165201009875, guid: 85dcd9d60200b344b945d76920c79651, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2334,6 +3132,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.08, z: 4}
     Triangles: 36
   - Key: kenney/city-kit-roads/road-square-barrier
+    Model: {fileID: 919132149155446097, guid: 8acecf94a08011b4088095ebe5bc5bc0, type: 3}
     Parts:
     - Mesh: {fileID: -5058292131822510550, guid: 8acecf94a08011b4088095ebe5bc5bc0, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2345,6 +3144,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.32, z: 4}
     Triangles: 32
   - Key: kenney/city-kit-roads/road-straight
+    Model: {fileID: 919132149155446097, guid: 686b283e042af9b4c98386190c338912, type: 3}
     Parts:
     - Mesh: {fileID: -6102804450836232372, guid: 686b283e042af9b4c98386190c338912, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2356,6 +3156,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.08, z: 4}
     Triangles: 44
   - Key: kenney/city-kit-roads/road-straight-barrier
+    Model: {fileID: 919132149155446097, guid: 1022533c2ca6388439f041221b1a30ac, type: 3}
     Parts:
     - Mesh: {fileID: 4217626409236116248, guid: 1022533c2ca6388439f041221b1a30ac, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2367,6 +3168,7 @@ MonoBehaviour:
       m_Extent: {x: 4.000001, y: 0.32, z: 4.000001}
     Triangles: 24
   - Key: kenney/city-kit-roads/road-straight-barrier-end
+    Model: {fileID: 919132149155446097, guid: b5a6dda9c7a090948939ca4af4a420c9, type: 3}
     Parts:
     - Mesh: {fileID: 7674442692433275595, guid: b5a6dda9c7a090948939ca4af4a420c9, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2378,6 +3180,7 @@ MonoBehaviour:
       m_Extent: {x: 4.000001, y: 0.32, z: 4.000001}
     Triangles: 16
   - Key: kenney/city-kit-roads/road-straight-barrier-half
+    Model: {fileID: 919132149155446097, guid: af3598b103a350a4d813d20765fc71a2, type: 3}
     Parts:
     - Mesh: {fileID: 3553231749321527099, guid: af3598b103a350a4d813d20765fc71a2, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2389,6 +3192,7 @@ MonoBehaviour:
       m_Extent: {x: 4.000001, y: 0.32, z: 2.0000005}
     Triangles: 24
   - Key: kenney/city-kit-roads/road-straight-half
+    Model: {fileID: 919132149155446097, guid: 988eab586a98a9143a093af9445f108c, type: 3}
     Parts:
     - Mesh: {fileID: 2248387210188678487, guid: 988eab586a98a9143a093af9445f108c, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2400,6 +3204,7 @@ MonoBehaviour:
       m_Extent: {x: 2, y: 0.08, z: 4}
     Triangles: 44
   - Key: kenney/city-kit-roads/sign-highway
+    Model: {fileID: 919132149155446097, guid: b5280d05aff28864cb42d6aa9807ca89, type: 3}
     Parts:
     - Mesh: {fileID: -3628400059217982823, guid: b5280d05aff28864cb42d6aa9807ca89, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2411,6 +3216,7 @@ MonoBehaviour:
       m_Extent: {x: 0.52949965, y: 2.8294997, z: 3.9999993}
     Triangles: 180
   - Key: kenney/city-kit-roads/sign-highway-detailed
+    Model: {fileID: 919132149155446097, guid: 54731474c0075874e9c1b26b654e4d1f, type: 3}
     Parts:
     - Mesh: {fileID: 6158520063420338041, guid: 54731474c0075874e9c1b26b654e4d1f, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2422,6 +3228,7 @@ MonoBehaviour:
       m_Extent: {x: 0.5295001, y: 3.2884996, z: 3.9999993}
     Triangles: 256
   - Key: kenney/city-kit-roads/sign-highway-wide
+    Model: {fileID: 919132149155446097, guid: 2044e41b4d2f17942b355a6fe5cd4926, type: 3}
     Parts:
     - Mesh: {fileID: 486082582322110665, guid: 2044e41b4d2f17942b355a6fe5cd4926, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2433,6 +3240,7 @@ MonoBehaviour:
       m_Extent: {x: 0.5295001, y: 2.8294997, z: 3.9999993}
     Triangles: 144
   - Key: kenney/city-kit-roads/tile-high
+    Model: {fileID: 919132149155446097, guid: eb6395435249ed043a71ae671d643aa2, type: 3}
     Parts:
     - Mesh: {fileID: 3330127673721514686, guid: eb6395435249ed043a71ae671d643aa2, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2444,6 +3252,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 1, z: 4}
     Triangles: 12
   - Key: kenney/city-kit-roads/tile-low
+    Model: {fileID: 919132149155446097, guid: 650f370055c38b04499f472c06c2a3ed, type: 3}
     Parts:
     - Mesh: {fileID: -3456468188639088122, guid: 650f370055c38b04499f472c06c2a3ed, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2455,6 +3264,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 0.08, z: 4}
     Triangles: 12
   - Key: kenney/city-kit-roads/tile-slant
+    Model: {fileID: 919132149155446097, guid: e5c3453ae059d0648906646a0dc215eb, type: 3}
     Parts:
     - Mesh: {fileID: -9114122330630467764, guid: e5c3453ae059d0648906646a0dc215eb, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2466,6 +3276,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 1.0799999, z: 4}
     Triangles: 12
   - Key: kenney/city-kit-roads/tile-slanthigh
+    Model: {fileID: 919132149155446097, guid: a602f2fbb1afbd4409e44f1606395e3f, type: 3}
     Parts:
     - Mesh: {fileID: 5295517009331750903, guid: a602f2fbb1afbd4409e44f1606395e3f, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2477,6 +3288,7 @@ MonoBehaviour:
       m_Extent: {x: 4, y: 2.08, z: 4}
     Triangles: 12
   - Key: kenney/city-kit-roads/traffic-light
+    Model: {fileID: 919132149155446097, guid: 95907a7d4a4355c4199bcc09d93b9186, type: 3}
     Parts:
     - Mesh: {fileID: 7237814090592269011, guid: 95907a7d4a4355c4199bcc09d93b9186, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2488,6 +3300,7 @@ MonoBehaviour:
       m_Extent: {x: 0.47039998, y: 2.06, z: 0.35999998}
     Triangles: 212
   - Key: kenney/city-kit-roads/traffic-light-hanging
+    Model: {fileID: 919132149155446097, guid: 28f7fc5499fd5af4599b78b8bb66b03e, type: 3}
     Parts:
     - Mesh: {fileID: 2585297722738174812, guid: 28f7fc5499fd5af4599b78b8bb66b03e, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2499,6 +3312,7 @@ MonoBehaviour:
       m_Extent: {x: 0.47039998, y: 2.036375, z: 1.1800003}
     Triangles: 230
   - Key: kenney/city-kit-roads/traffic-light-object-hanging
+    Model: {fileID: 919132149155446097, guid: 8d8c1408835b03d449eb685a0bfe1228, type: 3}
     Parts:
     - Mesh: {fileID: 816473488721555481, guid: 8d8c1408835b03d449eb685a0bfe1228, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2510,6 +3324,7 @@ MonoBehaviour:
       m_Extent: {x: 0.39039993, y: 0.57275, z: 0.24425}
     Triangles: 114
   - Key: kenney/city-kit-roads/traffic-light-object-horizontal
+    Model: {fileID: 919132149155446097, guid: 542bfc11173fce146b5eb13982f4284d, type: 3}
     Parts:
     - Mesh: {fileID: 3819103128891483732, guid: 542bfc11173fce146b5eb13982f4284d, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2521,6 +3336,7 @@ MonoBehaviour:
       m_Extent: {x: 0.39040023, y: 0.24425, z: 0.57275003}
     Triangles: 118
   - Key: kenney/city-kit-roads/traffic-light-object-vertical
+    Model: {fileID: 919132149155446097, guid: 4b91d12f569f67e4885626169da9caa4, type: 3}
     Parts:
     - Mesh: {fileID: 9189259002708542948, guid: 4b91d12f569f67e4885626169da9caa4, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2532,6 +3348,7 @@ MonoBehaviour:
       m_Extent: {x: 0.39039993, y: 0.57275, z: 0.24425}
     Triangles: 132
   - Key: kenney/city-kit-suburban/building-type-a
+    Model: {fileID: 919132149155446097, guid: 13c3e9388d7c8894e93ad666119111b6, type: 3}
     Parts:
     - Mesh: {fileID: 2341495138360658118, guid: 13c3e9388d7c8894e93ad666119111b6, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2543,6 +3360,7 @@ MonoBehaviour:
       m_Extent: {x: 5.2, y: 3.3341637, z: 4.112551}
     Triangles: 1174
   - Key: kenney/city-kit-suburban/building-type-b
+    Model: {fileID: 919132149155446097, guid: 2ca1f6bde15bf564ab12bd50d73c5b45, type: 3}
     Parts:
     - Mesh: {fileID: 5292590131479047705, guid: 2ca1f6bde15bf564ab12bd50d73c5b45, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2554,6 +3372,7 @@ MonoBehaviour:
       m_Extent: {x: 7.312, y: 4.55, z: 4.56}
     Triangles: 1748
   - Key: kenney/city-kit-suburban/building-type-c
+    Model: {fileID: 919132149155446097, guid: 74060350a02aa4549adaa50825c33691, type: 3}
     Parts:
     - Mesh: {fileID: -4038059632633745876, guid: 74060350a02aa4549adaa50825c33691, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2565,6 +3384,7 @@ MonoBehaviour:
       m_Extent: {x: 5.145521, y: 4.134164, z: 4.112551}
     Triangles: 1196
   - Key: kenney/city-kit-suburban/building-type-d
+    Model: {fileID: 919132149155446097, guid: dbc4643591cdc2d409c0161f3138d882, type: 3}
     Parts:
     - Mesh: {fileID: 2877166761697098136, guid: dbc4643591cdc2d409c0161f3138d882, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2576,6 +3396,7 @@ MonoBehaviour:
       m_Extent: {x: 7.0255213, y: 4.9500003, z: 4.112}
     Triangles: 1757
   - Key: kenney/city-kit-suburban/building-type-e
+    Model: {fileID: 919132149155446097, guid: 7dcde2d93c269c24bb8d0c8a5aca014e, type: 3}
     Parts:
     - Mesh: {fileID: -917911441708352487, guid: 7dcde2d93c269c24bb8d0c8a5aca014e, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2587,6 +3408,7 @@ MonoBehaviour:
       m_Extent: {x: 5.2, y: 4.55, z: 4.112}
     Triangles: 1731
   - Key: kenney/city-kit-suburban/building-type-f
+    Model: {fileID: 919132149155446097, guid: bcf3efa6208927f4692b69aecbc72d0a, type: 3}
     Parts:
     - Mesh: {fileID: -4451102010757998781, guid: bcf3efa6208927f4692b69aecbc72d0a, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2598,6 +3420,7 @@ MonoBehaviour:
       m_Extent: {x: 5.712, y: 4.55, z: 5.6235647}
     Triangles: 1616
   - Key: kenney/city-kit-suburban/building-type-g
+    Model: {fileID: 919132149155446097, guid: 4694429a4885b4b469bfe5cf12ee1233, type: 3}
     Parts:
     - Mesh: {fileID: 9182828109983725516, guid: 4694429a4885b4b469bfe5cf12ee1233, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2609,6 +3432,7 @@ MonoBehaviour:
       m_Extent: {x: 5.7999997, y: 3.0728388, z: 4.712}
     Triangles: 1067
   - Key: kenney/city-kit-suburban/building-type-h
+    Model: {fileID: 919132149155446097, guid: 5a979d83ed2150f4f9b6ada29981175c, type: 3}
     Parts:
     - Mesh: {fileID: -8292418123367507728, guid: 5a979d83ed2150f4f9b6ada29981175c, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2620,6 +3444,7 @@ MonoBehaviour:
       m_Extent: {x: 5.2, y: 2.9499996, z: 3.6639998}
     Triangles: 770
   - Key: kenney/city-kit-suburban/building-type-i
+    Model: {fileID: 919132149155446097, guid: baf7e3cb87feae14598dd0bb8c1725a2, type: 3}
     Parts:
     - Mesh: {fileID: -1188069927208145672, guid: baf7e3cb87feae14598dd0bb8c1725a2, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2631,6 +3456,7 @@ MonoBehaviour:
       m_Extent: {x: 5.145521, y: 2.9499996, z: 4.112}
     Triangles: 800
   - Key: kenney/city-kit-suburban/building-type-j
+    Model: {fileID: 919132149155446097, guid: 77518a1ca1cfb924b8ae28c948f48dcb, type: 3}
     Parts:
     - Mesh: {fileID: -8898339329139413169, guid: 77518a1ca1cfb924b8ae28c948f48dcb, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2642,6 +3468,7 @@ MonoBehaviour:
       m_Extent: {x: 5.48, y: 4.15, z: 3.6639998}
     Triangles: 1210
   - Key: kenney/city-kit-suburban/building-type-k
+    Model: {fileID: 919132149155446097, guid: 8c922f19ab06cbe4e91bb7fee0d02457, type: 3}
     Parts:
     - Mesh: {fileID: -258877355178633374, guid: 8c922f19ab06cbe4e91bb7fee0d02457, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2653,6 +3480,7 @@ MonoBehaviour:
       m_Extent: {x: 3.683752, y: 4.598385, z: 4.08}
     Triangles: 1024
   - Key: kenney/city-kit-suburban/building-type-l
+    Model: {fileID: 919132149155446097, guid: 544f310c8a1b3da448beeb01efa51089, type: 3}
     Parts:
     - Mesh: {fileID: -8408686140122113377, guid: 544f310c8a1b3da448beeb01efa51089, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2664,6 +3492,7 @@ MonoBehaviour:
       m_Extent: {x: 4.1343517, y: 4.1967735, z: 4.08}
     Triangles: 1310
   - Key: kenney/city-kit-suburban/building-type-m
+    Model: {fileID: 919132149155446097, guid: 65e51c36d738f19478ca6febb21dd5c4, type: 3}
     Parts:
     - Mesh: {fileID: 4858565865334097509, guid: 65e51c36d738f19478ca6febb21dd5c4, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2675,6 +3504,7 @@ MonoBehaviour:
       m_Extent: {x: 5.712, y: 2.9499996, z: 5.712}
     Triangles: 1112
   - Key: kenney/city-kit-suburban/building-type-n
+    Model: {fileID: 919132149155446097, guid: 7b1ca9701cdbf3e4c999d495def74d75, type: 3}
     Parts:
     - Mesh: {fileID: 2994208289515770256, guid: 7b1ca9701cdbf3e4c999d495def74d75, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2686,6 +3516,7 @@ MonoBehaviour:
       m_Extent: {x: 7.137086, y: 4.55, z: 5.5115643}
     Triangles: 1612
   - Key: kenney/city-kit-suburban/building-type-o
+    Model: {fileID: 919132149155446097, guid: 9698d02145ad12a4fa420bb02e4013bc, type: 3}
     Parts:
     - Mesh: {fileID: 5397217913366792580, guid: 9698d02145ad12a4fa420bb02e4013bc, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2697,6 +3528,7 @@ MonoBehaviour:
       m_Extent: {x: 5.08, y: 4.55, z: 4.112}
     Triangles: 1326
   - Key: kenney/city-kit-suburban/building-type-p
+    Model: {fileID: 919132149155446097, guid: bd38c0cc8d404a848a4fbe8b02cb73d5, type: 3}
     Parts:
     - Mesh: {fileID: -8510516734233680673, guid: bd38c0cc8d404a848a4fbe8b02cb73d5, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2708,6 +3540,7 @@ MonoBehaviour:
       m_Extent: {x: 4.9600005, y: 3.6719997, z: 3.96}
     Triangles: 1282
   - Key: kenney/city-kit-suburban/building-type-q
+    Model: {fileID: 919132149155446097, guid: 67d478273cf7afb4788db578d7385fc5, type: 3}
     Parts:
     - Mesh: {fileID: 5385716266787372977, guid: 67d478273cf7afb4788db578d7385fc5, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2719,6 +3552,7 @@ MonoBehaviour:
       m_Extent: {x: 4.96, y: 3.6719997, z: 3.5423517}
     Triangles: 1140
   - Key: kenney/city-kit-suburban/building-type-r
+    Model: {fileID: 919132149155446097, guid: 2f9638bee51e2604e86e7f97a67684b2, type: 3}
     Parts:
     - Mesh: {fileID: 3217951734092603951, guid: 2f9638bee51e2604e86e7f97a67684b2, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2730,6 +3564,7 @@ MonoBehaviour:
       m_Extent: {x: 4.1120005, y: 4.5645714, z: 4.08}
     Triangles: 1030
   - Key: kenney/city-kit-suburban/building-type-s
+    Model: {fileID: 919132149155446097, guid: 75e8cc2b2ebc4234898063f1a903c0d9, type: 3}
     Parts:
     - Mesh: {fileID: 846441143127786057, guid: 75e8cc2b2ebc4234898063f1a903c0d9, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2741,6 +3576,7 @@ MonoBehaviour:
       m_Extent: {x: 5.624116, y: 4.55, z: 4.345522}
     Triangles: 1212
   - Key: kenney/city-kit-suburban/building-type-t
+    Model: {fileID: 919132149155446097, guid: 90aa698daa219204fbb1d5d815196ede, type: 3}
     Parts:
     - Mesh: {fileID: 5730343550756943599, guid: 90aa698daa219204fbb1d5d815196ede, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2752,6 +3588,7 @@ MonoBehaviour:
       m_Extent: {x: 5.2543516, y: 4.6253223, z: 5.625521}
     Triangles: 2062
   - Key: kenney/city-kit-suburban/building-type-u
+    Model: {fileID: 919132149155446097, guid: 6f7816720d0552e4a9d5a300f1214d52, type: 3}
     Parts:
     - Mesh: {fileID: -8171314789620074566, guid: 6f7816720d0552e4a9d5a300f1214d52, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2763,6 +3600,7 @@ MonoBehaviour:
       m_Extent: {x: 5.712001, y: 4.55, z: 4.34774}
     Triangles: 1332
   - Key: kenney/city-kit-suburban/driveway-long
+    Model: {fileID: 919132149155446097, guid: 274e57a611d51c544a92e63ac122b06e, type: 3}
     Parts:
     - Mesh: {fileID: -4329521809293169, guid: 274e57a611d51c544a92e63ac122b06e, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2774,6 +3612,7 @@ MonoBehaviour:
       m_Extent: {x: 1.4399999, y: 0.04, z: 1.5999999}
     Triangles: 12
   - Key: kenney/city-kit-suburban/driveway-short
+    Model: {fileID: 919132149155446097, guid: 340d5ab013bb0ed468f5d9e1b464704e, type: 3}
     Parts:
     - Mesh: {fileID: -5791600240163611167, guid: 340d5ab013bb0ed468f5d9e1b464704e, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2785,6 +3624,7 @@ MonoBehaviour:
       m_Extent: {x: 1.4399999, y: 0.04, z: 0.79999995}
     Triangles: 12
   - Key: kenney/city-kit-suburban/fence
+    Model: {fileID: 919132149155446097, guid: 6493b44909785e34c9a2caaba906ab8b, type: 3}
     Parts:
     - Mesh: {fileID: -8223828571603864074, guid: 6493b44909785e34c9a2caaba906ab8b, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2796,6 +3636,7 @@ MonoBehaviour:
       m_Extent: {x: 1.9000001, y: 1.0799999, z: 0.3}
     Triangles: 88
   - Key: kenney/city-kit-suburban/fence-1x2
+    Model: {fileID: 919132149155446097, guid: 8bd782d779b1d7048b741bfc012a5019, type: 3}
     Parts:
     - Mesh: {fileID: -7458825633475257210, guid: 8bd782d779b1d7048b741bfc012a5019, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2807,6 +3648,7 @@ MonoBehaviour:
       m_Extent: {x: 3.5, y: 1.0799999, z: 1.75}
     Triangles: 156
   - Key: kenney/city-kit-suburban/fence-1x3
+    Model: {fileID: 919132149155446097, guid: e5186dde158adbb4ebce42af2f27262c, type: 3}
     Parts:
     - Mesh: {fileID: 2786148727869345120, guid: e5186dde158adbb4ebce42af2f27262c, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2818,6 +3660,7 @@ MonoBehaviour:
       m_Extent: {x: 5.1000004, y: 1.0799999, z: 1.75}
     Triangles: 204
   - Key: kenney/city-kit-suburban/fence-1x4
+    Model: {fileID: 919132149155446097, guid: 769dd048b00e3ee4ba3fb9f0ef601d8e, type: 3}
     Parts:
     - Mesh: {fileID: 6029781765657583713, guid: 769dd048b00e3ee4ba3fb9f0ef601d8e, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2829,6 +3672,7 @@ MonoBehaviour:
       m_Extent: {x: 6.7, y: 1.0799999, z: 1.75}
     Triangles: 252
   - Key: kenney/city-kit-suburban/fence-2x2
+    Model: {fileID: 919132149155446097, guid: b6ca45408d9fbae47ac20bbcaef04d72, type: 3}
     Parts:
     - Mesh: {fileID: -361014210149313146, guid: b6ca45408d9fbae47ac20bbcaef04d72, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2840,6 +3684,7 @@ MonoBehaviour:
       m_Extent: {x: 3.5, y: 1.0799999, z: 3.35}
     Triangles: 236
   - Key: kenney/city-kit-suburban/fence-2x3
+    Model: {fileID: 919132149155446097, guid: 691cfacf59ce2b64a9e88bb5d8e9e5f7, type: 3}
     Parts:
     - Mesh: {fileID: 749594703091104901, guid: 691cfacf59ce2b64a9e88bb5d8e9e5f7, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2851,6 +3696,7 @@ MonoBehaviour:
       m_Extent: {x: 5.1000004, y: 1.0799999, z: 3.35}
     Triangles: 284
   - Key: kenney/city-kit-suburban/fence-3x2
+    Model: {fileID: 919132149155446097, guid: a1944472fb8c58c4b9b6f20a02ace0ec, type: 3}
     Parts:
     - Mesh: {fileID: -5909073313328836100, guid: a1944472fb8c58c4b9b6f20a02ace0ec, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2862,6 +3708,7 @@ MonoBehaviour:
       m_Extent: {x: 3.5, y: 1.0799999, z: 4.9500003}
     Triangles: 316
   - Key: kenney/city-kit-suburban/fence-3x3
+    Model: {fileID: 919132149155446097, guid: 8ab2806fb77ed1c409ddae23e9985119, type: 3}
     Parts:
     - Mesh: {fileID: -3017537521937577863, guid: 8ab2806fb77ed1c409ddae23e9985119, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2873,6 +3720,7 @@ MonoBehaviour:
       m_Extent: {x: 5.1000004, y: 1.0799999, z: 4.9500003}
     Triangles: 364
   - Key: kenney/city-kit-suburban/fence-low
+    Model: {fileID: 919132149155446097, guid: 3459990994ecd894082d7c948a1d154d, type: 3}
     Parts:
     - Mesh: {fileID: 3015627885256562537, guid: 3459990994ecd894082d7c948a1d154d, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2884,6 +3732,7 @@ MonoBehaviour:
       m_Extent: {x: 5.1000004, y: 0.68, z: 3.35}
     Triangles: 180
   - Key: kenney/city-kit-suburban/path-long
+    Model: {fileID: 919132149155446097, guid: 36d8e3954b3d45944965e840e5431941, type: 3}
     Parts:
     - Mesh: {fileID: -2997255848418593878, guid: 36d8e3954b3d45944965e840e5431941, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2895,6 +3744,7 @@ MonoBehaviour:
       m_Extent: {x: 0.79999995, y: 0.04, z: 1.5999999}
     Triangles: 12
   - Key: kenney/city-kit-suburban/path-short
+    Model: {fileID: 919132149155446097, guid: b731975a0e54803438a2ba79d3585fe3, type: 3}
     Parts:
     - Mesh: {fileID: -6228001237392652508, guid: b731975a0e54803438a2ba79d3585fe3, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2906,6 +3756,7 @@ MonoBehaviour:
       m_Extent: {x: 0.79999995, y: 0.04, z: 0.79999995}
     Triangles: 12
   - Key: kenney/city-kit-suburban/path-stones-long
+    Model: {fileID: 919132149155446097, guid: 5fa9aaac23c59d345a582b0c38e9ce49, type: 3}
     Parts:
     - Mesh: {fileID: -6919640796428943833, guid: 5fa9aaac23c59d345a582b0c38e9ce49, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2917,6 +3768,7 @@ MonoBehaviour:
       m_Extent: {x: 0.56, y: 0.04, z: 1.5999999}
     Triangles: 48
   - Key: kenney/city-kit-suburban/path-stones-messy
+    Model: {fileID: 919132149155446097, guid: e8277ee93a0ae0c4abdfaa9c38200570, type: 3}
     Parts:
     - Mesh: {fileID: -3001504544787980593, guid: e8277ee93a0ae0c4abdfaa9c38200570, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2928,6 +3780,7 @@ MonoBehaviour:
       m_Extent: {x: 0.6224965, y: 0.04, z: 1.4454018}
     Triangles: 36
   - Key: kenney/city-kit-suburban/path-stones-short
+    Model: {fileID: 919132149155446097, guid: d42ad2f83b2311c4c93c4d5b9fbdba96, type: 3}
     Parts:
     - Mesh: {fileID: 5899664601650671407, guid: d42ad2f83b2311c4c93c4d5b9fbdba96, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2939,6 +3792,7 @@ MonoBehaviour:
       m_Extent: {x: 0.56, y: 0.04, z: 0.79999995}
     Triangles: 24
   - Key: kenney/city-kit-suburban/planter
+    Model: {fileID: 919132149155446097, guid: aa5fe595c5a5fc04786c441ef7b28d58, type: 3}
     Parts:
     - Mesh: {fileID: 3495235744726054618, guid: aa5fe595c5a5fc04786c441ef7b28d58, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2950,6 +3804,7 @@ MonoBehaviour:
       m_Extent: {x: 1.5999999, y: 0.70843816, z: 1.1999999}
     Triangles: 204
   - Key: kenney/city-kit-suburban/tree-large
+    Model: {fileID: 919132149155446097, guid: 35640b55ad6a34c428ca647b4ed27b4c, type: 3}
     Parts:
     - Mesh: {fileID: -5600180399591002894, guid: 35640b55ad6a34c428ca647b4ed27b4c, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}
@@ -2961,6 +3816,7 @@ MonoBehaviour:
       m_Extent: {x: 0.8417767, y: 3.0679998, z: 0.97199994}
     Triangles: 42
   - Key: kenney/city-kit-suburban/tree-small
+    Model: {fileID: 919132149155446097, guid: 33a529350d302494695ca6fd07588509, type: 3}
     Parts:
     - Mesh: {fileID: 8239390232501668674, guid: 33a529350d302494695ca6fd07588509, type: 3}
       LocalPosition: {x: 0, y: 0, z: 0}

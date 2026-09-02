@@ -6,20 +6,30 @@ using UnityEngine;
 namespace Game.Runtime.World
 {
     /// <summary>
-    /// The town's presence around the site: distant, faceless figures on the
-    /// ring road, at the fence line and at the vehicle gate, plus a handful
-    /// of cars. Residents are never seen close up (art-bible.md §3) and
-    /// there is no staff pathing (open-questions.md Q18), so every figure
-    /// keeps its distance from the player and none of them changes the sim.
+    /// The town around the site: residents walking their own errands through
+    /// the streets, filming at the fence line, picketing the vehicle gate,
+    /// and a handful of cars on the ring road.
     ///
-    /// Same inputs, evaluated on a local cadence — not lockstep: what the
-    /// figures do is read from the replicated report, so a client sees the
-    /// same crowd for the same reasons, but not frame-identical. Head-counts
-    /// are re-evaluated every few REAL seconds and keyed on (day, hour/3,
-    /// slot), because at the default 24 ticks/s a per-tick roll would flicker.
+    /// The owner overruled art-bible.md §3 on 2026-09-02. Residents used to
+    /// be silhouettes that turned away at 9 m and dissolved at 5 m; they are
+    /// now solid (a capsule you cannot walk through), free to roam the whole
+    /// town lattice rather than a fixed polyline, and they answer E with one
+    /// line about the state the sim has actually reached. What survives of
+    /// the old rule: nobody comes inside the wire, nobody appears or vanishes
+    /// within 25 m of a player, and none of them changes the simulation —
+    /// this whole file is presentation.
     ///
-    /// Nothing here is a person: no faces, no hats, no colliders, no lights,
-    /// no dialogue. Placards are blank (open-questions.md Q27).
+    /// Same inputs, evaluated on a local cadence — not lockstep: how many
+    /// figures are out and what they are doing is read from the replicated
+    /// report, so a client sees the same crowd for the same reasons, but
+    /// their exact positions are local. Head-counts are re-evaluated every
+    /// few REAL seconds and keyed on (day, hour/3, slot), because at a fast
+    /// clock a per-tick roll would flicker.
+    ///
+    /// The bodies are Kenney's CC0 Blocky Characters, baked to the palette
+    /// like the rest of the town, with the pack's own idle and walk takes.
+    /// Without the pack they fall back to the two-cylinder stand-in.
+    /// Placards stay blank (open-questions.md Q27).
     /// </summary>
     public sealed class Presence : MonoBehaviour
     {
@@ -35,16 +45,22 @@ namespace Game.Runtime.World
             public FigureKind Kind;
             public int Slot;
             public Transform Tf;
-            public Renderer Body, Extra, Placard;   // Extra: umbrella / phone / headlights
+            public Renderer Extra, Placard;         // Extra: umbrella / phone / headlights
+            public GameObject Body;                 // the character model, or the procedural stand-in
+            public Animation Anim;                  // the model's clips; null for the stand-in
+            public string Clip;                     // what it is playing now
+            public Collider Col;
+            public Resident Talk;                   // the E prompt, on humans only
             public bool Wanted;        // the last target evaluation wants this slot present
             public bool Shown;         // spawned: scaling in, standing, or scaling out
             public bool Leaving;       // scaling out; sticky until gone
-            public bool DormantNear;   // walker vanished from a player: waits until they are far
-            public bool Fleeing;       // walker reversed away from a player
             public float Scale;        // 0..1, uniform scale-in from the feet
-            public float ShownSince, DormantUntil;
-            public int Route, Seg;     // polyline (walkers: route, cars: lane) and cached segment
-            public float S, Dir, Speed;
+            public float ShownSince;
+            public List<Vector3> Path; // walkers: the errand, in world points
+            public int PathIdx, Errand;
+            public float PausedUntil;  // walkers: standing still between errands
+            public int Lane, Seg;      // cars: which lane, and the cached segment
+            public float S, Speed;
             public float Vel;          // cars: current speed, eased toward the corner speed
             public float Yaw, BaseYaw, SwayPhase;
             public Vector3 Spot;       // standing figures: the validated spot
@@ -62,11 +78,25 @@ namespace Game.Runtime.World
         private const float MinDwell = 6f;            // a shown figure stays at least this long
         private const float ScaleTime = 0.4f;         // scale-in / scale-out duration
         private const float IncidentMemory = 20f;     // an accident keeps the phones out this long
-        private const float SpawnClearDist = 15f;     // nothing appears closer to the player
+        // Nobody appears or disappears within this radius. Residents no longer
+        // retreat from a player — art-bible §3's "never approachable" was
+        // overruled by the owner on 2026-09-02: they are solid, they can be
+        // spoken to, and all that survives of the old rule is that the crowd
+        // changes size out of sight instead of in front of you.
+        private const float PopClearDist = 25f;
         private const float CullDist = 180f;          // fog has eaten them well before this
-        private const float WalkerReverseDist = 11f, WalkerReleaseDist = 16f, WalkerVanishDist = 7f, WalkerReturnDist = 26f;
-        private const float StanderTurnDist = 9f, StanderVanishDist = 5f, StanderDormant = 60f;
-        private const float WalkSpeed = 1.2f, FleeMult = 1.35f, CarSpeed = 8f, LaneOffset = 2f;
+        private const float WalkSpeed = 1.25f, CarSpeed = 8f, LaneOffset = 2f;
+        private const float TurnRate = 260f;          // degrees a second
+        private const float ArriveDist = 0.9f;        // waypoint reached
+        private const float PausedMin = 2f, PausedMax = 9f;   // a stop between errands
+        private const float PlayerPush = 2.2f;        // a walker steps around you inside this
+        private const float BodyRadius = 0.32f, BodyHeight = 1.75f;
+        private const float BrakeDist = 10f;          // a car stops this far short of a player
+        /// <summary>The figures' own layer, so a figure's ground probe cannot
+        /// hit itself. It is NOT the player's layer: the interact probe and
+        /// the player capsule must both still see them.</summary>
+        public const int FigureLayer = 9;
+        private const int GroundMask = ~((1 << FigureLayer) | (1 << PlayerRig.PlayerLayer));
         // The carriageway centre line sits this far outside the fence rectangle
         // (design_site-plan §3: a 7 m road starting 5 m past the fence).
         private const float RingRoadOffset = 8.5f, RoadTopY = 0.04f;
@@ -80,19 +110,30 @@ namespace Game.Runtime.World
         private static readonly string[] CarKeys =
             { "kenney/car-kit/sedan", "kenney/car-kit/hatchback-sports", "kenney/car-kit/suv", "kenney/car-kit/van" };
         private const float LaneClearance = CarHalfWidth + CarClearance;
-        // Layout validation. A stander keeps LaneClearance from either lane
-        // and RouteClearance from a route, or walkers slide through it.
-        private const float SpawnClearance = 9f, ObstacleClearance = 1.5f, RouteClearance = 0.8f, MinRouteLen = 5f;
+        // Layout validation. A stander keeps LaneClearance from either lane,
+        // or a car drives through it.
+        private const float SpawnClearance = 9f, ObstacleClearance = 1.5f;
+        /// <summary>Eighteen CC0 Blocky Characters; a slot keeps its own.</summary>
+        private static readonly string[] CharacterKeys =
+        {
+            "kenney/blocky-characters/character-a", "kenney/blocky-characters/character-b",
+            "kenney/blocky-characters/character-c", "kenney/blocky-characters/character-d",
+            "kenney/blocky-characters/character-e", "kenney/blocky-characters/character-f",
+            "kenney/blocky-characters/character-g", "kenney/blocky-characters/character-h",
+            "kenney/blocky-characters/character-i", "kenney/blocky-characters/character-j",
+            "kenney/blocky-characters/character-k", "kenney/blocky-characters/character-l",
+            "kenney/blocky-characters/character-m", "kenney/blocky-characters/character-n",
+            "kenney/blocky-characters/character-o", "kenney/blocky-characters/character-p",
+            "kenney/blocky-characters/character-q", "kenney/blocky-characters/character-r"
+        };
 
         private SiteRefs _site;
         private Transform _root;
         private Figure[] _figs;
 
-        // Validated layout. Route indices are kept stable (a dropped route is
-        // null) because index 1 has a meaning: the zebra crossing.
-        private Vector3[][] _routes = new Vector3[0][];
-        private float[][] _routeCum = new float[0][];
-        private bool[] _routeClosed = new bool[0];
+        /// <summary>Where a resident may walk: the whole town outside the
+        /// wire, not a fixed route.</summary>
+        private TownNav _nav;
         private readonly List<Vector3> _fenceSpots = new List<Vector3>();
         private readonly List<Vector3> _gateSpots = new List<Vector3>();
         // Ring road lanes, each closed (first vertex repeated) and in its own
@@ -140,7 +181,7 @@ namespace Game.Runtime.World
             _root = new GameObject("Presence").transform;
             _root.SetParent(transform, false);
 
-            ValidateRoutes();
+            _nav = TownNav.Build(_site);
             BuildLanes();
             ValidateSpots();
             BuildMeshes();
@@ -156,47 +197,12 @@ namespace Game.Runtime.World
         }
 
         // ---- layout validation ---------------------------------------------
-        // Figures use only validated data: every spot and route vertex keeps
-        // 9 m from the player spawn and 1.5 m from every town obstacle.
-
-        /// <summary>A route is all or nothing, as CityBuilder.AddRoute has it:
-        /// a polyline with a vertex missing is a different path, possibly
-        /// through a wall, or a stub that stacks every walker on one tile.</summary>
-        private void ValidateRoutes()
-        {
-            var routes = _site.ResidentRoutes;
-            _routes = new Vector3[routes.Count][];
-            _routeCum = new float[routes.Count][];
-            _routeClosed = new bool[routes.Count];
-            for (int r = 0; r < routes.Count; r++)
-            {
-                Vector3[] v = routes[r];
-                if (v == null || v.Length < 2)
-                {
-                    Debug.LogWarning("[Presence] route " + r + " has fewer than two vertices; dropped");
-                    continue;
-                }
-                string fault = null;
-                for (int i = 0; i < v.Length && fault == null; i++)
-                {
-                    fault = Fault(v[i]);
-                    if (fault != null) Debug.LogWarning("[Presence] route " + r + " dropped whole: vertex " + i + " at " + v[i] + " " + fault);
-                }
-                if (fault != null) continue;
-                float[] cum = Cumulative(v);
-                if (cum[cum.Length - 1] < MinRouteLen)
-                {
-                    Debug.LogWarning("[Presence] route " + r + " is shorter than " + MinRouteLen + " m; dropped");
-                    continue;
-                }
-                _routes[r] = v;
-                _routeCum[r] = cum;
-                _routeClosed[r] = (v[0] - v[v.Length - 1]).sqrMagnitude < 0.01f;
-            }
-        }
+        // Standing spots use only validated data: 9 m from the player spawn
+        // and 1.5 m from every town obstacle. Walkers need no such list —
+        // TownNav rules the whole town in or out, cell by cell.
 
         /// <summary>After the lanes exist: a stander also keeps out of the
-        /// carriageway and off the routes.</summary>
+        /// carriageway.</summary>
         private void ValidateSpots()
         {
             foreach (Vector3 p in _site.FenceLineSpots)
@@ -209,13 +215,8 @@ namespace Game.Runtime.World
         {
             string fault = Fault(p);
             if (fault == null)
-            {
                 for (int l = 0; l < _lanes.Length && fault == null; l++)
                     if (PolylineDist2(_lanes[l], p) < LaneClearance * LaneClearance) fault = "stands in a ring road lane";
-                for (int r = 0; r < _routes.Length && fault == null; r++)
-                    if (_routes[r] != null && PolylineDist2(_routes[r], p) < RouteClearance * RouteClearance)
-                        fault = "is within " + RouteClearance + " m of route " + r;
-            }
             if (fault == null) return true;
             Debug.LogWarning("[Presence] " + what + " at " + p + " " + fault + "; dropped");
             return false;
@@ -453,43 +454,95 @@ namespace Game.Runtime.World
             f.Slot = slot;
             // Not "Avatar ": the forklift and the doors parse that prefix.
             var go = new GameObject("Figure " + kind + " " + slot);
+            go.layer = FigureLayer;
             go.transform.SetParent(_root, false);
             go.transform.localScale = Vector3.zero;
             f.Tf = go.transform;
             uint s = (uint)slot;
-            switch (kind)
+            if (kind == FigureKind.Car)
             {
-                case FigureKind.Walker:
-                    f.Body = Part("body", slot % 2 == 0 ? _walkerA : _walkerB, f.Tf, false);
-                    f.Extra = Part("umbrella", _umbrella, f.Tf, false);
-                    f.Speed = WalkSpeed * (0.8f + 0.4f * F01(PresenceSeed, s, 2));
-                    break;
-                case FigureKind.Filmer:
-                    f.Body = Part("body", slot % 2 == 0 ? _walkerB : _walkerA, f.Tf, false);
-                    f.Extra = Part("phone", _phone, f.Tf, true);
-                    break;
-                case FigureKind.Protester:
-                    f.Body = Part("body", slot % 2 == 0 ? _walkerA : _walkerB, f.Tf, false);
-                    f.Extra = Part("phone", _phone, f.Tf, true);
-                    if (slot % 3 != 2) f.Placard = Part("placard", _placard, f.Tf, false);
-                    break;
-                case FigureKind.Car:
-                    // A kit car when the packs are in (four types, one per
-                    // slot), else the slate box; the headlight quads sit at
-                    // the same front either way (both are 4.1-4.2 m long).
-                    f.Body = Part("body", AssetKit.TryGetCombined(CarKeys[slot % CarKeys.Length], out Mesh kitCar) ? kitCar : _car, f.Tf, false);
-                    f.Extra = Part("lights", _carLights, f.Tf, true);
-                    // Even slots take the outer lane, odd the inner; the two
-                    // cars of a lane start half a lap apart.
-                    f.Route = slot % 2;
-                    f.Speed = CarSpeed * (0.9f + 0.2f * F01(PresenceSeed, s, 4));
-                    f.Vel = f.Speed;
-                    float[] laneCum = _laneCum[f.Route];
-                    f.S = laneCum[laneCum.Length - 1] * (slot + F01(PresenceSeed, s, 5)) / Cars;
-                    break;
+                // A kit car when the packs are in (four types, one per slot),
+                // else the slate box; the headlight quads sit at the same
+                // front either way (both are 4.1-4.2 m long).
+                Mesh kitCar;
+                f.Body = Solid("body", AssetKit.TryGetCombined(CarKeys[slot % CarKeys.Length], out kitCar) ? kitCar : _car, f.Tf);
+                f.Extra = Part("lights", _carLights, f.Tf, true);
+                var box = go.AddComponent<BoxCollider>();
+                box.size = new Vector3(2.3f, 1.5f, 4.3f);
+                box.center = new Vector3(0f, 0.75f, 0f);
+                f.Col = box;
+                // Even slots take the outer lane, odd the inner; the cars of
+                // a lane start a fair share of a lap apart.
+                f.Lane = slot % 2;
+                f.Speed = CarSpeed * (0.9f + 0.2f * F01(PresenceSeed, s, 4));
+                f.Vel = f.Speed;
+                float[] laneCum = _laneCum[f.Lane];
+                f.S = laneCum[laneCum.Length - 1] * (slot + F01(PresenceSeed, s, 5)) / Cars;
             }
+            else
+            {
+                f.Body = Human(f.Tf, slot, out f.Anim);
+                if (kind == FigureKind.Walker) f.Extra = Part("umbrella", _umbrella, f.Tf, false);
+                else f.Extra = Part("phone", _phone, f.Tf, true);
+                if (kind == FigureKind.Protester && slot % 3 != 2) f.Placard = Part("placard", _placard, f.Tf, false);
+                var cap = go.AddComponent<CapsuleCollider>();
+                cap.radius = BodyRadius;
+                cap.height = BodyHeight;
+                cap.center = new Vector3(0f, BodyHeight * 0.5f, 0f);
+                f.Col = cap;
+                f.Talk = go.AddComponent<Resident>();
+                f.Talk.Kind = kind;
+                f.Speed = WalkSpeed * (0.85f + 0.3f * F01(PresenceSeed, s, 2));
+                f.Path = new List<Vector3>();
+            }
+            // Kinematic: the figures are driven by their transforms, and a
+            // moving collider without a body makes the physics engine rebuild
+            // the static tree every frame.
+            var rb = go.AddComponent<Rigidbody>();
+            rb.isKinematic = true;
+            rb.useGravity = false;
+            f.Col.enabled = false;
+            f.Body.SetActive(false);
             f.SwayPhase = F01(PresenceSeed, s, 6) * Mathf.PI * 2f;
             f.Scale = 0f;
+        }
+
+        /// <summary>A Blocky Character from the kit with its clips, or the
+        /// two-cylinder stand-in when the pack is not installed.</summary>
+        private GameObject Human(Transform parent, int slot, out Animation anim)
+        {
+            GameObject model = AssetKit.TryInstantiate(CharacterKeys[slot % CharacterKeys.Length], parent);
+            if (model != null)
+            {
+                foreach (Transform t in model.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = FigureLayer;
+                anim = model.GetComponent<Animation>();
+                if (anim != null)
+                {
+                    anim.playAutomatically = false;
+                    anim.wrapMode = WrapMode.Loop;
+                }
+                return model;
+            }
+            anim = null;
+            return Solid("body", slot % 2 == 0 ? _walkerA : _walkerB, parent);
+        }
+
+        /// <summary>A visible part whose object is switched, not its renderer:
+        /// the character models carry several renderers each.</summary>
+        private static GameObject Solid(string name, Mesh mesh, Transform parent)
+        {
+            Renderer r = Part(name, mesh, parent, false);
+            r.enabled = true;
+            r.gameObject.layer = FigureLayer;
+            return r.gameObject;
+        }
+
+        private static void PlayClip(ref Figure f, string clip)
+        {
+            if (f.Anim == null || f.Clip == clip) return;
+            if (f.Anim.GetClip(clip) == null) return;
+            f.Anim.CrossFade(clip, 0.25f);
+            f.Clip = clip;
         }
 
         // ---- frame update ------------------------------------------------------
@@ -514,7 +567,7 @@ namespace Game.Runtime.World
             }
             _wasEnabled = true;
             PlayerRig player = GameBootstrap.LocalPlayer;
-            if (player == null || _routes.Length == 0 || _routes[0] == null) return;
+            if (player == null || _nav == null || _nav.NodeCount == 0) return;
 
             TickReport r = GameBootstrap.CurrentReport;
             float now = Time.unscaledTime;
@@ -525,7 +578,6 @@ namespace Game.Runtime.World
             }
 
             Vector3 pp = player.transform.position;
-            bool outside = !_site.InsideFence(pp);
             bool rain = r.RainMmH > 0;
             float dt = Time.deltaTime;
             _protestersShown = 0;
@@ -535,9 +587,9 @@ namespace Game.Runtime.World
                 ref Figure f = ref _figs[i];
                 switch (f.Kind)
                 {
-                    case FigureKind.Walker: UpdateWalker(ref f, pp, outside, rain, now, dt); break;
+                    case FigureKind.Walker: UpdateWalker(ref f, pp, rain, now, dt); break;
                     case FigureKind.Car: UpdateCar(ref f, pp, dark, now, dt); break;
-                    default: UpdateStander(ref f, pp, outside, dark, now, dt); break;
+                    default: UpdateStander(ref f, pp, dark, now, dt); break;
                 }
             }
 
@@ -613,7 +665,6 @@ namespace Game.Runtime.World
             int cars = hour < 6 ? 1 : hour < 10 ? 6 : hour < 16 ? 3 : hour < 20 ? 6 : 2;
             cars = Mathf.Clamp(Mathf.RoundToInt(cars * DebugDensity), 0, Cars);
 
-            bool protestPass = r.Stage >= EscalationStage.Protest;
             for (int i = 0; i < _figs.Length; i++)
             {
                 ref Figure f = ref _figs[i];
@@ -627,7 +678,7 @@ namespace Game.Runtime.World
                     // in the outer lane.
                     default: want = Rotated(f.Slot, Cars, cars, day, bucket, 3u); break;
                 }
-                if (want && !f.Wanted && !f.Shown) PrepareSpawn(ref f, day, bucket, protestPass);
+                if (want && !f.Wanted && !f.Shown) PrepareSpawn(ref f);
                 f.Wanted = want;
             }
         }
@@ -665,23 +716,10 @@ namespace Game.Runtime.World
 
         // ---- per-kind behaviour --------------------------------------------
 
-        private void PrepareSpawn(ref Figure f, uint day, uint bucket, bool protestPass)
+        private void PrepareSpawn(ref Figure f)
         {
-            uint s = (uint)f.Slot, key = H(PresenceSeed, day, bucket);
             switch (f.Kind)
             {
-                case FigureKind.Walker:
-                    // The zebra crossing is walked only by figures who set out
-                    // during a protest; everyone else keeps to the pavement.
-                    // One slot in four: a crossing is short and four is a crowd.
-                    bool zebra = protestPass && f.Slot % 4 == 3 && _routes.Length > 1 && _routes[1] != null;
-                    f.Route = zebra ? 1 : 0;
-                    float[] cum = _routeCum[f.Route];
-                    float len = cum[cum.Length - 1];
-                    f.S = Mathf.Repeat(((f.Slot + 0.5f) / Walkers + 0.1f * F01(key, s, 7)) * len, len);
-                    f.Dir = F01(key, s, 8) < 0.5f ? 1f : -1f;
-                    f.Seg = 0;
-                    break;
                 case FigureKind.Filmer:
                     f.Spot = _fenceSpots[f.Slot];
                     f.BaseYaw = f.Yaw = YawTo(f.Spot, _site.SiteCentre);
@@ -693,75 +731,128 @@ namespace Game.Runtime.World
             }
         }
 
-        private void UpdateWalker(ref Figure f, Vector3 pp, bool outside, bool rain, float now, float dt)
+        /// <summary>A resident going somewhere: a walk across the town lattice
+        /// to a hashed destination, a stop, then another errand. Nobody
+        /// reacts to the player beyond stepping around them.</summary>
+        private void UpdateWalker(ref Figure f, Vector3 pp, bool rain, float now, float dt)
         {
-            Vector3[] v = _routes[f.Route];
-            float[] cum = _routeCum[f.Route];
-            if (v == null) { if (f.Shown) Vanish(ref f); return; }
-            float len = cum[cum.Length - 1];
             if (!f.Shown)
             {
-                if (f.DormantNear && Dist2(f.Pos, pp) > WalkerReturnDist * WalkerReturnDist) f.DormantNear = false;
-                if (f.Wanted && !f.DormantNear)
+                if (f.Wanted) Place(ref f, pp, now);
+                return;
+            }
+            if (!f.Wanted && !f.Leaving && now - f.ShownSince >= MinDwell
+                && Dist2(f.Pos, pp) > PopClearDist * PopClearDist) f.Leaving = true;
+
+            bool moving = false;
+            if (now >= f.PausedUntil)
+            {
+                if (f.PathIdx >= f.Path.Count) NewErrand(ref f, now);
+                if (f.PathIdx < f.Path.Count)
                 {
-                    f.Pos = Sample(v, cum, f.S, ref f.Seg, out _);
+                    Vector3 target = f.Path[f.PathIdx];
+                    var to = new Vector3(target.x - f.Pos.x, 0f, target.z - f.Pos.z);
+                    float d = to.magnitude;
+                    if (d < ArriveDist)
+                    {
+                        f.PathIdx++;
+                        if (f.PathIdx >= f.Path.Count) f.PausedUntil = now + Pause(ref f);
+                    }
+                    else
+                    {
+                        Vector3 dir = to / d;
+                        // Step around a player rather than into them: two
+                        // capsules pushing at each other wedge and stay wedged.
+                        var away = new Vector3(f.Pos.x - pp.x, 0f, f.Pos.z - pp.z);
+                        float ad = away.magnitude;
+                        if (ad > 0.01f && ad < PlayerPush)
+                            dir = (dir + away / ad * (1.6f * (PlayerPush - ad) / PlayerPush)).normalized;
+                        f.Yaw = Mathf.MoveTowardsAngle(f.Yaw, Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg, TurnRate * dt);
+                        Vector3 next = f.Pos + Quaternion.Euler(0f, f.Yaw, 0f) * Vector3.forward * (f.Speed * dt);
+                        // Walked into something the lattice knew about: think
+                        // again rather than grind along a wall.
+                        if (_nav.Walkable(next)) { f.Pos = next; moving = true; }
+                        else { f.PathIdx = f.Path.Count; f.PausedUntil = now + 1f; }
+                    }
+                }
+            }
+            f.Pos.y = GroundY(f.Pos);
+            PlayClip(ref f, moving ? "walk" : "idle");
+            Apply(ref f, pp, dt, rain);
+        }
+
+        private float Pause(ref Figure f)
+        {
+            return PausedMin + (PausedMax - PausedMin) * F01(PresenceSeed, (uint)f.Slot, (uint)f.Errand);
+        }
+
+        /// <summary>Puts a walker on the lattice, out of sight of the player.</summary>
+        private void Place(ref Figure f, Vector3 pp, float now)
+        {
+            for (int attempt = 0; attempt < 6; attempt++)
+            {
+                f.Errand++;
+                Vector3 p = _nav.NodePos(_nav.NodeFrom(H(PresenceSeed + 3u, (uint)f.Slot, (uint)f.Errand)));
+                if (Dist2(p, pp) < PopClearDist * PopClearDist) continue;
+                f.Pos = new Vector3(p.x, GroundY(p + Vector3.up), p.z);
+                f.Path.Clear();
+                f.PathIdx = 0;
+                f.PausedUntil = 0f;
+                f.Yaw = f.BaseYaw = F01(PresenceSeed, (uint)f.Slot, (uint)f.Errand) * 360f;
+                TryAppear(ref f, pp, now);
+                return;
+            }
+        }
+
+        private void NewErrand(ref Figure f, float now)
+        {
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                f.Errand++;
+                int goal = _nav.NodeFrom(H(PresenceSeed + 11u, (uint)f.Slot, (uint)f.Errand));
+                if (_nav.TryPath(f.Pos, goal, f.Path) && f.Path.Count > 1)
+                {
+                    f.PathIdx = 1;      // [0] is the ground it already stands on
+                    return;
+                }
+            }
+            f.Path.Clear();
+            f.PathIdx = 0;
+            f.PausedUntil = now + Pause(ref f);
+        }
+
+        /// <summary>The pavement, kerb or road under a figure. The figures'
+        /// own layer is excluded, or the ray stops inside its own capsule.</summary>
+        private static float GroundY(Vector3 p)
+        {
+            RaycastHit hit;
+            if (Physics.Raycast(new Vector3(p.x, p.y + 3f, p.z), Vector3.down, out hit, 8f, GroundMask,
+                    QueryTriggerInteraction.Ignore))
+                return hit.point.y;
+            return p.y;
+        }
+
+        private void UpdateStander(ref Figure f, Vector3 pp, bool dark, float now, float dt)
+        {
+            if (!f.Shown)
+            {
+                if (f.Wanted)
+                {
+                    f.Pos = new Vector3(f.Spot.x, GroundY(f.Spot + Vector3.up), f.Spot.z);
                     TryAppear(ref f, pp, now);
                 }
                 return;
             }
-            f.S += f.Dir * f.Speed * (f.Fleeing ? FleeMult : 1f) * dt;
-            if (_routeClosed[f.Route]) f.S = Mathf.Repeat(f.S, len);
-            else if (f.S >= len) { f.S = len; f.Dir = -1f; if (f.Fleeing) WalkOff(ref f); }
-            else if (f.S <= 0f) { f.S = 0f; f.Dir = 1f; if (f.Fleeing) WalkOff(ref f); }
-            f.Pos = Sample(v, cum, f.S, ref f.Seg, out Vector3 heading);
-            heading *= f.Dir;
-
-            if (outside)
-            {
-                float d2 = Dist2(f.Pos, pp);
-                if (d2 < WalkerVanishDist * WalkerVanishDist) WalkOff(ref f);
-                else if (!f.Fleeing && d2 < WalkerReverseDist * WalkerReverseDist) { f.Fleeing = true; f.Dir = -f.Dir; }
-                else if (f.Fleeing && d2 > WalkerReleaseDist * WalkerReleaseDist) f.Fleeing = false;
-            }
-            if (!f.Wanted && !f.Leaving && now - f.ShownSince >= MinDwell) f.Leaving = true;
-            f.Yaw = Mathf.Atan2(heading.x, heading.z) * Mathf.Rad2Deg;
-            Apply(ref f, pp, dt, rain);
-        }
-
-        /// <summary>Too close, or cornered at a route end while fleeing (the
-        /// ping-pong would otherwise send it back at the player at flee speed):
-        /// scale out and stay away until the player is far.</summary>
-        private static void WalkOff(ref Figure f)
-        {
-            f.Leaving = true;
-            f.DormantNear = true;
-        }
-
-        private void UpdateStander(ref Figure f, Vector3 pp, bool outside, bool dark, float now, float dt)
-        {
-            if (!f.Shown)
-            {
-                if (f.Wanted && now >= f.DormantUntil) { f.Pos = f.Spot; TryAppear(ref f, pp, now); }
-                return;
-            }
-            f.Pos = f.Spot;
-            bool turned = false;
-            if (outside)
-            {
-                float d2 = Dist2(f.Pos, pp);
-                if (d2 < StanderVanish * StanderVanish) { f.Leaving = true; f.DormantUntil = now + StanderDormant; }
-                else if (d2 < StanderTurnDist * StanderTurnDist) turned = true;
-            }
-            if (!f.Wanted && !f.Leaving && now - f.ShownSince >= MinDwell) f.Leaving = true;
+            if (!f.Wanted && !f.Leaving && now - f.ShownSince >= MinDwell
+                && Dist2(f.Pos, pp) > PopClearDist * PopClearDist) f.Leaving = true;
 
             bool protester = f.Kind == FigureKind.Protester;
             float sway = (protester ? 3f : 2f) * Mathf.Sin(now * (protester ? 2.5f : 1.9f) + f.SwayPhase);
-            // Turned away = back to the player, phone down. Not a reaction to
-            // being looked at; a person who does not want to be approached.
-            float target = turned ? Mathf.Atan2(f.Pos.x - pp.x, f.Pos.z - pp.z) * Mathf.Rad2Deg : f.BaseYaw;
-            f.Yaw = Mathf.MoveTowardsAngle(f.Yaw, target + sway, 180f * dt);
+            f.Yaw = Mathf.MoveTowardsAngle(f.Yaw, f.BaseYaw + sway, 180f * dt);
             if (protester && !f.Leaving) { _protestersShown++; _protestCentroid += f.Pos; }
-            Apply(ref f, pp, dt, dark && !turned);
+            // Both hands up is filming; one hand up carries the placard.
+            PlayClip(ref f, protester ? "holding-left" : "holding-both");
+            Apply(ref f, pp, dt, dark);
         }
 
         private void UpdateCar(ref Figure f, Vector3 pp, bool dark, float now, float dt)
@@ -771,30 +862,37 @@ namespace Game.Runtime.World
                 if (f.Wanted) { f.Pos = LanePos(ref f, out _); TryAppear(ref f, pp, now); }
                 return;
             }
-            float[] cum = _laneCum[f.Route];
+            float[] cum = _laneCum[f.Lane];
             // Brakes for the corners; the arc flag is the segment sampled last frame.
-            float target = f.Speed * (_laneArc[f.Route][f.Seg] ? CornerSpeed : 1f);
+            float target = f.Speed * (_laneArc[f.Lane][f.Seg] ? CornerSpeed : 1f);
+            // And for anyone standing in the lane. The cars are solid now, and
+            // one that shoved the operator down the road would be a hazard the
+            // simulation never hears about.
+            Vector3 forward = Quaternion.Euler(0f, f.Yaw, 0f) * Vector3.forward;
+            var gap = new Vector3(pp.x - f.Pos.x, 0f, pp.z - f.Pos.z);
+            float ahead = Vector3.Dot(gap, forward);
+            float lateral = Vector3.Dot(gap, Vector3.Cross(Vector3.up, forward));
+            if (ahead > -1.5f && ahead < BrakeDist && Mathf.Abs(lateral) < 2.4f) target = 0f;
             f.Vel = Mathf.MoveTowards(f.Vel, target, CarAccel * dt);
             f.S = Mathf.Repeat(f.S + f.Vel * dt, cum[cum.Length - 1]);
-            f.Pos = LanePos(ref f, out Vector3 heading);
-            if (!f.Wanted && !f.Leaving && now - f.ShownSince >= MinDwell) f.Leaving = true;
+            Vector3 heading;
+            f.Pos = LanePos(ref f, out heading);
+            if (!f.Wanted && !f.Leaving && now - f.ShownSince >= MinDwell
+                && Dist2(f.Pos, pp) > PopClearDist * PopClearDist) f.Leaving = true;
             f.Yaw = Mathf.Atan2(heading.x, heading.z) * Mathf.Rad2Deg;
             Apply(ref f, pp, dt, dark);
         }
 
         // ---- shared mechanics --------------------------------------------------
 
-        // The larger of the contract's 5 m and the site's own promise.
-        private static readonly float StanderVanish = Mathf.Max(StanderVanishDist, SiteRefs.ResidentClearRadius);
-
-        /// <summary>Appear only out of sight of the player: a figure never pops
-        /// into existence within 20 m. Otherwise the slot waits.</summary>
+        /// <summary>Appear only well away from the player. Figures no longer
+        /// retreat, so this radius is the whole of what is left of the old
+        /// distance rule: the crowd's size changes out of sight.</summary>
         private static void TryAppear(ref Figure f, Vector3 pp, float now)
         {
-            if (Dist2(f.Pos, pp) < SpawnClearDist * SpawnClearDist) return;
+            if (Dist2(f.Pos, pp) < PopClearDist * PopClearDist) return;
             f.Shown = true;
             f.Leaving = false;
-            f.Fleeing = false;
             f.Scale = 0f;
             f.ShownSince = now;
             f.Tf.position = f.Pos;
@@ -808,21 +906,25 @@ namespace Game.Runtime.World
             f.Tf.rotation = Quaternion.Euler(0f, f.Yaw, 0f);
             f.Tf.localScale = new Vector3(f.Scale, f.Scale, f.Scale);
             bool vis = Dist2(f.Pos, pp) < CullDist * CullDist;
-            SetRenderer(f.Body, vis);
+            if (f.Body.activeSelf != vis) f.Body.SetActive(vis);
             SetRenderer(f.Extra, vis && extraOn);
             SetRenderer(f.Placard, vis);
+            // Solid only at full size: a collider on something scaling up out
+            // of the ground is a trap you cannot see.
+            bool solid = vis && f.Scale > 0.9f;
+            if (f.Col.enabled != solid) f.Col.enabled = solid;
         }
 
         private static void Vanish(ref Figure f)
         {
             f.Shown = false;
             f.Leaving = false;
-            f.Fleeing = false;
             f.Scale = 0f;
             f.Tf.localScale = Vector3.zero;
-            SetRenderer(f.Body, false);
+            f.Body.SetActive(false);
             SetRenderer(f.Extra, false);
             SetRenderer(f.Placard, false);
+            f.Col.enabled = false;
         }
 
         private void HideAll()
@@ -868,8 +970,9 @@ namespace Game.Runtime.World
         /// past a parked car; the heading follows the eased path, not the lane.</summary>
         private Vector3 LanePos(ref Figure f, out Vector3 heading)
         {
-            Vector3 p = Sample(_lanes[f.Route], _laneCum[f.Route], f.S, ref f.Seg, out heading);
-            float shift = PinchAt(_lanePinch[f.Route], f.S, out float slope) * (LaneOffset - PinchOffset);
+            Vector3 p = Sample(_lanes[f.Lane], _laneCum[f.Lane], f.S, ref f.Seg, out heading);
+            float slope;
+            float shift = PinchAt(_lanePinch[f.Lane], f.S, out slope) * (LaneOffset - PinchOffset);
             if (shift <= 0f && slope == 0f) return p;
             // The centre line is to the LEFT of travel (drive on the right).
             Vector3 right = Vector3.Cross(Vector3.up, heading);
@@ -898,6 +1001,67 @@ namespace Game.Runtime.World
                 if (wi > w) { w = wi; slope = si; }
             }
             return w;
+        }
+    }
+
+    /// <summary>A neighbour you can actually speak to. What they say is the
+    /// town's own state read back: whichever nuisance the town remembers most
+    /// loudly, or failing that the escalation stage. Residents are quoted
+    /// plainly and never played for laughs (art-bible.md, on writing) — the
+    /// joke, where there is one, is always on the operator.</summary>
+    public sealed class Resident : MonoBehaviour, IInteractable
+    {
+        public const float Cooldown = 10f;
+        public Presence.FigureKind Kind;
+        private float _lastUse = -Cooldown;
+
+        /// <summary>Hud draws only E-prefixed prompts as offers, so while
+        /// they have nothing more to say they do not offer to say it.</summary>
+        public string Prompt(PlayerRig player)
+        {
+            return Time.unscaledTime - _lastUse < Cooldown ? "" : "E: speak to the resident";
+        }
+
+        public void Interact(PlayerRig player)
+        {
+            if (Time.unscaledTime - _lastUse < Cooldown) return;
+            _lastUse = Time.unscaledTime;
+            NewsFeed.PostLocal("A resident: “" + Line(GameBootstrap.CurrentReport, Kind) + "”");
+        }
+
+        private static string Line(TickReport r, Presence.FigureKind kind)
+        {
+            if (kind == Presence.FigureKind.Protester)
+            {
+                switch (r.Stage)
+                {
+                    case EscalationStage.Protest: return "We'll be back on Saturday. It isn't personal.";
+                    case EscalationStage.Injunction: return "It's with the solicitors now. I'd rather it hadn't come to that.";
+                    case EscalationStage.Sabotage: return "I've nothing to say to you.";
+                    default: return "We're only standing here.";
+                }
+            }
+            // The loudest thing the town still remembers, if it is loud at all.
+            float noise = (float)r.MNoise, air = (float)r.MAir, water = (float)r.MWater;
+            float price = (float)r.MPrice, visual = (float)r.MVisual;
+            float top = Mathf.Max(noise, Mathf.Max(air, Mathf.Max(water, Mathf.Max(price, visual))));
+            if (top > 25f)
+            {
+                if (top == noise) return "That hum. Is it going to be all night again?";
+                if (top == air) return "You can smell it on the washing when the wind turns.";
+                if (top == water) return "Pressure's down again. They tell us that isn't you.";
+                if (top == price) return "My bill went up. I looked it up — you're the biggest meter on this grid.";
+                return "It's taller than the barn was. Bluer, too.";
+            }
+            switch (r.Stage)
+            {
+                case EscalationStage.Complaints: return "Someone's put a letter round about the noise.";
+                case EscalationStage.Petition: return "There's a clipboard going door to door. I signed it.";
+                case EscalationStage.Protest: return "Half the street's at your gate. You could go and talk to them.";
+                case EscalationStage.Injunction: return "It's in front of a judge now. Nobody's pleased about that.";
+                case EscalationStage.Sabotage: return "Somebody's been at your fence. It wasn't me.";
+                default: return "Morning. Quieter than the lorries were, I'll give you that.";
+            }
         }
     }
 

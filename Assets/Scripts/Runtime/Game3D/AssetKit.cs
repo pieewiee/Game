@@ -48,6 +48,11 @@ namespace Game.Runtime.World
         public struct MeshEntry
         {
             public string Key;
+            /// <summary>The imported model asset itself. Instantiate this when
+            /// the model is more than geometry — a Blocky Character carries a
+            /// six-part hierarchy and its animation clips — and use Parts when
+            /// all that is wanted is the mesh.</summary>
+            public GameObject Model;
             public Part[] Parts;
             public Attachment[] Attachments;
             /// <summary>Union of the parts' bounds in the model's space, feet at y = 0.</summary>
@@ -96,6 +101,23 @@ namespace Game.Runtime.World
             }
             entry = default;
             return false;
+        }
+
+        /// <summary>Instantiates an imported model with its hierarchy and its
+        /// animation intact, and paints every renderer with the game's one
+        /// opaque material (the kits import with no materials at all — their
+        /// colour is baked into the vertex stream).</summary>
+        public static GameObject TryInstantiate(string key, Transform parent)
+        {
+            if (!TryGetMesh(key, out MeshEntry entry) || entry.Model == null) return null;
+            GameObject go = Instantiate(entry.Model, parent);
+            go.name = key;
+            foreach (Renderer r in go.GetComponentsInChildren<Renderer>(true))
+            {
+                r.sharedMaterial = MatLib.Opaque;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+            return go;
         }
 
         public static bool TryGetClip(string key, out AudioClip clip)

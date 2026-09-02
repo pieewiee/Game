@@ -346,38 +346,49 @@ delete that file. `Temp/` is git-ignored; nothing to commit.
       heads, the town's windows, the figures' phones and the car headlights
       all switch on the same "is it dark" verdict as the sky, so nothing
       flips a frame early. The HUD's fourth line is the weather.
-- [ ] **7.2f The residents.** The town is present but never close: distant,
-      faceless figures on the outer pavement loop (walkers, an umbrella when
-      it rains), filming figures at the fence line whose phones glow at night,
-      a picket of blank placards at the vehicle gate from the Protest stage
-      on (in-fiction the fight moves to court, so fewer at Injunction and
-      Sabotage), and four cars driving the ring road on the right, braking
-      for the corners and easing past parked cars. Head-counts are a pure
-      function of the replicated report (hour, escalation stage, a diesel
-      plume over town, an outage, a fresh accident), re-evaluated every few
-      real seconds, so every machine shows the same crowd for the same
-      reasons. Nobody appears within 20 m of you, walkers turn back at 14 m,
-      standing figures turn their backs at 9 m and leave at 5 m; none has a
-      collider, and the sim never hears about any of them. Two interactions
-      only: **E** at the **intercom** beside the pedestrian gate answers in the
-      Program's voice, to you alone, once per 30 s; **E** at the small sign on
-      the south verge puts your ear on the town's side of the wire (the site's
-      plant ducks, the gate crowd comes forward) until you walk off. **F3 →
-      ambient figures** switches the whole layer off. Placards are blank by
-      decision (`docs/open-questions.md` Q27). Presence warnings in the
-      console (`[Presence] … dropped`) mean a spot or route in `CityBuilder`
-      violates the layout rules and was left out — fix the coordinates, not
-      the rule.
+- [ ] **7.2f The residents.** The town lives around you. Up to 24 people walk
+      their own errands through the streets — pick a destination, walk there,
+      stand a while, pick another — plus filming figures at the fence line
+      whose phones glow at night, a picket of blank placards at the vehicle
+      gate from the Protest stage on (in-fiction the fight moves to court, so
+      fewer at Injunction and Sabotage), and six cars on the ring road,
+      braking for the corners, easing past parked cars and stopping for you.
+      Head-counts are a pure function of the replicated report (hour,
+      escalation stage, a diesel plume over either residential sector, an
+      outage, a fresh accident), re-evaluated every few real seconds, so every
+      machine shows the same crowd for the same reasons; where each person
+      happens to be is local.
+      They are **solid** — you cannot walk through a resident or a car — and
+      **E** gets one line out of a resident: whichever nuisance the town
+      remembers most loudly, or else the escalation stage. Nobody retreats
+      from you any more (`docs/open-questions.md` Q28 records that overrule of
+      art-bible §3); the only distance rule left is that the crowd changes
+      size at least 25 m away, so nobody evaporates in front of you. Nobody
+      ever comes inside the wire, and nothing they do touches the simulation.
+      Where they may walk is a 4 m lattice built at load from the fence and
+      the town's footprints (`TownNav.cs`), weighted so people keep to the
+      streets and cross a carriageway rather than stroll down it.
+      Two more interactions: **E** at the **intercom** beside the pedestrian
+      gate answers in the Program's voice, to you alone, once per 30 s; **E**
+      at the small sign on the south verge puts your ear on the town's side of
+      the wire until you walk off. **F3 → ambient figures** switches the whole
+      layer off. Presence warnings in the console (`[Presence] … dropped`)
+      mean a standing spot in `CityBuilder` violates the layout rules and was
+      left out — fix the coordinates, not the rule.
 - [ ] **7.2g Imported art and sound (`Assets/ThirdParty`).** The houses,
       the north blocks and every car are Kenney's CC0 city and car kits;
       the protest chant is a real climate-strike crowd from Freesound
       (CC0), low-passed at 350 Hz so no word survives; window clicks and
       control clunks are Kenney's CC0 interface and impact packs. All of it
       is listed in `Assets/ThirdParty/CREDITS.md`, all of it is in Git LFS
-      (16 MB), and none of it is used as delivered: `KitImport.cs` (Editor)
-      bakes each model's colormap into vertex colours quantised to the
-      palette, scales the kits to metres (city ×8, cars ×1.6) and imports no
-      materials. The game reads the catalogue
+      (26 MB), and none of it is used as delivered: `KitImport.cs` (Editor)
+      bakes each model's colour sheet into vertex colours quantised to the
+      palette, scales the kits to metres (city ×8, cars ×1.6, people ×0.65 for
+      a 1.75 m adult) and imports no materials. The people — Kenney's Blocky
+      Characters — are the one kit imported **with** animation, on a Legacy
+      rig so the game can play a clip by name without an AnimatorController
+      asset; their per-model texture sheet is baked the same way, which is
+      also what drops the kit's painted faces. The game reads the catalogue
       `Assets/Settings/Resources/AssetKit.asset`; after adding or removing a
       file under `ThirdParty`, run **GNP > Rebuild Asset Kit** and commit
       the asset with the new `.meta` files. Every consumer keeps its

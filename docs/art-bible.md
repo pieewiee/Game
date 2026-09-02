@@ -139,6 +139,18 @@ So residents are represented at **distance only**:
 - Everything else is **text**: the local news ticker, letters, petition counts,
   quoted complaints.
 
+> **Overruled by the owner, 2026-09-02.** "Distance only" is no longer the
+> rule. Residents are bodies you can walk up to (Kenney's CC0 Blocky
+> Characters, baked to the palette like the rest of the town), they are solid,
+> they walk their own errands through the streets, and **E** gets one line out
+> of them. What the tone rule still holds onto, and what the implementation
+> still obeys: the line is the town's own state read back, residents are
+> quoted plainly and never played for laughs, nobody comes inside the wire,
+> and nothing a resident does touches the simulation. The characters carry no
+> faces — the bake keeps flat colour and drops the kit's painted eyes — so the
+> "faceless capsule as a joke about a person" is avoided from the other side.
+> See [open-questions.md](open-questions.md) Q28.
+
 The town has a population of `TOWN_POPULATION` = 4,000 and you never meet one of
 them. That is both the cheapest possible solution and the correct one.
 

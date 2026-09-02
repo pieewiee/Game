@@ -519,3 +519,36 @@ Options if you want the text back:
 | **C. Slogans surface through the news ticker instead** | Keeps the distance rule; the text arrives through the Program's own channel, which is the tone the bible asks for |
 
 **Decision pending: blank placards for now.** C is the cheapest honest upgrade.
+
+---
+
+## Q28 — Residents are approachable (owner overrule)
+
+[art-bible.md](art-bible.md) §3 required residents at **distance only**:
+silhouettes that turn away at 9 m and dissolve at 5 m, never approachable,
+no dialogue. The presence layer shipped exactly that.
+
+The owner overruled it on 2026-09-02, having walked the site: *"die npcs
+verschwinden wenn ich näher komme … ich will mit den sachen interagieren …
+die sollen auch frei laufen können"*.
+
+What changed:
+
+| Was | Is |
+|---|---|
+| Retreat at 11 m, vanish at 5 m | Nobody retreats; a walker only steps around you |
+| No colliders | A capsule you cannot walk through, and cars that brake for you |
+| One ping-ponged pavement polyline | Free roaming over the whole town on a 4 m lattice (`TownNav`), weighted so people keep to the streets |
+| Two cylinders, no face | Kenney Blocky Characters (CC0), palette-baked, with the pack's idle/walk/holding takes |
+| No dialogue | **E** posts one local line: the loudest nuisance the town remembers, else the escalation stage |
+
+What did **not** change, and should not without another decision:
+
+- No resident ever comes inside the wire (`TownNav` blocks the fence plus 2.5 m).
+- Nothing a resident does touches the simulation. The layer is presentation;
+  head-counts are read from the replicated report and nothing is written back.
+- Nobody appears or disappears within 25 m of a player — the crowd changes
+  size out of sight, not in front of you.
+- Residents are quoted plainly. The joke is on the operator, never on them.
+- The bake drops the kit's painted faces, so the figures stay faceless.
+- Placards stay blank (Q27).

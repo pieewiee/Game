@@ -18,6 +18,7 @@ fallback; the game builds and runs without these folders.
 | `Kenney/city-kit-commercial` | https://kenney.nl/assets/city-kit-commercial (v2.1) | CC0 | Apartment and commercial blocks north and east |
 | `Kenney/city-kit-roads` | https://kenney.nl/assets/city-kit-roads | CC0 | Street props (signs, traffic lights, poles); the road itself stays procedural |
 | `Kenney/car-kit` | https://kenney.nl/assets/car-kit (v3.1) | CC0 | Parked cars and the residents' cars on the ring road |
+| `Kenney/blocky-characters` | https://kenney.nl/assets/blocky-characters (v2.0) | CC0 | The residents themselves: eighteen six-part figures with the pack's own idle, walk and holding takes. The only kit imported with animation (a Legacy rig, so no AnimatorController asset is needed), and the only one whose per-model texture sheet is baked rather than a shared colormap — which also drops the painted faces |
 | `Kenney/ui-audio`, `Kenney/interface-sounds` | https://kenney.nl/assets/ui-audio, https://kenney.nl/assets/interface-sounds | CC0 | Window open/close clicks |
 | `Kenney/impact-sounds` | https://kenney.nl/assets/impact-sounds | CC0 | Switch and breaker clunks |
 | `Freesound/485621-protest-crowd.mp3` | https://freesound.org/people/InspectorJ/sounds/485621/ by InspectorJ | CC0 | The muffled protest chant at the vehicle gate (low-passed; MP3 preview, see LICENSE.txt) |

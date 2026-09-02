@@ -26,7 +26,7 @@ namespace Game.Editor
         private const string Root = "Assets/ThirdParty/";
         private const string KitAssetPath = "Assets/Settings/Resources/" + AssetKit.ResourceName + ".asset";
 
-        public override uint GetVersion() { return 3; }
+        public override uint GetVersion() { return 5; }
 
         /// <summary>The kits' window glass is the one saturated light-blue
         /// swatch column (#D0E8FF and its gradient). It is tagged in the
@@ -49,7 +49,21 @@ namespace Game.Editor
         {
             if (path.Contains("/city-kit-")) return 8f;
             if (path.Contains("/car-kit/")) return 1.6f;
+            // A Blocky Character stands 2.70 units to the crown of its
+            // oversized head; ×0.65 makes that a 1.75 m adult, the same
+            // height as the procedural figures it replaces.
+            if (path.Contains("/blocky-characters/")) return 0.65f;
             return 1f;
+        }
+
+        /// <summary>Blocky Characters are the one animated kit: six rigid
+        /// parts (root, torso, head, two arms, two legs) with authored takes
+        /// — idle, walk, sit, interact and more. They import with a Legacy
+        /// rig, which needs no AnimatorController asset: the runtime just
+        /// plays a clip by name on the model's Animation component.</summary>
+        private static bool IsCharacter(string path)
+        {
+            return path.Contains("/blocky-characters/");
         }
 
         private static bool IsKit(string path)
@@ -65,8 +79,11 @@ namespace Game.Editor
             mi.importBlendShapes = false;
             mi.importCameras = false;
             mi.importLights = false;
-            mi.importAnimation = false;
-            mi.animationType = ModelImporterAnimationType.None;
+            mi.importConstraints = false;
+            bool character = IsCharacter(assetPath);
+            mi.importAnimation = character;
+            mi.animationType = character ? ModelImporterAnimationType.Legacy : ModelImporterAnimationType.None;
+            if (character) mi.animationCompression = ModelImporterAnimationCompression.KeyframeReduction;
             mi.meshCompression = ModelImporterMeshCompression.Off;
             mi.weldVertices = false;
             mi.importNormals = ModelImporterNormals.Import;
@@ -101,8 +118,9 @@ namespace Game.Editor
             {
                 if (t == root.transform) continue;
                 var mf = t.GetComponent<MeshFilter>();
-                if (mf == null || mf.sharedMesh == null) { empties.Add(t.name); continue; }
-                Mesh m = mf.sharedMesh;
+                var smr = t.GetComponent<SkinnedMeshRenderer>();
+                Mesh m = mf != null ? mf.sharedMesh : smr != null ? smr.sharedMesh : null;
+                if (m == null) { empties.Add(t.name); continue; }
                 Vector2[] uv = m.uv;
                 var cols = new Color[m.vertexCount];
                 bool mapped = map != null && uv != null && uv.Length == m.vertexCount;
@@ -198,20 +216,31 @@ namespace Game.Editor
             return r;
         }
 
-        /// <summary>The kit's colormap: Textures/colormap.png beside the model
-        /// folder or in any parent up to the kit root. Read from disk, so the
-        /// import order of the PNG does not matter.</summary>
+        /// <summary>The swatch sheet a model's UVs point into, from the
+        /// Textures folder beside it or in any parent up to the kit root:
+        /// the kit-wide `colormap.png`, else the model's own sheet
+        /// (`character-a.fbx` → `texture-a.png`), else the only PNG there.
+        /// Read from disk, so the import order of the PNG does not matter.</summary>
         private static Texture2D LoadColormap(string modelPath)
         {
+            string name = Path.GetFileNameWithoutExtension(modelPath);
+            int dash = name.LastIndexOf('-');
             string dir = Path.GetDirectoryName(modelPath)?.Replace('\\', '/');
             for (int depth = 0; depth < 4 && !string.IsNullOrEmpty(dir) && dir.StartsWith("Assets/ThirdParty"); depth++)
             {
-                string candidate = dir + "/Textures/colormap.png";
-                if (File.Exists(candidate))
+                string textures = dir + "/Textures";
+                if (Directory.Exists(textures))
                 {
+                    string candidate = textures + "/colormap.png";
+                    if (!File.Exists(candidate) && dash >= 0) candidate = textures + "/texture" + name.Substring(dash) + ".png";
+                    if (!File.Exists(candidate))
+                    {
+                        string[] pngs = Directory.GetFiles(textures, "*.png");
+                        candidate = pngs.Length == 1 ? pngs[0] : null;
+                    }
+                    if (candidate == null) return null;
                     var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-                    if (tex.LoadImage(File.ReadAllBytes(candidate))) return tex;
-                    return null;
+                    return tex.LoadImage(File.ReadAllBytes(candidate)) ? tex : null;
                 }
                 dir = Path.GetDirectoryName(dir)?.Replace('\\', '/');
             }
@@ -247,7 +276,7 @@ namespace Game.Editor
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 var go = AssetDatabase.LoadAssetAtPath<GameObject>(path);
                 if (go == null) continue;
-                var entry = new AssetKit.MeshEntry { Key = KeyFor(path) };
+                var entry = new AssetKit.MeshEntry { Key = KeyFor(path), Model = go };
                 var parts = new List<AssetKit.Part>();
                 var atts = new List<AssetKit.Attachment>();
                 Bounds b = default;
