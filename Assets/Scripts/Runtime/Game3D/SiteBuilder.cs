@@ -666,33 +666,41 @@ namespace Game.Runtime.World
         {
             var posts = new ProcMesh();
             var mesh = new ProcMesh();
-            Color m = colour; m.a = 0.28f;
+            var wire = new ProcMesh();
             const float span = 4f;
+            // The wire above the top rail leans OUT (art-bible mesh #6: a
+            // fence that keeps people out, not in): each post carries a 45°
+            // arm and three strands of barbed wire run along the arms.
+            const float ArmOut = 0.32f, ArmUp = 0.32f;
 
             void Panel(bool alongX, float a0, float a1, float fixedCoord, char side)
             {
                 float mid = (a0 + a1) / 2f;
+                float outSign = side == 'S' || side == 'W' ? -1f : 1f;
                 if (alongX)
                 {
                     posts.Box(new Vector3(mid, h - 0.06f, fixedCoord), new Vector3(a1 - a0, 0.08f, 0.08f), colour);
-                    mesh.Box(new Vector3(mid, h / 2f, fixedCoord), new Vector3(a1 - a0 - 0.1f, h - 0.25f, 0.04f), m);
                     FenceWall(root, name, new Vector3(mid, h / 2f, fixedCoord), new Vector3(a1 - a0, h, 0.3f));
                 }
                 else
                 {
                     posts.Box(new Vector3(fixedCoord, h - 0.06f, mid), new Vector3(0.08f, 0.08f, a1 - a0), colour);
-                    mesh.Box(new Vector3(fixedCoord, h / 2f, mid), new Vector3(0.04f, h - 0.25f, a1 - a0 - 0.1f), m);
                     FenceWall(root, name, new Vector3(fixedCoord, h / 2f, mid), new Vector3(0.3f, h, a1 - a0));
                 }
+                ChainLink(mesh, alongX, a0 + 0.06f, a1 - 0.06f, fixedCoord, 0.12f, h - 0.1f, colour);
+                BarbedWire(wire, alongX, a0, a1, fixedCoord, h, outSign, ArmOut, ArmUp, Palette.Slate);
             }
 
-            void Post(bool alongX, float a, float fixedCoord)
+            void Post(bool alongX, float a, float fixedCoord, float outSign)
             {
                 // Corner posts belong to the X sides; the Z sides would put a
                 // second, coincident post there.
                 if (!alongX && (Mathf.Abs(a - z0) < 0.01f || Mathf.Abs(a - z1) < 0.01f)) return;
                 Vector3 p = alongX ? new Vector3(a, h / 2f, fixedCoord) : new Vector3(fixedCoord, h / 2f, a);
                 posts.Box(p, new Vector3(0.12f, h, 0.12f), colour);
+                Vector3 top = alongX ? new Vector3(a, h, fixedCoord) : new Vector3(fixedCoord, h, a);
+                Vector3 outward = alongX ? new Vector3(0f, 0f, outSign) : new Vector3(outSign, 0f, 0f);
+                posts.Beam(top, top + outward * ArmOut + Vector3.up * ArmUp, 0.05f, colour);
             }
 
             // A run is divided into EVEN panels, so a post lands on both ends
@@ -705,7 +713,8 @@ namespace Game.Runtime.World
                 if (len <= 0.01f) return;
                 int n = Mathf.Max(1, Mathf.CeilToInt(len / span - 0.01f));
                 float step = len / n;
-                for (int i = 0; i <= n; i++) Post(alongX, a0 + i * step, fixedCoord);
+                float outSign = side == 'S' || side == 'W' ? -1f : 1f;
+                for (int i = 0; i <= n; i++) Post(alongX, a0 + i * step, fixedCoord, outSign);
                 for (int i = 0; i < n; i++) Panel(alongX, a0 + i * step, a0 + (i + 1) * step, fixedCoord, side);
             }
 
@@ -746,7 +755,73 @@ namespace Game.Runtime.World
             }
 
             MatLib.Spawn("Fence" + name, posts.Build("fence"), root, Vector3.zero, false);
-            MatLib.Spawn("Fence" + name + "Mesh", mesh.Build("fenceMesh"), root, Vector3.zero, false, true);
+            MatLib.Spawn("Fence" + name + "Mesh", mesh.Build("fenceMesh"), root, Vector3.zero, false);
+            MatLib.Spawn("Fence" + name + "Wire", wire.Build("fenceWire"), root, Vector3.zero, false);
+        }
+
+        /// <summary>Chain-link: two families of diagonal wires 20 cm apart,
+        /// each a 3 cm strip seen from both sides, clipped to the panel. At
+        /// the distances the fence is looked at it reads as a mesh; up close
+        /// it is a lattice you can see the yard through.</summary>
+        private static void ChainLink(ProcMesh pm, bool alongX, float a0, float a1, float fixedCoord,
+            float y0, float y1, Color colour)
+        {
+            const float pitch = 0.2f, width = 0.03f;
+            float hgt = y1 - y0;
+            for (int dir = -1; dir <= 1; dir += 2)
+            {
+                for (float k = a0 - hgt; k < a1 + hgt; k += pitch)
+                {
+                    // The wire is a = k + dir·t, y = y0 + t for t in [0, hgt],
+                    // cut to the panel's a range.
+                    float tMin = 0f, tMax = hgt;
+                    if (dir > 0) { tMin = Mathf.Max(tMin, a0 - k); tMax = Mathf.Min(tMax, a1 - k); }
+                    else { tMin = Mathf.Max(tMin, k - a1); tMax = Mathf.Min(tMax, k - a0); }
+                    if (tMax - tMin < 0.05f) continue;
+                    WireStrip(pm, alongX, k + dir * tMin, y0 + tMin, k + dir * tMax, y0 + tMax, fixedCoord, width, colour);
+                }
+            }
+        }
+
+        /// <summary>A flat strip in the fence plane from (aA, yA) to (aB, yB),
+        /// both faces.</summary>
+        private static void WireStrip(ProcMesh pm, bool alongX, float aA, float yA, float aB, float yB,
+            float f, float width, Color c)
+        {
+            float da = aB - aA, dy = yB - yA;
+            float len = Mathf.Sqrt(da * da + dy * dy);
+            float na = -dy / len * width / 2f, ny = da / len * width / 2f;
+            Vector3 p0 = FencePoint(alongX, aA - na, yA - ny, f), p1 = FencePoint(alongX, aA + na, yA + ny, f);
+            Vector3 p2 = FencePoint(alongX, aB + na, yB + ny, f), p3 = FencePoint(alongX, aB - na, yB - ny, f);
+            pm.Quad(p0, p1, p2, p3, c);
+            pm.Quad(p1, p0, p3, p2, c);
+        }
+
+        private static Vector3 FencePoint(bool alongX, float a, float y, float f, float o = 0f)
+        {
+            return alongX ? new Vector3(a, y, f + o) : new Vector3(f + o, y, a);
+        }
+
+        /// <summary>Three strands along the leaning arms, a barb every 40 cm
+        /// (one short diagonal, alternating its lean, which reads as barbs
+        /// from the pavement without costing a cross each).</summary>
+        private static void BarbedWire(ProcMesh pm, bool alongX, float a0, float a1, float f, float h,
+            float outSign, float armOut, float armUp, Color colour)
+        {
+            float[] along = { 0.4f, 0.7f, 1f };
+            foreach (float fr in along)
+            {
+                float up = armUp * fr, o = armOut * fr * outSign;
+                pm.Beam(FencePoint(alongX, a0, h + up, f, o), FencePoint(alongX, a1, h + up, f, o), 0.015f, colour);
+                int barbs = Mathf.FloorToInt((a1 - a0) / 0.4f);
+                for (int i = 0; i < barbs; i++)
+                {
+                    float a = a0 + 0.2f + i * 0.4f;
+                    float lean = i % 2 == 0 ? 0.04f : -0.04f;
+                    pm.Beam(FencePoint(alongX, a, h + up - 0.04f, f, o - lean),
+                        FencePoint(alongX, a, h + up + 0.04f, f, o + lean), 0.012f, colour);
+                }
+            }
         }
 
         private static void FenceWall(Transform root, string name, Vector3 centre, Vector3 size)
