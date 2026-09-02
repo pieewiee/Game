@@ -109,6 +109,11 @@ namespace Game.Runtime.World
 
             HazardInstaller.Install(Site, Facility);
 
+            // The clock runs from the first frame at the driver's walking
+            // pace (one sim hour per ten seconds); a net session pauses and
+            // resumes it itself, and F1 still holds the faster presets.
+            if (Driver != null) Driver.Paused = false;
+
             NewsFeed.Post("A new operator has taken over the old barn site. " +
                 "The Good Neighbor Program welcomes the community's continued partnership.");
             NewsFeed.Post("ORIENTATION: the operations terminal is F1 — contracts, money and " +

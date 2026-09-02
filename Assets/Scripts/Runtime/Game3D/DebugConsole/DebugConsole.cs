@@ -172,6 +172,7 @@ namespace Game.Runtime.DebugTools
             }
 
             GUILayout.Label("speed:", GUILayout.Width(44));
+            DrawSpeedButton("1 h/10s", 0.1f);
             DrawSpeedButton("1 h/s", 1f);
             DrawSpeedButton("1 d/s", 24f);
             DrawSpeedButton("1 w/s", 168f);

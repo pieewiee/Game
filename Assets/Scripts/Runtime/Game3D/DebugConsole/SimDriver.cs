@@ -37,8 +37,12 @@ namespace Game.Runtime.DebugTools
         /// <summary>Ring capacity: five simulated years of hourly reports.</summary>
         public const int MaxHistory = 5 * SimClock.TicksPerYear;
 
-        /// <summary>Ticks simulated per real-time second while unpaused.</summary>
-        public float TicksPerSecond = 24f;
+        /// <summary>Ticks simulated per real-time second while unpaused. The
+        /// default is a walking pace — one sim hour per ten real seconds, a
+        /// day in four minutes — so weather, light and the crowd change at a
+        /// rate a player on foot can read; the console's faster presets are
+        /// for balancing.</summary>
+        public float TicksPerSecond = 0.1f;
         public bool Paused = true;
 
         public Balance Balance { get; private set; }

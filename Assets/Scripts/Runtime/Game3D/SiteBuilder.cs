@@ -687,8 +687,10 @@ namespace Game.Runtime.World
                     posts.Box(new Vector3(fixedCoord, h - 0.06f, mid), new Vector3(0.08f, 0.08f, a1 - a0), colour);
                     FenceWall(root, name, new Vector3(fixedCoord, h / 2f, mid), new Vector3(0.3f, h, a1 - a0));
                 }
-                ChainLink(mesh, alongX, a0 + 0.06f, a1 - 0.06f, fixedCoord, 0.12f, h - 0.1f, colour);
-                BarbedWire(wire, alongX, a0, a1, fixedCoord, h, outSign, ArmOut, ArmUp, Palette.Slate);
+                // Galvanised wire: the Program's blue is the frame (posts,
+                // rails, arms, gate caps), the mesh and the barbs are steel.
+                ChainLink(mesh, alongX, a0 + 0.06f, a1 - 0.06f, fixedCoord, 0.12f, h - 0.1f, Palette.Concrete);
+                BarbedWire(wire, alongX, a0, a1, fixedCoord, h, outSign, ArmOut, ArmUp, Palette.Concrete);
             }
 
             void Post(bool alongX, float a, float fixedCoord, float outSign)

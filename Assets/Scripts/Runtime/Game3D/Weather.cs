@@ -124,9 +124,23 @@ namespace Game.Runtime.World
             public Mesh Mesh;
             public Vector3 Base;       // hashed world position before drift; y is the altitude
             public float Threshold;    // visible once CloudFrac exceeds this
-            public float[] Shade;      // per-vertex brightness (quad-to-quad variation)
+            public float[] Shade;      // per-vertex brightness (lobe-to-lobe variation)
+            public float[] Rim;        // per-vertex alpha factor: 1 at a lobe's centre, 0 on its rim
             public List<Color> Colors = new List<Color>();
         }
+
+        // ---- stars -----------------------------------------------------------
+        private const int StarCount = 600;
+        private const float StarDistance = 474f;
+        /// <summary>Celestial pole for 51° N: up the +z (north) axis, 51° above the horizon.</summary>
+        private static readonly Vector3 PoleAxis = new Vector3(0f, Mathf.Sin(51f * Mathf.Deg2Rad), Mathf.Cos(51f * Mathf.Deg2Rad));
+        private Transform _stars;
+        private Mesh _starMesh;
+        private Vector3[] _starDirs;          // unit direction of each star in the sky's own frame
+        private float[] _starBright;          // 0.35..1 per star
+        private Color[] _starTint;
+        private readonly List<Color> _starColors = new List<Color>();
+        private Renderer _starRend;
 
         private void Awake() { Instance = this; }
         private void OnDestroy() { if (Instance == this) Instance = null; }
@@ -149,8 +163,83 @@ namespace Game.Runtime.World
             _sunDisc = BuildDisc("SunDisc", 12f, false);
             _sunHalo = BuildDisc("SunHalo", 30f, true);
             _moonDisc = BuildDisc("Moon", 10f, false);
+            BuildStars();
             BuildClouds();
             _built = true;
+        }
+
+        // ---- stars -----------------------------------------------------------
+
+        /// <summary>600 hashed points on the sky sphere, each a small quad
+        /// facing the centre (1-2 px at the dome's distance), in one mesh
+        /// under a root that turns with the hour about the celestial pole.
+        /// Alpha is set per star on recolour: darkness, cloud, haze and a
+        /// fade-in above the horizon.</summary>
+        private void BuildStars()
+        {
+            var pm = new ProcMesh();
+            _starDirs = new Vector3[StarCount];
+            _starBright = new float[StarCount];
+            _starTint = new Color[StarCount];
+            for (int i = 0; i < StarCount; i++)
+            {
+                // Uniform on the sphere: z in [-1, 1], azimuth in [0, 2π).
+                float z = 2f * Hash(1000 + i, 0) - 1f;
+                float az = Mathf.PI * 2f * Hash(1000 + i, 1);
+                float rxy = Mathf.Sqrt(1f - z * z);
+                var dir = new Vector3(rxy * Mathf.Cos(az), z, rxy * Mathf.Sin(az));
+                float bright = Mathf.Pow(Hash(1000 + i, 2), 2f);          // few bright, many faint
+                float size = 0.9f + 1.4f * bright;
+                Vector3 u = Vector3.Cross(dir, Mathf.Abs(dir.y) < 0.9f ? Vector3.up : Vector3.right).normalized * size * 0.5f;
+                Vector3 v = Vector3.Cross(dir, u).normalized * size * 0.5f;
+                Vector3 c = dir * StarDistance;
+                pm.Quad(c - u - v, c + u - v, c + u + v, c - u + v, Color.white);
+                pm.Quad(c + u - v, c - u - v, c - u + v, c + u + v, Color.white);
+                _starDirs[i] = dir;
+                _starBright[i] = 0.35f + 0.65f * bright;
+                float hue = Hash(1000 + i, 3);
+                _starTint[i] = hue < 0.15f ? Color.Lerp(Color.white, Palette.Amber, 0.35f)
+                             : hue < 0.45f ? Color.Lerp(Color.white, Palette.PaleBlue, 0.35f) : Color.white;
+            }
+            _starMesh = pm.Build("Stars");
+            var go = MatLib.Spawn("Stars", _starMesh, null, Vector3.zero, collider: false, transparent: true);
+            _starRend = go.GetComponent<MeshRenderer>();
+            _starRend.sharedMaterial = _discMat;
+            _starRend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            _starRend.receiveShadows = false;
+            _starRend.enabled = false;
+            _stars = go.transform;
+            for (int k = 0; k < StarCount * 8; k++) _starColors.Add(Color.white);
+        }
+
+        /// <summary>The sky turns 15° per hour about the pole (plus the slow
+        /// seasonal drift), so the same stars rise in the east.</summary>
+        private void PlaceStars(in SkyState st, Vector3 camPos)
+        {
+            _stars.position = camPos;
+            float doy = SimClock.DayOfYear((long)Math.Floor(st.Vt));
+            _stars.rotation = Quaternion.AngleAxis(-(15f * st.HourF + 0.9856f * doy), PoleAxis);
+        }
+
+        private void RecolourStars(in SkyState st)
+        {
+            float dark = Mathf.Clamp01((-st.SunElevationDeg - 6f) / 8f);
+            float haze = Mathf.Exp(-(150f * st.FogDensity) * (150f * st.FogDensity));
+            float clear = Mathf.Pow(1f - st.Cloud, 2f);
+            float global = dark * clear * haze;
+            bool visible = global > 0.02f;
+            _starRend.enabled = visible;
+            if (!visible) return;
+            Quaternion rot = _stars.rotation;
+            for (int i = 0; i < StarCount; i++)
+            {
+                float y = (rot * _starDirs[i]).y;
+                float a = global * _starBright[i] * Mathf.Clamp01((y - 0.02f) / 0.12f);
+                Color c = _starTint[i];
+                c.a = a;
+                for (int k = 0; k < 8; k++) _starColors[i * 8 + k] = c;
+            }
+            _starMesh.SetColors(_starColors);
         }
 
         // ---- pure sun geometry ---------------------------------------------
@@ -539,30 +628,55 @@ namespace Game.Runtime.World
         /// <summary>28 flat blobs, every dimension from the stateless hash so a
         /// host and its clients build the same sky. Blob i appears once the
         /// cloud fraction passes 0.9·i/28: a third of the sky dotted at 0.3, a
-        /// lid at 0.9.</summary>
+        /// lid at 0.9. A blob is three to five overlapping elliptical lobes,
+        /// each a fan whose rim alpha is 0: the edges are soft and no
+        /// rectangle is ever seen against the sky.</summary>
         private void BuildClouds()
         {
             _cloudRoot = new GameObject("Clouds").transform;
+            const int sides = 14;
             for (int i = 0; i < CloudCount; i++)
             {
                 var pm = new ProcMesh();
-                int quads = 2 + (int)(Hash(i, 3) * 3f);          // 2..4
-                var shade = new float[quads * 4];
-                for (int q = 0; q < quads; q++)
+                int lobes = 3 + (int)(Hash(i, 3) * 3f);          // 3..5
+                var shade = new List<float>();
+                var rim = new List<float>();
+                for (int q = 0; q < lobes; q++)
                 {
                     int h = 10 + q * 5;
-                    float w = 50f + 60f * Hash(i, h), l = 35f + 40f * Hash(i, h + 1);
+                    float rx = 25f + 30f * Hash(i, h), rz = 18f + 22f * Hash(i, h + 1);
                     float ox = q == 0 ? 0f : (Hash(i, h + 2) - 0.5f) * 60f;
-                    float oz = q == 0 ? 0f : (Hash(i, h + 3) - 0.5f) * 60f;
+                    float oz = q == 0 ? 0f : (Hash(i, h + 3) - 0.5f) * 40f;
                     float oy = q * 1.5f;                             // overlapping layers, never z-fighting
                     float s = q == 0 ? 1f : 0.9f + 0.15f * Hash(i, h + 4);
-                    pm.Quad(new Vector3(ox - w * 0.5f, oy, oz - l * 0.5f), new Vector3(ox + w * 0.5f, oy, oz - l * 0.5f),
-                            new Vector3(ox + w * 0.5f, oy, oz + l * 0.5f), new Vector3(ox - w * 0.5f, oy, oz + l * 0.5f), Color.white);
-                    for (int k = 0; k < 4; k++) shade[q * 4 + k] = s;
+                    // A firm body out to 65 % of the radius, then a ring that
+                    // fades to nothing: the lobe has weight and a soft edge,
+                    // instead of being one flat gradient with no cloud in it.
+                    const float core = 0.65f;
+                    var centre = new Vector3(ox, oy, oz);
+                    for (int k = 0; k < sides; k++)
+                    {
+                        float a0 = Mathf.PI * 2f * k / sides, a1 = Mathf.PI * 2f * (k + 1) / sides;
+                        float c0 = Mathf.Cos(a0), s0 = Mathf.Sin(a0), c1 = Mathf.Cos(a1), s1 = Mathf.Sin(a1);
+                        var i0 = new Vector3(ox + c0 * rx * core, oy, oz + s0 * rz * core);
+                        var i1 = new Vector3(ox + c1 * rx * core, oy, oz + s1 * rz * core);
+                        var o0 = new Vector3(ox + c0 * rx, oy, oz + s0 * rz);
+                        var o1 = new Vector3(ox + c1 * rx, oy, oz + s1 * rz);
+                        pm.Triangle(centre, i0, i1, Vector3.up, Color.white);
+                        shade.Add(s); shade.Add(s); shade.Add(s);
+                        rim.Add(1f); rim.Add(1f); rim.Add(1f);
+                        pm.Triangle(i0, o0, o1, Vector3.up, Color.white);
+                        shade.Add(s); shade.Add(s); shade.Add(s);
+                        rim.Add(1f); rim.Add(0f); rim.Add(0f);
+                        pm.Triangle(i0, o1, i1, Vector3.up, Color.white);
+                        shade.Add(s); shade.Add(s); shade.Add(s);
+                        rim.Add(1f); rim.Add(0f); rim.Add(1f);
+                    }
                 }
                 var b = new Blob();
                 b.Mesh = pm.Build("Cloud" + i);
-                b.Shade = shade;
+                b.Shade = shade.ToArray();
+                b.Rim = rim.ToArray();
                 b.Base = new Vector3((Hash(i, 0) - 0.5f) * 2f * CloudSpread, 140f + 25f * Hash(i, 2),
                                      (Hash(i, 1) - 0.5f) * 2f * CloudSpread);
                 b.Threshold = 0.9f * i / CloudCount;
@@ -573,7 +687,7 @@ namespace Game.Runtime.World
                 mr.enabled = false;
                 b.Rend = mr;
                 b.Tf = go.transform;
-                for (int k = 0; k < shade.Length; k++) b.Colors.Add(Color.white);
+                for (int k = 0; k < b.Shade.Length; k++) b.Colors.Add(Color.white);
                 _clouds[i] = b;
             }
         }
@@ -624,7 +738,7 @@ namespace Game.Runtime.World
                 for (int k = 0; k < b.Shade.Length; k++)
                 {
                     Color c = st.CloudTint * b.Shade[k];
-                    c.a = a;
+                    c.a = a * b.Rim[k];
                     b.Colors[k] = c;
                 }
                 b.Mesh.SetColors(b.Colors);
@@ -674,24 +788,49 @@ namespace Game.Runtime.World
             _precip.Play();
         }
 
-        /// <summary>Rain: stretched streaks under gravity. Snow: slow billboards.
-        /// Switching clears the system so no streak turns into a flake mid-air.</summary>
+        /// <summary>Rain: stretched streaks under gravity. Snow: fine flakes
+        /// that fall at their terminal speed and drift on a noise field.
+        /// Both are camera-facing quads — a mesh particle does not receive
+        /// the particle colour through this unlit vertex-colour shader and
+        /// came out a muddy lavender. Switching clears the system so no
+        /// streak turns into a flake mid-air.</summary>
         private void ConfigurePrecip(bool snow)
         {
             _precipSnow = snow;
             _precip.Clear();
             var main = _precip.main;
+            var noise = _precip.noise;
+            var shape = _precip.shape;
             if (snow)
             {
                 _precipRenderer.renderMode = ParticleSystemRenderMode.Billboard;
-                main.startSize = 0.12f;
-                main.startLifetime = 5f;
-                main.startSpeed = 1.2f;
-                main.gravityModifier = 0.1f;
-                main.startColor = new Color(0.95f, 0.95f, 0.97f, 0.9f);
+                // A flake falls at its terminal speed, about 1.1 m/s, and
+                // never accelerates: under gravity it was 180 m below the
+                // ground by the end of its life and the air looked empty.
+                // 16 s carries it the 12 m from the emitter to the ground,
+                // and the emitter sits over the player instead of ahead of
+                // them, so the snow is all round rather than in one wall.
+                _precip.transform.localPosition = new Vector3(0f, 12f, 0f);
+                main.startSize = new ParticleSystem.MinMaxCurve(0.035f, 0.09f);
+                main.startLifetime = 16f;
+                main.startSpeed = 1.1f;
+                main.gravityModifier = 0f;
+                main.startColor = Color.white;
+                main.maxParticles = 12000;
+                // A 30 m sheet left the far half of the street bare; 44 m
+                // reaches past the fence, and the rate rises with the area
+                // so the air is no thinner.
+                shape.scale = new Vector3(44f, 44f, 1f);
+                noise.enabled = true;
+                noise.strength = 0.4f;
+                noise.frequency = 0.2f;
+                noise.scrollSpeed = 0.15f;
+                noise.damping = true;
             }
             else
             {
+                // Rain falls fast enough to be read ahead of the player.
+                _precip.transform.localPosition = new Vector3(0f, 14f, 6f);
                 _precipRenderer.renderMode = ParticleSystemRenderMode.Stretch;
                 _precipRenderer.lengthScale = 5f;
                 main.startSize = 0.035f;
@@ -699,6 +838,9 @@ namespace Game.Runtime.World
                 main.startSpeed = 14f;
                 main.gravityModifier = 1f;
                 main.startColor = new Color(0.75f, 0.8f, 0.9f, 0.35f);
+                main.maxParticles = 4000;
+                shape.scale = new Vector3(30f, 30f, 1f);
+                noise.enabled = false;
             }
         }
 
@@ -711,7 +853,7 @@ namespace Game.Runtime.World
             // after the lazy creation.
             if (st.RainMmH > 0f && st.Snow != _precipSnow) ConfigurePrecip(st.Snow);
 
-            float rate = st.RainMmH <= 0f || st.Indoors ? 0f : st.RainMmH * (st.Snow ? 120f : 250f);
+            float rate = st.RainMmH <= 0f || st.Indoors ? 0f : st.RainMmH * (st.Snow ? 700f : 250f);
             var emission = _precip.emission;
             emission.rateOverTime = rate;
             if (rate > 0f)
@@ -833,12 +975,14 @@ namespace Game.Runtime.World
                 PlaceDisc(_sunDisc, camPos, st.ToSun, DiscDistance, sunVisible);
                 PlaceDisc(_sunHalo, camPos, st.ToSun, DiscDistance - 2f, sunVisible);
                 PlaceDisc(_moonDisc, camPos, st.ToMoon, DiscDistance, st.SunElevationDeg < 4f && st.ToMoon.y > -0.05f);
+                PlaceStars(st, camPos);
                 UpdateClouds(r, camPos, dt);
                 if (NeedsRecolour(st, vt, camPos))
                 {
                     var refs = GameBootstrap.Site;
                     RecolourDome(st, refs);
                     RecolourDiscs(st);
+                    RecolourStars(st);
                     RecolourClouds(st, camPos);
                     _lastRecolourVt = vt;
                     _nextRecolourTime = Time.time + RecolourMinInterval;

@@ -52,16 +52,19 @@ namespace Game.Runtime.World
         }
 
         private const uint PresenceSeed = 7331u;
-        private const int Walkers = 16, Filmers = 8, Protesters = 6, Cars = 4;
+        // The outer loop is 315 m of pavement: at sixteen slots the street
+        // read as deserted from the spawn, which is the one view every
+        // session starts with.
+        private const int Walkers = 24, Filmers = 8, Protesters = 6, Cars = 6;
         private const int FigureCount = Walkers + Filmers + Protesters + Cars;
 
         private const float RecomputeEvery = 4f;      // real seconds between target evaluations
         private const float MinDwell = 6f;            // a shown figure stays at least this long
         private const float ScaleTime = 0.4f;         // scale-in / scale-out duration
         private const float IncidentMemory = 20f;     // an accident keeps the phones out this long
-        private const float SpawnClearDist = 20f;     // nothing appears closer to the player
+        private const float SpawnClearDist = 15f;     // nothing appears closer to the player
         private const float CullDist = 180f;          // fog has eaten them well before this
-        private const float WalkerReverseDist = 14f, WalkerReleaseDist = 20f, WalkerVanishDist = 7f, WalkerReturnDist = 30f;
+        private const float WalkerReverseDist = 11f, WalkerReleaseDist = 16f, WalkerVanishDist = 7f, WalkerReturnDist = 26f;
         private const float StanderTurnDist = 9f, StanderVanishDist = 5f, StanderDormant = 60f;
         private const float WalkSpeed = 1.2f, FleeMult = 1.35f, CarSpeed = 8f, LaneOffset = 2f;
         // The carriageway centre line sits this far outside the fence rectangle
@@ -415,10 +418,12 @@ namespace Game.Runtime.World
         private static Mesh WalkerMesh(float bodyR, Color body, Color head, string name)
         {
             var pm = new ProcMesh();
-            // The head starts where the body ends: a gap reads as daylight
-            // through the silhouette at the 7-9 m minimum distances.
-            pm.Cylinder(new Vector3(0, 0.625f, 0), bodyR, 1.25f, 8, body, bodyR * 0.85f);
-            pm.Cylinder(new Vector3(0, 1.40f, 0), 0.16f, 0.3f, 6, head);
+            // 1.74 m to the crown: at 1.55 m the figures read as children
+            // beside the town's imported houses. The head starts where the
+            // body ends — a gap reads as daylight through the silhouette at
+            // the 7-9 m minimum distances.
+            pm.Cylinder(new Vector3(0, 0.71f, 0), bodyR, 1.42f, 8, body, bodyR * 0.85f);
+            pm.Cylinder(new Vector3(0, 1.58f, 0), 0.16f, 0.32f, 6, head);
             return pm.Build(name);
         }
 
@@ -573,7 +578,7 @@ namespace Game.Runtime.World
             uint bucket = (uint)(hour / 3);
             float now = Time.unscaledTime;
 
-            int walkers = hour < 6 ? 1 : hour < 8 ? 6 : hour < 10 ? 10 : hour < 17 ? 8 : hour < 20 ? 12 : hour < 22 ? 6 : 2;
+            int walkers = hour < 6 ? 2 : hour < 8 ? 11 : hour < 10 ? 18 : hour < 17 ? 14 : hour < 20 ? 21 : hour < 22 ? 11 : 4;
             float wf = walkers * (r.TdbC < 3 || r.TdbC > 32 ? 0.6f : 1f) * DebugDensity;
             walkers = Mathf.Clamp(Mathf.RoundToInt(wf), 0, Walkers);
 
@@ -605,7 +610,7 @@ namespace Game.Runtime.World
                 : r.Stage == EscalationStage.Sabotage ? 3 : 0;
             protesters = Mathf.Clamp(Mathf.RoundToInt(protesters * DebugDensity), 0, Mathf.Min(Protesters, _gateSpots.Count));
 
-            int cars = hour < 6 ? 1 : hour < 10 ? 4 : hour < 16 ? 2 : hour < 20 ? 4 : 2;
+            int cars = hour < 6 ? 1 : hour < 10 ? 6 : hour < 16 ? 3 : hour < 20 ? 6 : 2;
             cars = Mathf.Clamp(Mathf.RoundToInt(cars * DebugDensity), 0, Cars);
 
             bool protestPass = r.Stage >= EscalationStage.Protest;
@@ -628,12 +633,34 @@ namespace Game.Runtime.World
         }
 
         /// <summary>Exactly `count` of `n` slots, which ones rotating per
-        /// (day, bucket): the crowd changes faces without changing size.</summary>
+        /// (day, bucket): the crowd changes faces without changing size.
+        ///
+        /// The slot index also decides where a walker sets out along the
+        /// route, so a plain rotation (slot + rot) picked one CONTIGUOUS arc
+        /// and put the whole crowd on a third of the loop — from the spawn
+        /// the street looked deserted while fourteen people walked the far
+        /// side. Multiplying by a stride coprime with n scatters the chosen
+        /// slots around the ring and still selects exactly `count` of them.</summary>
         private static bool Rotated(int slot, int n, int count, uint day, uint bucket, uint salt)
         {
             if (slot >= n || n <= 0) return false;
             uint rot = H(PresenceSeed + salt, day, bucket) % (uint)n;
-            return (int)(((uint)slot + rot) % (uint)n) < count;
+            return (int)(((uint)slot * Stride(n) + rot) % (uint)n) < count;
+        }
+
+        /// <summary>A golden-ratio stride walked down to the nearest value
+        /// coprime with n (1 when none exists, e.g. for very small n).</summary>
+        private static uint Stride(int n)
+        {
+            uint s = (uint)Mathf.Max(1, Mathf.RoundToInt(n * 0.618034f));
+            while (s > 1 && Gcd(s, (uint)n) != 1) s--;
+            return s;
+        }
+
+        private static uint Gcd(uint a, uint b)
+        {
+            while (b != 0) { uint t = a % b; a = b; b = t; }
+            return a;
         }
 
         // ---- per-kind behaviour --------------------------------------------

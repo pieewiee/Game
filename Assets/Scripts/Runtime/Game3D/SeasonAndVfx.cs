@@ -47,15 +47,20 @@ namespace Game.Runtime.World
             if (_plume == null) return;
             TickReport r = GameBootstrap.CurrentReport;
             double dieselKw = r.DieselKwh; // 1 tick = 1 h, so kWh ≡ average kW
-            _plumeEmission.rateOverTime = (float)(dieselKw * 0.5);
+            // The module handles are fetched per frame, not cached: a cached
+            // handle outlives a domain reload during play and then throws
+            // every frame ("do not create your own module instances").
+            var emission = _plume.emission;
+            emission.rateOverTime = (float)(dieselKw * 0.5);
             // Wind blows TOWARD WindTowardDeg (0° = +z). The town sits west
             // (bearing 270° = −x), so a 270° wind drives particles at it.
             float rad = (float)r.WindTowardDeg * Mathf.Deg2Rad;
             var dir = new Vector3(Mathf.Sin(rad), 0.25f, Mathf.Cos(rad));
             float speed = (float)r.WindSpeedMs * 0.8f;
-            _plumeVelocity.x = dir.x * speed;
-            _plumeVelocity.y = 0.8f;
-            _plumeVelocity.z = dir.z * speed;
+            var velocity = _plume.velocityOverLifetime;
+            velocity.x = dir.x * speed;
+            velocity.y = 0.8f;
+            velocity.z = dir.z * speed;
         }
     }
 }
