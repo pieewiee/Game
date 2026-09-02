@@ -93,6 +93,7 @@ namespace Game.Sim
             r.IrradianceFrac = c.IrradianceFrac; r.WindCf = c.WindCf;
             r.DroughtActive = c.DroughtActive; r.HeatwaveActive = c.HeatwaveActive;
             r.DunkelflauteActive = c.DunkelflauteActive; r.ScarcityMult = c.ScarcityMult;
+            r.CloudFrac = c.CloudFrac; r.RainMmH = c.RainMmH;
 
             if (s.RunOver)
             {

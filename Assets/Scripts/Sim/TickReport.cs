@@ -18,6 +18,7 @@ namespace Game.Sim
         public double TdbC, TwbC, WindSpeedMs, WindTowardDeg;
         public bool WindTowardTown, DroughtActive, HeatwaveActive, DunkelflauteActive;
         public double IrradianceFrac, WindCf, ScarcityMult;
+        public double CloudFrac, RainMmH;    // presentation meters (sky, precipitation)
 
         // load
         public double RequestedBillableKw;   // what contracts asked for
@@ -69,7 +70,7 @@ namespace Game.Sim
         public const string CsvHeader =
             "tick,day,hour,month," +
             "tdb_c,twb_c,wind_ms,wind_toward_deg,wind_toward_town,irradiance_frac,wind_cf," +
-            "drought,heatwave,dunkelflaute,scarcity_mult," +
+            "drought,heatwave,dunkelflaute,scarcity_mult,cloud_frac,rain_mm_h," +
             "requested_kw,delivered_kw,theta_cool,theta_power,utilisation," +
             "p_it_kw,p_cool_kw,p_aux_kw," +
             "q_it_kwth,q_freecool_kwth,q_evap_kwth,q_chiller_kwth,q_unremoved_kwth,water_l_per_h," +
@@ -95,7 +96,7 @@ namespace Game.Sim
 
             I(Tick); I(SimClock.DayIndex(Tick)); I(SimClock.HourOfDay(Tick)); I(SimClock.Month(Tick));
             D(TdbC); D(TwbC); D(WindSpeedMs); D(WindTowardDeg); B(WindTowardTown); D(IrradianceFrac); D(WindCf);
-            B(DroughtActive); B(HeatwaveActive); B(DunkelflauteActive); D(ScarcityMult);
+            B(DroughtActive); B(HeatwaveActive); B(DunkelflauteActive); D(ScarcityMult); D(CloudFrac); D(RainMmH);
             D(RequestedBillableKw); D(DeliveredBillableKw); D(ThetaCool); D(ThetaPower); D(Utilisation);
             D(PItKw); D(PCoolKw); D(PAuxKw);
             D(QItKwTh); D(QFreecoolKwTh); D(QEvapKwTh); D(QChillerKwTh); D(QUnremovedKwTh); D(WaterLPerH);

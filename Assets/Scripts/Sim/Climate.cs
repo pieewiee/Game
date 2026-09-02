@@ -36,6 +36,8 @@ namespace Game.Sim
         public double WindCf;           // turbine capacity factor 0..1
         public double IrradianceFrac;   // fraction of kWp produced this hour
         public bool WetDay;             // did it rain today
+        public double CloudFrac;        // 0 clear .. 1 overcast (what the sky shows)
+        public double RainMmH;          // mm/h falling this hour, 0 on dry days
         public bool DroughtActive;      // water restriction in force
         public bool HeatwaveActive;
         public bool DunkelflauteActive;
@@ -54,7 +56,8 @@ namespace Game.Sim
     public sealed class ClimateModel
     {
         private const ulong ChTemp = 1, ChWindSpd = 2, ChWindDir = 3,
-                            ChCloud = 4, ChPrecip = 5;
+                            ChCloud = 4, ChPrecip = 5, ChRain = 6;
+        private const double RainMmHPeak = 6.0;   // presentation-only meter, no balance key
 
         private readonly Balance _b;
         private readonly ulong _seed;
@@ -176,7 +179,42 @@ namespace Game.Sim
             return RawSolarShape(tick) * _solarScale;
         }
 
+        /// <summary>
+        /// Cloud cover 0 (clear) .. 1 (overcast) for the sky. Same noise
+        /// channel as the per-day cloud factor in RawSolarShape, sampled per
+        /// tick (tick/48 == DayIndex/2 at every even-day midnight) so the sky
+        /// changes smoothly instead of stepping at 00:00; between those anchors
+        /// it can differ from the solar factor by at most one noise step.
+        /// Pure output: nothing in the sim reads it.
+        /// </summary>
+        public double CloudFrac(long tick)
+        {
+            double n01 = 0.5 + 0.5 * SimRandom.SmoothNoise(_seed, ChCloud, tick / 48.0);
+            return 1.0 - n01;
+        }
+
         // --- precipitation --------------------------------------------------
+
+        /// <summary>
+        /// Rain intensity inside a wet day: 3-hour shower texture on its own
+        /// channel, squared so ~15 % of wet-day hours fall below the 0.2 mm/h
+        /// floor and read as a dry gap. Tapers over the first/last two hours
+        /// when the neighbouring day is dry so showers fade in rather than
+        /// start at midnight. Pure output: drought keeps using IsWetDay.
+        /// </summary>
+        public double RainMmH(long tick)
+        {
+            long day = SimClock.DayIndex(tick);
+            if (!IsWetDay(day)) return 0.0;
+            double n01 = 0.5 + 0.5 * SimRandom.SmoothNoise(_seed, ChRain, tick / 3.0);
+            double mm = RainMmHPeak * n01 * n01;
+            int hour = SimClock.HourOfDay(tick);
+            double taper = 1.0;
+            if (day > 0 && !IsWetDay(day - 1)) taper = Math.Min(taper, hour / 2.0);
+            if (!IsWetDay(day + 1)) taper = Math.Min(taper, (24 - hour) / 2.0);
+            mm *= taper;
+            return mm < 0.2 ? 0.0 : mm;
+        }
 
         public bool IsWetDay(long dayIndex)
         {
@@ -211,6 +249,8 @@ namespace Game.Sim
             s.WindCf = WindCf(tick);
             s.IrradianceFrac = IrradianceFrac(tick);
             s.WetDay = IsWetDay(SimClock.DayIndex(tick));
+            s.CloudFrac = CloudFrac(tick);
+            s.RainMmH = RainMmH(tick);
             s.DroughtActive = droughtActive;
             s.HeatwaveActive = IsHeatwave(s.TdbC);
             s.DunkelflauteActive = IsDunkelflaute(tick, s.WindCf, s.IrradianceFrac);
