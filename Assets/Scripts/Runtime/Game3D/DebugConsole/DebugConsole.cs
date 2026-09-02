@@ -16,19 +16,30 @@ namespace Game.Runtime.DebugTools
     /// F1 toggles visibility.
     /// </summary>
     [RequireComponent(typeof(SimDriver))]
-    public sealed class DebugConsole : MonoBehaviour
+    public sealed class DebugConsole : MonoBehaviour, Game.Runtime.World.IUiWindow
     {
         private static readonly string[] TabNames =
             { "Meters", "Graphs", "Tuning", "Actions", "Contracts", "Events", "Scenario" };
 
+        public static DebugConsole Instance { get; private set; }
+
         private SimDriver _driver;
         private TuningPanel _tuning;
         private GraphPanel _graphs;
-        // The game starts IN the world; the console is one key away. Starting
-        // it open left the cursor locked over a full-screen panel.
-        private bool _visible;
         private int _tab;
+        // A tab click lands in a Repaint pass; switching the drawn controls
+        // there desyncs IMGUI's layout, so the switch waits for the next
+        // Layout event. Same for anything else that changes how many lines
+        // are drawn inside the pass that triggered it: a manual step (new
+        // events, contracts), a folder rescan, a shortened event filter.
+        private int _pendingTab = -1;
+        private int _pendingStepHours;
+        private bool _pendingRescan;
+        private string _pendingEventFilter;
         private Vector2 _scroll;
+        // Enqueue rejected a number: which button, and until when it glows.
+        private string _badInput;
+        private float _badInputUntil;
 
         // Actions tab input buffers (strings so half-typed numbers survive).
         private string _infKw = "300", _infDays = "180";
@@ -47,86 +58,74 @@ namespace Game.Runtime.DebugTools
             if (_reportFields == null)
                 _reportFields = typeof(TickReport).GetFields(BindingFlags.Public | BindingFlags.Instance);
             _seedText = _driver.Seed.ToString(CultureInfo.InvariantCulture);
+            Instance = this;
+            Game.Runtime.World.UiWindows.Register(this);
+        }
+
+        private void OnDestroy()
+        {
+            Game.Runtime.World.UiWindows.Unregister(this);
+            if (Instance == this) Instance = null;
         }
 
         /// <summary>The console is modal: it owns the cursor while it is open,
-        /// because its whole point is clicking sliders and buttons. Without
-        /// this the cursor stayed locked to the crosshair and every click
-        /// landed in the middle of the screen.</summary>
-        public static bool IsOpen { get; private set; }
+        /// because its whole point is clicking sliders and buttons.</summary>
+        public static bool IsOpen
+        {
+            get { return Instance != null && Game.Runtime.World.UiWindows.IsOpen(Instance); }
+        }
 
         private void Update()
         {
             Keyboard kb = Keyboard.current;
             if (kb == null) return;
-            if (kb.f1Key.wasPressedThisFrame) SetVisible(!_visible);
-            else if (_visible && kb.escapeKey.wasPressedThisFrame)
+            if (kb.f1Key.wasPressedThisFrame) Game.Runtime.World.UiWindows.Toggle(this);
+        }
+
+        // --- IUiWindow ----------------------------------------------------
+        public int Id { get { return 910; } }
+        public string Title { get { return "GNP debug console — F1 closes, drag to move, corner to resize"; } }
+
+        // Opacity tints the window and control BACKGROUNDS only: a
+        // see-through console still has to be readable, and text at 40 %
+        // alpha over the site is not.
+        public Game.Runtime.World.UiWindowFlags Flags
+        {
+            get
             {
-                SetVisible(false);
-                Game.Runtime.World.GameBootstrap.EscConsumedFrame = Time.frameCount;
+                return Game.Runtime.World.UiWindowFlags.Resizable |
+                       Game.Runtime.World.UiWindowFlags.TitleDragOnly |
+                       Game.Runtime.World.UiWindowFlags.Tinted;
             }
         }
 
-        private void SetVisible(bool on)
+        public Rect DefaultRect(float w, float h)
         {
-            _visible = on;
-            IsOpen = on;
-            if (on)
-            {
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
-            }
-            else if (!Game.Runtime.World.GameBootstrap.UiWantsCursor)
-            {
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
-            }
+            // A large but not total window, inside the view.
+            return new Rect(20, 20, Mathf.Min(1040f, w - 340f),
+                Mathf.Min(620f, h - 20f - Game.Runtime.World.UiScaler.BottomReserve));
         }
 
-        private void OnDisable() { IsOpen = false; }
+        public void OnOpened() { }
+        public void OnClosed() { }
 
-        private Rect _win = new Rect(20, 20, 1040, 620);
-        private bool _sized;
-
-        private void OnGUI()
+        public void DrawContents(int id)
         {
-            Game.Runtime.World.UiScaler.Begin();
-            try
+            if (_driver.Sim == null)
             {
-                if (!_visible)
-                {
-                    GUI.Label(new Rect(8, 8, 400, 24), "[GNP] F1: debug console");
-                    return;
-                }
-                if (_driver.Sim == null)
-                {
-                    GUI.Label(new Rect(8, 8, 900, 24), "[GNP] no simulation — balance.tuning or the scenario failed to load (see Console log)");
-                    return;
-                }
-                if (!_sized)
-                {
-                    // First open: a large but not total window, inside the view.
-                    _sized = true;
-                    float w = Mathf.Min(1040f, Game.Runtime.World.UiScaler.W - 40f);
-                    float h = Mathf.Min(620f, Game.Runtime.World.UiScaler.H - 20f - Game.Runtime.World.UiScaler.BottomReserve);
-                    _win = new Rect(20, 20, w, h);
-                }
-                // Opacity tints the window and control BACKGROUNDS only: a
-                // see-through console still has to be readable, and text at
-                // 40 % alpha over the site is not.
-                Color prev = GUI.backgroundColor;
-                GUI.backgroundColor = new Color(1f, 1f, 1f, Game.Runtime.World.PlayerOptions.ConsoleOpacity);
-                _win = Game.Runtime.World.UiScaler.Clamp(GUILayout.Window(910, _win, DrawWindow,
-                    "GNP debug console — F1 closes, drag to move, corner to resize"));
-                GUI.backgroundColor = prev;
+                GUILayout.Label("no simulation — balance.tuning or the scenario failed to load (see Console log)");
+                return;
             }
-            finally { Game.Runtime.World.UiScaler.End(); }
-        }
-
-        private void DrawWindow(int id)
-        {
+            if (Event.current.type == EventType.Layout)
+            {
+                if (_pendingTab >= 0) { _tab = _pendingTab; _pendingTab = -1; }
+                if (_pendingStepHours > 0) { _driver.Step(_pendingStepHours); _pendingStepHours = 0; }
+                if (_pendingRescan) { _driver.RefreshScenarioList(); _pendingRescan = false; }
+                if (_pendingEventFilter != null) { _eventFilter = _pendingEventFilter; _pendingEventFilter = null; }
+            }
             DrawTopBar();
-            _tab = GUILayout.Toolbar(_tab, TabNames, GUILayout.Height(26));
+            int clicked = GUILayout.Toolbar(_tab, TabNames, GUILayout.Height(26));
+            if (clicked != _tab) _pendingTab = clicked;
             GUILayout.Space(4);
             switch (_tab)
             {
@@ -138,17 +137,6 @@ namespace Game.Runtime.DebugTools
                 case 5: DrawEvents(); break;
                 case 6: DrawScenario(); break;
             }
-
-            // Resize grip: drag the bottom-right corner.
-            var grip = new Rect(_win.width - 18, _win.height - 18, 16, 16);
-            GUI.Box(grip, "◢");
-            if (Event.current.type == EventType.MouseDrag && grip.Contains(Event.current.mousePosition))
-            {
-                _win.width = Mathf.Max(520f, _win.width + Event.current.delta.x);
-                _win.height = Mathf.Max(320f, _win.height + Event.current.delta.y);
-                Event.current.Use();
-            }
-            GUI.DragWindow(new Rect(0, 0, _win.width, 20));
         }
 
         // ------------------------------------------------------------------
@@ -178,9 +166,9 @@ namespace Game.Runtime.DebugTools
                 SetTime(!shownPaused, shownTps);
             if (!isNetClient)
             {
-                if (GUILayout.Button("+1h", GUILayout.Width(40))) _driver.Step(1);
-                if (GUILayout.Button("+1d", GUILayout.Width(40))) _driver.Step(24);
-                if (GUILayout.Button("+30d", GUILayout.Width(48))) _driver.Step(24 * 30);
+                if (GUILayout.Button("+1h", GUILayout.Width(40))) _pendingStepHours += 1;
+                if (GUILayout.Button("+1d", GUILayout.Width(40))) _pendingStepHours += 24;
+                if (GUILayout.Button("+30d", GUILayout.Width(48))) _pendingStepHours += 24 * 30;
             }
 
             GUILayout.Label("speed:", GUILayout.Width(44));
@@ -300,8 +288,7 @@ namespace Game.Runtime.DebugTools
             _infKw = GUILayout.TextField(_infKw, GUILayout.Width(60));
             GUILayout.Label("days", GUILayout.Width(36));
             _infDays = GUILayout.TextField(_infDays, GUILayout.Width(60));
-            if (GUILayout.Button("SIGN_INFERENCE", GUILayout.Width(140)))
-                Enqueue(CommandKind.SignInference, _infKw, _infDays);
+            ActionButton("SIGN_INFERENCE", 140, CommandKind.SignInference, _infKw, _infDays);
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
@@ -309,8 +296,7 @@ namespace Game.Runtime.DebugTools
             _trainKw = GUILayout.TextField(_trainKw, GUILayout.Width(60));
             GUILayout.Label("days", GUILayout.Width(36));
             _trainDays = GUILayout.TextField(_trainDays, GUILayout.Width(60));
-            if (GUILayout.Button("SIGN_TRAINING", GUILayout.Width(140)))
-                Enqueue(CommandKind.SignTraining, _trainKw, _trainDays);
+            ActionButton("SIGN_TRAINING", 140, CommandKind.SignTraining, _trainKw, _trainDays);
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
@@ -337,17 +323,34 @@ namespace Game.Runtime.DebugTools
             GUILayout.BeginHorizontal();
             GUILayout.Label("ADD_NODES", GUILayout.Width(80));
             _addNodes = GUILayout.TextField(_addNodes, GUILayout.Width(60));
-            if (GUILayout.Button("install", GUILayout.Width(70)))
-                Enqueue(CommandKind.AddNodes, _addNodes, null);
+            ActionButton("install", 70, CommandKind.AddNodes, _addNodes, null);
             GUILayout.Label("SET_LOCAL_FTE", GUILayout.Width(100));
             _localFte = GUILayout.TextField(_localFte, GUILayout.Width(60));
-            if (GUILayout.Button("set", GUILayout.Width(50)))
-                Enqueue(CommandKind.SetLocalFte, _localFte, null);
+            ActionButton("set", 50, CommandKind.SetLocalFte, _localFte, null);
             GUILayout.Label("SET_VISUAL", GUILayout.Width(80));
             _visualPts = GUILayout.TextField(_visualPts, GUILayout.Width(60));
-            if (GUILayout.Button("set ", GUILayout.Width(50)))
-                Enqueue(CommandKind.SetVisualPoints, _visualPts, null);
+            ActionButton("set ", 50, CommandKind.SetVisualPoints, _visualPts, null);
             GUILayout.EndHorizontal();
+
+            GUILayout.Space(6);
+            Game.Runtime.World.FullBuildActions.DrawGui();
+        }
+
+        /// <summary>A command button whose number fields may be half-typed:
+        /// a rejected value turns the button red for two seconds instead of
+        /// silently doing nothing.</summary>
+        private void ActionButton(string label, float width, CommandKind kind, string aText, string bText)
+        {
+            bool bad = _badInput == label && Time.unscaledTime < _badInputUntil;
+            Color prev = GUI.backgroundColor;
+            if (bad) GUI.backgroundColor = Color.red;
+            bool clicked = GUILayout.Button(bad ? "not a number" : label, GUILayout.Width(width));
+            GUI.backgroundColor = prev;
+            if (clicked && !Enqueue(kind, aText, bText))
+            {
+                _badInput = label;
+                _badInputUntil = Time.unscaledTime + 2f;
+            }
         }
 
         private void DrawDieselButton(string label, DieselPolicy policy)
@@ -357,15 +360,25 @@ namespace Game.Runtime.DebugTools
                 Game.Runtime.World.GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.SetDieselPolicy, A = (int)policy }, null);
         }
 
-        private void Enqueue(CommandKind kind, string aText, string bText)
+        /// <summary>False when a field is not a number. Accepts a decimal
+        /// comma: the game is played on German keyboards.</summary>
+        private bool Enqueue(CommandKind kind, string aText, string bText)
         {
-            var ci = CultureInfo.InvariantCulture;
             double a = 0, b = 0;
-            if (aText != null && !double.TryParse(aText, NumberStyles.Float, ci, out a)) return;
-            if (bText != null && !double.TryParse(bText, NumberStyles.Float, ci, out b)) return;
+            if (aText != null && !TryParseNumber(aText, out a)) return false;
+            if (bText != null && !TryParseNumber(bText, out b)) return false;
             // Recorded (and net-routed on a client): console actions are real
             // history — the save's replay must reproduce them.
             Game.Runtime.World.GameBootstrap.SendCommand(new SimCommand { Kind = kind, A = a, B = b }, null);
+            return true;
+        }
+
+        public static bool TryParseNumber(string text, out double value)
+        {
+            value = 0;
+            if (text == null) return false;
+            return double.TryParse(text.Trim().Replace(',', '.'), NumberStyles.Float,
+                CultureInfo.InvariantCulture, out value);
         }
 
         // ------------------------------------------------------------------
@@ -402,7 +415,8 @@ namespace Game.Runtime.DebugTools
         {
             GUILayout.BeginHorizontal();
             GUILayout.Label("filter:", GUILayout.Width(40));
-            _eventFilter = GUILayout.TextField(_eventFilter, GUILayout.Width(200));
+            string typed = GUILayout.TextField(_eventFilter, GUILayout.Width(200));
+            if (typed != _eventFilter) _pendingEventFilter = typed;
             GUILayout.EndHorizontal();
             _scroll = GUILayout.BeginScrollView(_scroll);
             var events = _driver.Sim.State.Events;
@@ -428,7 +442,7 @@ namespace Game.Runtime.DebugTools
             GUILayout.BeginHorizontal();
             GUILayout.Label("Scenario (restart keeps the LIVE-TUNED balance — that is the balancing loop):");
             if (GUILayout.Button("rescan folder", GUILayout.Width(110)))
-                _driver.RefreshScenarioList();
+                _pendingRescan = true;
             GUILayout.EndHorizontal();
             foreach (string name in _driver.ListScenarios())
             {

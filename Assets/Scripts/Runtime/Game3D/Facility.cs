@@ -57,6 +57,7 @@ namespace Game.Runtime.World
         private readonly List<GameObject> _rackGos = new List<GameObject>();
         private readonly List<GameObject> _plantGos = new List<GameObject>();
         private readonly List<GameObject> _routeGos = new List<GameObject>();
+        private readonly List<GameObject> _ghostGos = new List<GameObject>();
         private readonly List<BlankingPanel> _panels = new List<BlankingPanel>();
         private string _placeKind;
         private RoutePath _draftRoute;
@@ -64,7 +65,47 @@ namespace Game.Runtime.World
         private Aggregates _lastSynced;
         private bool _syncDirty = true;
         private GameObject _slotGhost;
+        private GameObject _firstGhostRack;
+        private bool _preview;
+        private bool _ghostsDirty;
+        // Where the last SyncFromSim left off (first empty rack / plant /
+        // solar slot), so a toggle flip rebuilds only the ghosts.
+        private int _lastRacks, _lastPlantSlot, _lastSolarRows;
         public string PlacementHint { get; private set; } = "";
+
+        /// <summary>"Vollausbau" preview: translucent ghosts in every empty
+        /// slot, showing the site as a full build-out would leave it. Local
+        /// only — nothing is sent, nothing is replicated. A toggle flip
+        /// rebuilds only the ghosts (the racks carry RackRemount references
+        /// the player may be holding); an inventory change rebuilds all.</summary>
+        public bool PreviewFullBuild
+        {
+            get { return _preview; }
+            set
+            {
+                if (_preview == value) return;
+                _preview = value;
+                _ghostsDirty = true;
+            }
+        }
+
+        /// <summary>The site's geometry and unit sizes as the planner needs
+        /// them, so the plan and the ghosts always agree with the visual
+        /// mirror (SiteLimits.Default only mirrors these for tests).</summary>
+        public static SiteLimits LimitsFor(SiteRefs site)
+        {
+            SiteLimits lim = SiteLimits.Default;
+            if (site == null) return lim;
+            lim.RackSlots = site.RackSlots.Count;
+            lim.PlantSlots = site.PlantSlots.Count;
+            lim.SolarSlots = site.SolarSlots.Count;
+            lim.NodesPerRack = NodesPerRack;
+            lim.PlantUnitKwTh = FreecoolUnitKwTh;
+            lim.SolarRowKwp = SolarRowKwp;
+            lim.BatteryPackKwh = BatteryPackKwh;
+            lim.BatteryPackKw = BatteryPackKw;
+            return lim;
+        }
 
         private static readonly string[] PlaceKinds =
             { "rack", "evap", "chiller", "freecool", "solar", "battery", "diesel" };
@@ -85,7 +126,7 @@ namespace Game.Runtime.World
         private struct Aggregates
         {
             public int Nodes;
-            public double EvapKwTh, ChillerKwTh, FreecoolKwTh, SolarKwp, BatteryKwhCap;
+            public double EvapKwTh, ChillerKwTh, FreecoolKwTh, SolarKwp, BatteryKwhCap, DieselKw;
         }
 
         private Aggregates CurrentAggregates()
@@ -98,7 +139,7 @@ namespace Game.Runtime.World
                 {
                     Nodes = r.NodesInstalled,
                     EvapKwTh = r.EvapKwTh, ChillerKwTh = r.ChillerKwTh, FreecoolKwTh = r.FreecoolKwTh,
-                    SolarKwp = r.SolarKwp, BatteryKwhCap = r.BatteryKwhCap,
+                    SolarKwp = r.SolarKwp, BatteryKwhCap = r.BatteryKwhCap, DieselKw = r.DieselKw,
                 };
             }
             var driver = GameBootstrap.Driver;
@@ -108,7 +149,7 @@ namespace Game.Runtime.World
             {
                 Nodes = s.NodesInstalled,
                 EvapKwTh = s.EvapKwTh, ChillerKwTh = s.ChillerKwTh, FreecoolKwTh = s.FreecoolKwTh,
-                SolarKwp = s.SolarKwp, BatteryKwhCap = s.BatteryKwhCap,
+                SolarKwp = s.SolarKwp, BatteryKwhCap = s.BatteryKwhCap, DieselKw = s.DieselKw,
             };
         }
 
@@ -118,7 +159,8 @@ namespace Game.Runtime.World
         {
             return x.Nodes == y.Nodes && x.EvapKwTh == y.EvapKwTh &&
                    x.ChillerKwTh == y.ChillerKwTh && x.FreecoolKwTh == y.FreecoolKwTh &&
-                   x.SolarKwp == y.SolarKwp && x.BatteryKwhCap == y.BatteryKwhCap;
+                   x.SolarKwp == y.SolarKwp && x.BatteryKwhCap == y.BatteryKwhCap &&
+                   x.DieselKw == y.DieselKw;
         }
 
         private void Update()
@@ -127,6 +169,7 @@ namespace Game.Runtime.World
             // no node count but must still appear when its delta lands.
             Aggregates a = CurrentAggregates();
             if (_syncDirty || !AggregatesEqual(a, _lastSynced)) SyncFromSim(false);
+            else if (_ghostsDirty) RebuildGhosts(_lastSynced);
             HandlePlacementInput();
             UpdateSlotGhost(a);
         }
@@ -135,14 +178,12 @@ namespace Game.Runtime.World
         /// nobody should have to guess where a pallet is supposed to go.</summary>
         private void UpdateSlotGhost(Aggregates a)
         {
-            bool want = Pallet.Current != null;
-            if (!want)
-            {
-                if (_slotGhost != null) _slotGhost.SetActive(false);
-                return;
-            }
             int used = (a.Nodes + NodesPerRack - 1) / NodesPerRack;
-            if (used >= Site.RackSlots.Count)
+            bool want = Pallet.Current != null && used < Site.RackSlots.Count;
+            // The amber marker and the first preview ghost share a slot; the
+            // marker wins while a delivery is on site.
+            if (_firstGhostRack != null) _firstGhostRack.SetActive(!want);
+            if (!want)
             {
                 if (_slotGhost != null) _slotGhost.SetActive(false);
                 return;
@@ -195,6 +236,11 @@ namespace Game.Runtime.World
                 pm.Box(new Vector3(0, 0.45f, 0), new Vector3(0.15f, 0.9f, 0.15f), Palette.Slate);
                 _plantGos.Add(MatLib.Spawn("SolarRow", pm.Build("solar"), Site.Root, Site.SolarSlots[i]));
             }
+
+            _lastRacks = racks;
+            _lastPlantSlot = plantSlot;
+            _lastSolarRows = solarRows;
+            RebuildGhosts(s);
 
             // Restore missing-panel state SILENTLY: rebuilt panels default to
             // Mounted, but the hazard must survive a rack resync (and a load).
@@ -255,6 +301,79 @@ namespace Game.Runtime.World
                 _plantGos.Add(MatLib.Spawn(name, pm.Build("unit"), Site.Root, Site.PlantSlots[slot]));
             }
             return slot;
+        }
+
+        private const float GhostAlpha = 0.28f;
+
+        private static Color Ghost(Color c) { c.a = GhostAlpha; return c; }
+
+        /// <summary>Drops every ghost and, with the preview on, builds them
+        /// again on top of the LAST synced visuals — the only thing a toggle
+        /// flip has to touch.</summary>
+        private void RebuildGhosts(Aggregates a)
+        {
+            _ghostsDirty = false;
+            foreach (GameObject go in _ghostGos) if (go != null) Destroy(go);
+            _ghostGos.Clear();
+            _firstGhostRack = null;
+            if (_preview && Site != null) BuildGhosts(a, _lastRacks, _lastPlantSlot, _lastSolarRows);
+        }
+
+        /// <summary>Translucent stand-ins for what a full build-out (DebugPresets)
+        /// would add: a rack in every empty rack slot, the planned unit in
+        /// every empty plant slot, a row on every empty solar slot. No
+        /// colliders — the player walks through them, the forklift ignores
+        /// them. Diesel has no slot and therefore no ghost.</summary>
+        private void BuildGhosts(Aggregates a, int racks, int plantSlot, int solarRows)
+        {
+            var inv = new SiteInventory
+            {
+                Nodes = a.Nodes, FreecoolKwTh = a.FreecoolKwTh, EvapKwTh = a.EvapKwTh,
+                ChillerKwTh = a.ChillerKwTh, SolarKwp = a.SolarKwp, BatteryKwhCap = a.BatteryKwhCap,
+                DieselKw = a.DieselKw,
+            };
+            SiteLimits lim = LimitsFor(Site);
+            FullBuildPlan plan = DebugPresets.PlanFullBuild(inv, lim);
+
+            for (int i = racks; i < Site.RackSlots.Count; i++)
+            {
+                var pm = new ProcMesh();
+                pm.Box(new Vector3(0, 1.1f, 0), new Vector3(0.8f, 2.2f, 1.1f), Ghost(Palette.Slate));
+                GameObject go = MatLib.Spawn("GhostRack", pm.Build("ghostrack"), Site.Root, Site.RackSlots[i], false, true);
+                _ghostGos.Add(go);
+                if (_firstGhostRack == null) _firstGhostRack = go;
+            }
+
+            // The yard AFTER the build, in the order SyncFromSim will draw it
+            // (freecool → evap → chiller → battery). Only the empty slots get
+            // a ghost, so an existing unit may shift or re-colour once the
+            // build actually lands — the preview shows the slot as occupied,
+            // not the exact unit that ends up there.
+            var seq = new List<KeyValuePair<Color, string>>(lim.PlantSlots);
+            void Push(int count, Color color, string name)
+            {
+                for (int i = 0; i < count; i++) seq.Add(new KeyValuePair<Color, string>(color, name));
+            }
+            Push(DebugPresets.Units(a.FreecoolKwTh, lim.PlantUnitKwTh) + plan.AddFreecoolUnits, Palette.Render, "GhostFreecoolUnit");
+            Push(DebugPresets.Units(a.EvapKwTh, lim.PlantUnitKwTh) + plan.AddEvapUnits, Palette.PaleBlue, "GhostEvapTower");
+            Push(DebugPresets.Units(a.ChillerKwTh, lim.PlantUnitKwTh) + plan.AddChillerUnits, Palette.Slate, "GhostChiller");
+            Push((a.BatteryKwhCap > 0 ? 1 : 0) + plan.AddBatteryPacks, Palette.Amber, "GhostBatteryPack");
+            int plantEnd = Mathf.Min(seq.Count, Site.PlantSlots.Count);
+            for (int i = plantSlot; i < plantEnd; i++)
+            {
+                var pm = new ProcMesh();
+                pm.Box(new Vector3(0, 1f, 0), new Vector3(1.8f, 2f, 1.8f), Ghost(seq[i].Key));
+                pm.Box(new Vector3(0, 2.05f, 0), new Vector3(1.4f, 0.1f, 1.4f), Ghost(Palette.Ink));
+                _ghostGos.Add(MatLib.Spawn(seq[i].Value, pm.Build("ghostunit"), Site.Root, Site.PlantSlots[i], false, true));
+            }
+
+            for (int i = solarRows; i < Site.SolarSlots.Count; i++)
+            {
+                var pm = new ProcMesh();
+                pm.Box(new Vector3(0, 0.9f, 0), new Vector3(6.5f, 0.12f, 2.2f), Ghost(Palette.Ink));
+                pm.Box(new Vector3(0, 0.45f, 0), new Vector3(0.15f, 0.9f, 0.15f), Ghost(Palette.Slate));
+                _ghostGos.Add(MatLib.Spawn("GhostSolarRow", pm.Build("ghostsolar"), Site.Root, Site.SolarSlots[i], false, true));
+            }
         }
 
         // ------------------------------------------------------------------

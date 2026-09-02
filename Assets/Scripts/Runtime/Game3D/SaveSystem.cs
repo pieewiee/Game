@@ -42,15 +42,23 @@ namespace Game.Runtime.World
         {
             Keyboard kb = Keyboard.current;
             if (kb == null) return;
+            // With a window open F5/F9 would fire while typing into a text
+            // field; the pause menu has buttons for both.
+            if (UiWindows.AnyOpen) return;
             bool client = GameBootstrap.Net != null && GameBootstrap.Net.IsClient;
             if (kb.f5Key.wasPressedThisFrame && !client) Save();
             if (kb.f9Key.wasPressedThisFrame && !client) Load();
         }
 
-        public void Save()
+        /// <summary>True when the file was written.</summary>
+        public bool Save()
         {
             var driver = GameBootstrap.Driver;
-            if (driver == null || driver.Sim == null) return;
+            if (driver == null || driver.Sim == null)
+            {
+                NewsFeed.Post("Nothing to save — no simulation is running.");
+                return false;
+            }
             try
             {
                 var data = new SaveData
@@ -64,19 +72,23 @@ namespace Game.Runtime.World
                 };
                 File.WriteAllText(SavePath, JsonUtility.ToJson(data));
                 NewsFeed.Post("Site state saved (day " + SimClock.DayIndex(data.tick) + ").");
+                return true;
             }
             catch (Exception e)
             {
                 Debug.LogError("[GNP] save failed: " + e.Message);
                 NewsFeed.Post("SAVE FAILED: " + e.Message);
+                return false;
             }
         }
 
-        public void Load()
+        /// <summary>True only when the replay landed and the driver was left
+        /// paused; false leaves the running sim untouched.</summary>
+        public bool Load()
         {
             var driver = GameBootstrap.Driver;
-            if (driver == null) return;
-            if (!File.Exists(SavePath)) { NewsFeed.Post("No save file yet (F5 saves)."); return; }
+            if (driver == null) return false;
+            if (!File.Exists(SavePath)) { NewsFeed.Post("No save file yet (F5 saves)."); return false; }
             try
             {
                 var data = JsonUtility.FromJson<SaveData>(File.ReadAllText(SavePath));
@@ -136,11 +148,13 @@ namespace Game.Runtime.World
                 }
                 NewsFeed.Post("Site state restored to day " + SimClock.DayIndex(data.tick) +
                     " by deterministic replay. The town remembers everything; so does the save file.");
+                return true;
             }
             catch (Exception e)
             {
                 Debug.LogError("[GNP] load failed: " + e.Message);
                 NewsFeed.Post("LOAD FAILED: " + e.Message);
+                return false;
             }
         }
     }

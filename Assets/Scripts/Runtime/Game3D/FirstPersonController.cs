@@ -124,8 +124,7 @@ namespace Game.Runtime.World
             _carryAnchor.SetParent(camGo.transform, false);
             _carryAnchor.localPosition = new Vector3(0.35f, -0.35f, 0.7f);
 
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            // The cursor is UiWindows' alone (locked once its Start runs).
 
             // Spawning is not falling.
             _apexY = transform.position.y;
@@ -143,17 +142,8 @@ namespace Game.Runtime.World
             // must still not fall for ever with the respawn never firing.
             if (!IsDead && transform.position.y < KillPlaneY) Die("fell out of the world");
 
-            // Escape TOGGLES the cursor (free it for the debug console, press
-            // again to play on). Never re-lock by click: clicking a console
-            // slider must not yank the camera. Modal windows own their own
-            // Escape, so it is ignored while one is open.
-            if (kb.escapeKey.wasPressedThisFrame && !GameBootstrap.UiWantsCursor &&
-                GameBootstrap.EscConsumedFrame != Time.frameCount)
-            {
-                bool locking = Cursor.lockState != CursorLockMode.Locked;
-                Cursor.lockState = locking ? CursorLockMode.Locked : CursorLockMode.None;
-                Cursor.visible = !locking;
-            }
+            // Escape and the cursor belong to UiWindows (the pause menu);
+            // the rig only reads the lock state.
 
             // While any UI owns the input (or the cursor is free), the body
             // stands still — but it still FALLS: freezing mid-air because
@@ -690,7 +680,7 @@ namespace Game.Runtime.World
             RespawnSystem.OnPlayerDied(this, cause);
         }
 
-        public void FinishRespawn(Vector3 carPark)
+        public void FinishRespawn(Vector3 spawn)
         {
             TempWorkerCount++;
             PlayerName = "Temp worker #" + TempWorkerCount;
@@ -707,12 +697,12 @@ namespace Game.Runtime.World
             if (transform.parent != null) transform.SetParent(null, true);
 
             _cc.enabled = false;
-            transform.position = carPark;
+            transform.position = spawn;
             _cc.enabled = true;
             // A teleport is not a fall, and the new body starts upright.
             _vel = Vector3.zero;
             _achieved = Vector3.zero;
-            _apexY = carPark.y;
+            _apexY = spawn.y;
             _platform = null;
             _jumping = false;
             _viewDip = 0f;

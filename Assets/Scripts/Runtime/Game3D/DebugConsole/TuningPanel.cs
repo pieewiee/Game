@@ -29,6 +29,9 @@ namespace Game.Runtime.DebugTools
         private readonly Dictionary<string, string> _textBuffers = new Dictionary<string, string>();
         private readonly HashSet<string> _openCurves = new HashSet<string>();
         private string _filter = "";
+        // A shortened filter adds rows in the KeyDown pass that typed it;
+        // like the foldouts, the change waits for the next Layout.
+        private string _pendingFilter;
         private Vector2 _scroll;
 
         private long _generation = -1;
@@ -44,10 +47,16 @@ namespace Game.Runtime.DebugTools
                 _generation = driver.BalanceGeneration;
                 _textBuffers.Clear();
             }
+            if (Event.current.type == EventType.Layout && _pendingFilter != null)
+            {
+                _filter = _pendingFilter;
+                _pendingFilter = null;
+            }
 
             GUILayout.BeginHorizontal();
             GUILayout.Label("filter:", GUILayout.Width(40));
-            _filter = GUILayout.TextField(_filter, GUILayout.Width(220));
+            string typed = GUILayout.TextField(_filter, GUILayout.Width(220));
+            if (typed != _filter) _pendingFilter = typed;
             if (GUILayout.Button("Reset ALL to file defaults", GUILayout.Width(200)))
                 ResetAll(b);
             double wSum = b.WNoise + b.WAir + b.WWater + b.WPrice + b.WVisual;
@@ -103,14 +112,18 @@ namespace Game.Runtime.DebugTools
                 buf = value.ToString("0.####", ci);
             string edited = GUILayout.TextField(buf, GUILayout.Width(90));
             if (edited != buf) _textBuffers[key] = edited;
-            if (GUILayout.Button("set", GUILayout.Width(40)))
+            if (SetButton(key))
             {
-                if (_textBuffers.TryGetValue(key, out string t) &&
-                    double.TryParse(t, NumberStyles.Float, ci, out double parsed))
+                if (!_textBuffers.TryGetValue(key, out string t))
+                {
+                    // Nothing typed: nothing to apply.
+                }
+                else if (DebugConsole.TryParseNumber(t, out double parsed))
                 {
                     b.SetScalar(key, parsed);
+                    _textBuffers.Remove(key);
                 }
-                _textBuffers.Remove(key);
+                else RejectInput(key);
             }
             GUILayout.Label("default " + def.ToString("0.####", ci), GUILayout.Width(120));
             if (Hints.TryGetValue(key, out string hint)) GUILayout.Label(hint);
@@ -176,19 +189,45 @@ namespace Game.Runtime.DebugTools
                     buf = c.Ys[i].ToString("0.####", ci);
                 string edited = GUILayout.TextField(buf, GUILayout.Width(90));
                 if (edited != buf) _textBuffers[bufKey] = edited;
-                if (GUILayout.Button("set", GUILayout.Width(40)))
+                if (SetButton(bufKey))
                 {
-                    if (_textBuffers.TryGetValue(bufKey, out string t) &&
-                        double.TryParse(t, NumberStyles.Float, ci, out double parsed))
+                    if (!_textBuffers.TryGetValue(bufKey, out string t))
+                    {
+                        // Nothing typed: nothing to apply.
+                    }
+                    else if (DebugConsole.TryParseNumber(t, out double parsed))
                     {
                         b.SetCurve(key, c.WithY(i, parsed));
                         c = b.GetCurve(key);
+                        _textBuffers.Remove(bufKey);
                     }
-                    _textBuffers.Remove(bufKey);
+                    else RejectInput(bufKey);
                 }
                 GUILayout.Label("default " + defCurve.Ys[i].ToString("0.####", ci));
                 GUILayout.EndHorizontal();
             }
+        }
+
+        // A rejected text field keeps its typo and its "set" button glows
+        // red for two seconds; silently reverting looked like the value had
+        // been applied.
+        private string _badKey;
+        private float _badUntil;
+
+        private bool SetButton(string bufKey)
+        {
+            bool bad = _badKey == bufKey && Time.unscaledTime < _badUntil;
+            Color prev = GUI.backgroundColor;
+            if (bad) GUI.backgroundColor = Color.red;
+            bool clicked = GUILayout.Button(bad ? "NaN" : "set", GUILayout.Width(40));
+            GUI.backgroundColor = prev;
+            return clicked;
+        }
+
+        private void RejectInput(string bufKey)
+        {
+            _badKey = bufKey;
+            _badUntil = Time.unscaledTime + 2f;
         }
 
         private void ResetAll(Balance b)

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using Game.Sim;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace Game.Runtime.Media
 {
@@ -13,12 +12,24 @@ namespace Game.Runtime.Media
     {
         public static readonly List<string> Items = new List<string>();
         public static event Action<string> OnPosted;
+        /// <summary>Raised for items that only this machine saw. The session
+        /// host does not subscribe, so they never reach the network.</summary>
+        public static event Action<string> OnPostedLocal;
 
         public static void Post(string item)
         {
             Items.Add(item);
             if (Items.Count > 200) Items.RemoveAt(0);
             OnPosted?.Invoke(item);
+        }
+
+        /// <summary>What the gate said to YOU — same ticker path as Post,
+        /// never replicated to other players.</summary>
+        public static void PostLocal(string item)
+        {
+            Items.Add(item);
+            if (Items.Count > 200) Items.RemoveAt(0);
+            OnPostedLocal?.Invoke(item);
         }
     }
 
@@ -38,8 +49,8 @@ namespace Game.Runtime.Media
         private int _lastEventCount;
         private bool _wasDiesel;
 
-        private void OnEnable() { NewsFeed.OnPosted += Enqueue; }
-        private void OnDisable() { NewsFeed.OnPosted -= Enqueue; }
+        private void OnEnable() { NewsFeed.OnPosted += Enqueue; NewsFeed.OnPostedLocal += Enqueue; }
+        private void OnDisable() { NewsFeed.OnPosted -= Enqueue; NewsFeed.OnPostedLocal -= Enqueue; }
 
         private void Enqueue(string s) { _queue.Enqueue(s); }
 
@@ -118,6 +129,8 @@ namespace Game.Runtime.Media
         private void OnGUI()
         {
             if (_current.Length == 0) return;
+            // Behind the windows (UiWindows draws at depth 0).
+            GUI.depth = 10;
             World.UiScaler.Begin();
             if (_style == null)
                 _style = new GUIStyle(GUI.skin.label) { fontSize = 16, wordWrap = false };
@@ -140,63 +153,56 @@ namespace Game.Runtime.Media
     /// mockery backfire, diminishing naming returns) lives in the sim, and the
     /// standing cost of a naming lands on the named player via the net session.
     /// </summary>
-    public sealed class BulletinEditor : MonoBehaviour
+    public sealed class BulletinEditor : MonoBehaviour, World.IUiWindow
     {
         public static BulletinEditor Instance { get; private set; }
-        public bool IsOpen { get; private set; }
         private string _text = "The Good Neighbor Program continues to deliver measurable benefit to the region.";
         private int _namedIndex; // 0 = nobody
-        private Rect _win = new Rect(200, 120, 560, 260);
 
-        private void Awake() { Instance = this; }
+        public bool IsOpen
+        {
+            get { return World.UiWindows.IsOpen(this); }
+        }
+
+        private void Awake()
+        {
+            Instance = this;
+            World.UiWindows.Register(this);
+        }
+
+        private void OnDestroy()
+        {
+            World.UiWindows.Unregister(this);
+            if (Instance == this) Instance = null;
+        }
 
         public void Open()
         {
-            IsOpen = true;
             // One desk at a time: two editors stacked on each other is how a
             // click meant for "discard" lands on "PUBLISH".
             if (ContractEditor.Instance != null) ContractEditor.Instance.Close();
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            World.UiWindows.Open(this);
         }
 
-        /// <summary>Closes the editor and hands the mouse back to the player
-        /// unless another modal still owns it. Leaving the cursor free after
-        /// PUBLISH meant the next click did nothing and Escape did the
-        /// opposite of what the player expected.</summary>
         public void Close()
         {
-            if (!IsOpen) return;
-            IsOpen = false;
-            if (!World.GameBootstrap.UiWantsCursor)
-            {
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
-            }
+            World.UiWindows.Close(this);
         }
 
-        private void Update()
+        // --- IUiWindow ----------------------------------------------------
+        public int Id { get { return 913; } }
+        public string Title { get { return "PROGRAM BULLETIN — draft"; } }
+        public World.UiWindowFlags Flags { get { return World.UiWindowFlags.None; } }
+
+        public Rect DefaultRect(float w, float h)
         {
-            if (IsOpen && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
-            {
-                Close();
-                // This Escape belongs to the editor — the player rig must not
-                // also toggle the cursor with it this frame.
-                World.GameBootstrap.EscConsumedFrame = Time.frameCount;
-            }
+            return new Rect(w / 2f - 280f, h / 2f - 130f, 560f, 260f);
         }
 
-        private void OnGUI()
-        {
-            if (!IsOpen) return;
-            // GUILayout.Window, not GUI.Window: the window body uses GUILayout
-            // controls, which need the layouting window variant.
-            World.UiScaler.Begin();
-            _win = World.UiScaler.Clamp(GUILayout.Window(913, _win, DrawWindow, "PROGRAM BULLETIN — draft"));
-            World.UiScaler.End();
-        }
+        public void OnOpened() { }
+        public void OnClosed() { }
 
-        private void DrawWindow(int id)
+        public void DrawContents(int id)
         {
             GUILayout.Label("Bulletin text (the town reads exactly what you publish):");
             _text = GUILayout.TextArea(_text, GUILayout.Height(90));
@@ -229,7 +235,6 @@ namespace Game.Runtime.Media
             }
             if (GUILayout.Button("discard", GUILayout.Width(90))) Close();
             GUILayout.EndHorizontal();
-            GUI.DragWindow();
         }
 
         private static string[] RosterNames()
@@ -265,49 +270,50 @@ namespace Game.Runtime.Media
     /// deserves a physical place. Standard terms only — no offer market yet.
     /// Anyone can sign anything; the ledger records who did.
     /// </summary>
-    public sealed class ContractEditor : MonoBehaviour
+    public sealed class ContractEditor : MonoBehaviour, World.IUiWindow
     {
         public static ContractEditor Instance { get; private set; }
-        public bool IsOpen { get; private set; }
-        private Rect _win = new Rect(240, 100, 520, 300);
 
-        private void Awake() { Instance = this; }
+        public bool IsOpen
+        {
+            get { return World.UiWindows.IsOpen(this); }
+        }
+
+        private void Awake()
+        {
+            Instance = this;
+            World.UiWindows.Register(this);
+        }
+
+        private void OnDestroy()
+        {
+            World.UiWindows.Unregister(this);
+            if (Instance == this) Instance = null;
+        }
 
         public void Open()
         {
-            IsOpen = true;
             if (BulletinEditor.Instance != null) BulletinEditor.Instance.Close();
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            World.UiWindows.Open(this);
         }
 
         public void Close()
         {
-            if (!IsOpen) return;
-            IsOpen = false;
-            if (!World.GameBootstrap.UiWantsCursor)
-            {
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
-            }
+            World.UiWindows.Close(this);
         }
 
-        private void Update()
+        // --- IUiWindow ----------------------------------------------------
+        public int Id { get { return 914; } }
+        public string Title { get { return "COMPUTE CONTRACTS — standard terms"; } }
+        public World.UiWindowFlags Flags { get { return World.UiWindowFlags.None; } }
+
+        public Rect DefaultRect(float w, float h)
         {
-            if (IsOpen && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
-            {
-                Close();
-                World.GameBootstrap.EscConsumedFrame = Time.frameCount;
-            }
+            return new Rect(w / 2f - 260f, h / 2f - 150f, 520f, 300f);
         }
 
-        private void OnGUI()
-        {
-            if (!IsOpen) return;
-            World.UiScaler.Begin();
-            _win = World.UiScaler.Clamp(GUILayout.Window(914, _win, DrawWindow, "COMPUTE CONTRACTS — standard terms"));
-            World.UiScaler.End();
-        }
+        public void OnOpened() { }
+        public void OnClosed() { }
 
         private void Sign(CommandKind kind, double kw, double days, string desc)
         {
@@ -316,7 +322,7 @@ namespace Game.Runtime.Media
                 ". Capacity planning is described as \"an evolving conversation\".");
         }
 
-        private void DrawWindow(int id)
+        public void DrawContents(int id)
         {
             var ci = CultureInfo.InvariantCulture;
             TickReport r = World.GameBootstrap.CurrentReport;
@@ -348,7 +354,6 @@ namespace Game.Runtime.Media
 
             GUILayout.Label("Nothing on this desk checks whether the site can deliver.\nThat is your job. The penalty clause is theirs.");
             if (GUILayout.Button("close", GUILayout.Width(90))) Close();
-            GUI.DragWindow();
         }
     }
 

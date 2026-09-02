@@ -28,7 +28,7 @@ namespace Game.Runtime.Net
     /// idle-gated clock is deferred — with snapshots at 5 Hz there is no
     /// per-player "touching" concept yet for it to key on.
     /// </summary>
-    public sealed class NetSession : MonoBehaviour
+    public sealed class NetSession : MonoBehaviour, IUiWindow
     {
         private const byte MsgHello = 1, MsgCmd = 2, MsgAvatar = 3, MsgTime = 4, MsgNamed = 5,
                            MsgHazard = 6, MsgPanel = 7, MsgRoute = 8, MsgVehicle = 9;
@@ -72,8 +72,7 @@ namespace Game.Runtime.Net
                        _vehicleDriver != _nm.LocalClientId;
             }
         }
-        public bool PanelOpen { get { return _panelOpen; } }
-        private bool _cursorWasLockedBeforePanel;
+        public bool PanelOpen { get { return UiWindows.IsOpen(this); } }
 
         private NetworkManager _nm;
         private UnityTransport _transport;
@@ -85,9 +84,16 @@ namespace Game.Runtime.Net
         private float _nextBroadcast;
         private float _nextAvatarSend;
         private string _lastFacilityJson = "";
-        private bool _panelOpen;
-        private Rect _panelWin;
-        private bool _panelPlaced;
+
+        private void Awake()
+        {
+            UiWindows.Register(this);
+        }
+
+        private void OnDestroy()
+        {
+            UiWindows.Unregister(this);
+        }
 
         public List<string> RosterSnapshot()
         {
@@ -621,24 +627,7 @@ namespace Game.Runtime.Net
         private void Update()
         {
             Keyboard kb = Keyboard.current;
-            if (kb != null && kb.f2Key.wasPressedThisFrame)
-            {
-                _panelOpen = !_panelOpen;
-                if (_panelOpen)
-                {
-                    _cursorWasLockedBeforePanel = Cursor.lockState == CursorLockMode.Locked;
-                    Cursor.lockState = CursorLockMode.None;
-                    Cursor.visible = true;
-                }
-                else
-                {
-                    // Restore what the player had, and never steal the cursor
-                    // from a modal that still owns it (bulletin editor).
-                    bool wantFree = GameBootstrap.UiWantsCursor || !_cursorWasLockedBeforePanel;
-                    Cursor.lockState = wantFree ? CursorLockMode.None : CursorLockMode.Locked;
-                    Cursor.visible = wantFree;
-                }
-            }
+            if (kb != null && kb.f2Key.wasPressedThisFrame) UiWindows.Toggle(this);
 
             if (!Active || _nm == null) return;
 
@@ -963,35 +952,43 @@ namespace Game.Runtime.Net
         // The F2 session panel
         // ------------------------------------------------------------------
 
+        /// <summary>The passive corner label only; the window itself is
+        /// drawn by UiWindows.</summary>
         private void OnGUI()
         {
+            if (PanelOpen || PauseMenu.IsOpen) return;
+            // Above the ticker, not on it — and not under the cab read-out,
+            // which owns that corner while someone drives.
+            var local = GameBootstrap.LocalPlayer;
+            if (local != null && local.Driving != null) return;
+            GUI.depth = 10;
             World.UiScaler.Begin();
-            try { DrawPanel(); } finally { World.UiScaler.End(); }
-        }
-
-        private void DrawPanel()
-        {
-            if (!_panelOpen)
+            try
             {
-                // Above the ticker, not on it — and not under the cab
-                // read-out, which owns that corner while someone drives.
-                var local = GameBootstrap.LocalPlayer;
-                if (local != null && local.Driving != null) return;
                 GUI.Label(new Rect(World.UiScaler.W - 200, World.UiScaler.H - 54, 196, 22),
                     Active ? (IsHost ? "hosting (F2)" : "client (F2)") : "F2: multiplayer");
-                return;
             }
-            if (!_panelPlaced)
-            {
-                // Bottom right, clear of the ticker; height 0 lets the layout
-                // size the window to its contents.
-                _panelPlaced = true;
-                _panelWin = new Rect(World.UiScaler.W - 300f, World.UiScaler.H - 280f, 280f, 0f);
-            }
-            _panelWin = World.UiScaler.Clamp(GUILayout.Window(912, _panelWin, DrawPanelWindow, "MULTIPLAYER (F2)"));
+            finally { World.UiScaler.End(); }
         }
 
-        private void DrawPanelWindow(int id)
+        // --- IUiWindow ----------------------------------------------------
+        public int Id { get { return 912; } }
+        public string Title { get { return "MULTIPLAYER (F2)"; } }
+        public UiWindowFlags Flags { get { return UiWindowFlags.None; } }
+
+        public Rect DefaultRect(float w, float h)
+        {
+            // Bottom right, clear of the ticker; height 0 lets the layout
+            // size the window to its contents.
+            return new Rect(w - 320f, h - UiScaler.BottomReserve - 150f, 300f, 0f);
+        }
+
+        public void OnOpened() { }
+        public void OnClosed() { }
+
+        private const int RosterShown = 6;
+
+        public void DrawContents(int id)
         {
             if (!Active)
             {
@@ -1004,12 +1001,19 @@ namespace Game.Runtime.Net
             else
             {
                 GUILayout.Label(IsHost ? "hosting — sim authority here" : "client of " + _address);
+                // An auto-sized window must not grow past the screen with a
+                // big roster: the last few entries and a count.
+                int skip = Mathf.Max(0, _standings.Count - RosterShown);
+                if (skip > 0) GUILayout.Label("+" + skip + " more");
+                int i = 0;
                 foreach (var kv in _standings)
+                {
+                    if (i++ < skip) continue;
                     GUILayout.Label(kv.Key + "  standing " +
                         kv.Value.ToString("0", CultureInfo.InvariantCulture));
+                }
                 if (GUILayout.Button("Disconnect")) Disconnect();
             }
-            GUI.DragWindow();
         }
     }
 }
