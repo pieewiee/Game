@@ -109,6 +109,30 @@ These were deliberately left out of the scaffold rather than guessed at.
 - [ ] **3.3 Install Unity `6000.0.58f1`** with Windows + Mac Build Support.
 - [ ] **3.4 Install the recommended editor extensions** — VS Code offers them
       from `.vscode/extensions.json` on first open.
+- [ ] **3.5 MCP for Unity (lets Claude Code drive the open editor: compile,
+      read the console, run tests, enter play mode, take screenshots).**
+      The package `com.coplaydev.unity-mcp` (MIT, pinned to `v10.2.0`) is in
+      `Packages/manifest.json`; the editor imports it the next time it gets
+      focus. Once per machine:
+      1. Install `uv` (`winget install --id=astral-sh.uv -e --source winget`).
+         The running editor does not see a PATH change until it is restarted —
+         if the *MCP for Unity* window says "uv Not Found", use **Choose UV
+         Install Location** and point it at
+         `%LOCALAPPDATA%\Microsoft\WinGet\Links\uv.exe`.
+      2. *Window > MCP for Unity*: transport **HTTP** (default,
+         `http://127.0.0.1:8080/mcp`), press **Start Server** — or enable
+         *Advanced Settings > Auto-Start on Editor Load* so it comes up with the
+         editor. The status panel must say *Connected*.
+      3. Register the server in Claude Code once:
+         `claude mcp add --scope user --transport http unityMCP http://127.0.0.1:8080/mcp`
+         (already done on the owner's machine). Claude Code only picks up new
+         MCP servers when it starts, so restart it after step 2.
+      4. The test and code-execution tool groups are off by default; an agent
+         turns them on with `manage_tools` (`activate` `testing` /
+         `scripting_ext`).
+      `Tools/UnityMcp/mcpcall.js` is a tiny stand-alone client for the same
+      endpoint (`node Tools/UnityMcp/mcpcall.js list`) for sessions that
+      started before the server existed.
 
 ---
 
