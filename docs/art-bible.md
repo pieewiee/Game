@@ -14,6 +14,13 @@ sound of the site at 3 a.m. are the game.
 One material, vertex colours only. No textures, no UV unwrapping, no normal
 maps, no PBR. Every mesh is painted from this list and nothing else.
 
+The rule survives imported art: the CC0 kits under `Assets/ThirdParty`
+(Kenney's city and car kits, see `CREDITS.md` there) arrive with UVs into a
+colormap, and the importer bakes those into vertex colours quantised to this
+table — minus Program Blue, Amber and Alarm Red, which carry meaning and never
+appear on a house or a car — then drops the UVs. They render through the same
+material as everything procedural.
+
 | # | Name | Hex | Used for |
 |---|---|---|---|
 | 1 | Concrete | `#8E8F8A` | Building shells, hardstanding, plinths |

@@ -5,19 +5,31 @@ using UnityEngine;
 namespace Game.Runtime.World
 {
     /// <summary>
-    /// Procedural audio — no clips exist anywhere in the project. Fan noise is
-    /// filtered noise whose loudness tracks the sim's actual cooling fan power
-    /// (audio is not optional: noise is a core mechanic, and what you hear IS
-    /// N_noise's source term). The diesel adds a low pulse; the suppression
-    /// siren is a synthesized two-tone.
+    /// The site's sound. The plant is procedural: fan noise is filtered noise
+    /// whose loudness tracks the sim's actual cooling fan power (audio is not
+    /// optional: noise is a core mechanic, and what you hear IS N_noise's
+    /// source term), the diesel a low pulse, the suppression siren a
+    /// synthesized two-tone. Three things come from Assets/ThirdParty via the
+    /// AssetKit, each with a synthesized fallback: the protest chant (a real
+    /// crowd, low-passed until no word survives), window clicks and the
+    /// clunk of a control being operated.
     /// </summary>
     public sealed class SiteAudio : MonoBehaviour
     {
+        private const string ChantKey = "freesound/485621-protest-crowd";
+        private const string OpenKey = "kenney/interface-sounds/click_002";
+        private const string CloseKey = "kenney/interface-sounds/close_001";
+        private const string ClunkKey = "kenney/impact-sounds/impactmetal_light_00";
+        /// <summary>art-bible.md, sound: the chant is muffled, never intelligible.</summary>
+        private const float ChantLowPassHz = 350f;
+
         private static SiteAudio _instance;
         public static SiteAudio Instance { get { return _instance; } }
         private AudioSource _fans;
         private AudioSource _diesel;
         private AudioSource _chant;
+        private AudioSource _ui;
+        private int _clunkIndex;
         // The listening-post perspective: the site's own plant stepped back.
         private float _outdoorDuck = 1f;
         private static AudioClip _noiseLoop;
@@ -92,10 +104,43 @@ namespace Game.Runtime.World
                 if (_chant != null && _chant.isPlaying) _chant.Stop();
                 return;
             }
-            if (_chant == null) _chant = MakeSource("ProtestChant", pos, ChantLoop(), 60f);
+            if (_chant == null)
+            {
+                _chant = MakeSource("ProtestChant", pos, ChantLoop(), 60f);
+                // The recording is a crowd of several hundred at a climate
+                // strike; through the fence and the low-pass it is a swell
+                // with a rhythm and no words, which is all the operator gets.
+                _chant.gameObject.AddComponent<AudioLowPassFilter>().cutoffFrequency = ChantLowPassHz;
+            }
             _chant.transform.position = pos;
             _chant.volume = Mathf.Clamp01(intensity01) * 0.5f;
             if (!_chant.isPlaying) _chant.Play();
+        }
+
+        /// <summary>A window opening or closing: a soft interface click, 2D.</summary>
+        public static void PlayUiClick(bool open)
+        {
+            SiteAudio a = _instance;
+            if (a == null || !AssetKit.TryGetClip(open ? OpenKey : CloseKey, out AudioClip clip)) return;
+            if (a._ui == null)
+            {
+                a._ui = a.gameObject.AddComponent<AudioSource>();
+                a._ui.spatialBlend = 0f;
+                a._ui.playOnAwake = false;
+            }
+            a._ui.PlayOneShot(clip, 0.45f);
+        }
+
+        /// <summary>A control operated by hand: a light metal clunk where it
+        /// stands. One of five takes, round-robin, so a row of switches does
+        /// not sound like one sample.</summary>
+        public static void PlayClunk(Vector3 pos)
+        {
+            SiteAudio a = _instance;
+            if (a == null) return;
+            a._clunkIndex = (a._clunkIndex + 1) % 5;
+            if (!AssetKit.TryGetClip(ClunkKey + a._clunkIndex, out AudioClip clip)) return;
+            AudioSource.PlayClipAtPoint(clip, pos, 0.6f);
         }
 
         /// <summary>The listening post: outdoor plant loops ducked by 30 % so the
@@ -171,6 +216,7 @@ namespace Game.Runtime.World
         private static AudioClip ChantLoop()
         {
             if (_chantLoop != null) return _chantLoop;
+            if (AssetKit.TryGetClip(ChantKey, out AudioClip real)) { _chantLoop = real; return real; }
             const int rate = 22050;
             var data = new float[rate * 3];
             float brown = 0f, lp = 0f;

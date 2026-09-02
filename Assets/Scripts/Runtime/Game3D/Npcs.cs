@@ -72,7 +72,10 @@ namespace Game.Runtime.World
         private const float OuterCornerR = 4.5f, InnerCornerR = 2.2f, CornerSpeed = 0.6f, CarAccel = 8f;
         // Past a parked car the lane eases to this far from the centre line,
         // ramping in and out over PinchRamp metres.
-        private const float PinchOffset = 0.3f, PinchRamp = 4f, CarHalfWidth = 0.9f, CarClearance = 0.5f;
+        // CarHalfWidth is the kit car's (2.4 m wide); the slate box is narrower.
+        private const float PinchOffset = 0.3f, PinchRamp = 4f, CarHalfWidth = 1.2f, CarClearance = 0.5f;
+        private static readonly string[] CarKeys =
+            { "kenney/car-kit/sedan", "kenney/car-kit/hatchback-sports", "kenney/car-kit/suv", "kenney/car-kit/van" };
         private const float LaneClearance = CarHalfWidth + CarClearance;
         // Layout validation. A stander keeps LaneClearance from either lane
         // and RouteClearance from a route, or walkers slide through it.
@@ -466,7 +469,10 @@ namespace Game.Runtime.World
                     if (slot % 3 != 2) f.Placard = Part("placard", _placard, f.Tf, false);
                     break;
                 case FigureKind.Car:
-                    f.Body = Part("body", _car, f.Tf, false);
+                    // A kit car when the packs are in (four types, one per
+                    // slot), else the slate box; the headlight quads sit at
+                    // the same front either way (both are 4.1-4.2 m long).
+                    f.Body = Part("body", AssetKit.TryGetCombined(CarKeys[slot % CarKeys.Length], out Mesh kitCar) ? kitCar : _car, f.Tf, false);
                     f.Extra = Part("lights", _carLights, f.Tf, true);
                     // Even slots take the outer lane, odd the inner; the two
                     // cars of a lane start half a lap apart.
@@ -587,7 +593,9 @@ namespace Game.Runtime.World
             if (_accidentSeen && r.AccidentScore > _lastAccident + 1e-9) _incidentUntil = now + IncidentMemory;
             _lastAccident = r.AccidentScore;
             _accidentSeen = true;
-            bool plumeOverTown = r.DieselKwh > 0 && Mathf.Abs(Mathf.DeltaAngle((float)r.WindTowardDeg, 270f)) <= 30f;
+            // The sim's own verdict: either residential sector (west houses,
+            // north flats) counts, exactly as the air channel charges it.
+            bool plumeOverTown = r.DieselKwh > 0 && r.WindTowardTown;
             if (plumeOverTown || r.OutageFrac > 0 || r.LoadShedKwh > 0 || now < _incidentUntil) p = Mathf.Max(p, 0.85f);
             int filmerSpots = Mathf.Min(Filmers, _fenceSpots.Count);
             int filmers = Mathf.Clamp(Mathf.RoundToInt(Filmers * Mathf.Clamp01(p) * DebugDensity), 0, filmerSpots);

@@ -30,6 +30,16 @@ namespace Game.Runtime.World
             _tris.Add(i); _tris.Add(i + 3); _tris.Add(i + 2);
         }
 
+        /// <summary>One triangle, a→b→c counter-clockwise seen from outside,
+        /// with the normal given (a copied glass pane keeps the pane's own).</summary>
+        public void Triangle(Vector3 a, Vector3 b, Vector3 c, Vector3 n, Color color)
+        {
+            int i = _verts.Count;
+            _verts.Add(a); _verts.Add(b); _verts.Add(c);
+            for (int k = 0; k < 3; k++) { _normals.Add(n); _colors.Add(color); }
+            _tris.Add(i); _tris.Add(i + 1); _tris.Add(i + 2);
+        }
+
         /// <summary>Axis-aligned box; centre + full size. Top face slightly lighter,
         /// bottom darker — a cheap fake of sky ambient on flat shading.</summary>
         public void Box(Vector3 centre, Vector3 size, Color color)

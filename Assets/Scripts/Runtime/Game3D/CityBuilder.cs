@@ -57,18 +57,112 @@ namespace Game.Runtime.World
         {
             var rnd = new System.Random(1234);
             var facades = new List<Facade>();
+            var kits = new List<KitPlacement>();
+            // Imported kit pieces (houses, blocks, cars) go under their own
+            // root so they can be statically batched without touching the
+            // glow meshes, whose renderers the night pass switches.
+            _kitRoot = null;
+            _carIndex = 0;
+            if (AssetKit.Instance != null)
+            {
+                _kitRoot = new GameObject("CityKit").transform;
+                _kitRoot.SetParent(root, false);
+            }
 
             BuildRoads(root);
             BuildMarkings(root);
             // Blocks before furniture: the verge trees are culled against the
             // block footprints, so those have to exist first.
-            BuildWest(root, refs, facades, rnd);
-            BuildNorth(root, refs, facades);
+            BuildWest(root, refs, facades, kits, rnd);
+            BuildNorth(root, refs, facades, kits);
             BuildEast(root, refs, facades);
-            BuildSouth(root, refs, facades);
+            BuildSouth(root, refs, facades, kits);
             BuildFurniture(root, refs);
-            BuildWindows(root, refs, facades);
+            BuildWindows(root, refs, facades, kits);
             DefineAnchors(refs);
+            if (_kitRoot != null) StaticBatchingUtility.Combine(_kitRoot.gameObject);
+        }
+
+        // ------------------------------------------------------------------
+        // Imported kit pieces (Assets/ThirdParty, via AssetKit)
+        // ------------------------------------------------------------------
+
+        /// <summary>A kit model placed in the town: where it stands and which
+        /// way its front (the model's -z) was turned. Kept so the window pass
+        /// can copy the model's own glass as night glow.</summary>
+        private struct KitPlacement
+        {
+            public AssetKit.MeshEntry Entry;
+            public Vector3 Pos;
+            public float Yaw;
+        }
+
+        private const string SuburbanKit = "kenney/city-kit-suburban/building-type-";
+        private const string CommercialKit = "kenney/city-kit-commercial/building-";
+        private const string CarKit = "kenney/car-kit/";
+        /// <summary>Suburban house types no wider than 11.6 m and no deeper
+        /// than 9.5 m: the west columns are 14 m apart and the rows 14 m with
+        /// up to 4 m of jitter.</summary>
+        private static readonly string[] HouseTypes =
+            { "a", "c", "e", "g", "h", "i", "j", "k", "l", "o", "p", "q", "r", "u" };
+        private static readonly string[] BlockTypes =
+            { "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n" };
+        private static readonly string[] CarTypes =
+            { "sedan", "hatchback-sports", "suv", "van", "delivery", "sedan-sports" };
+
+        private static Transform _kitRoot;
+        private static int _carIndex;
+
+        /// <summary>Spawns a kit model under the kit root, registers its plan
+        /// footprint as an obstacle and remembers it for the glow pass.
+        /// Returns false, having built nothing, when the kit is absent: the
+        /// caller then falls back to its procedural recipe.</summary>
+        private static bool KitModel(SiteRefs refs, List<KitPlacement> kits,
+            string key, Vector3 pos, float yaw, out Bounds footprint)
+        {
+            if (_kitRoot == null || !AssetKit.TryGetMesh(key, out AssetKit.MeshEntry entry))
+            {
+                footprint = default;
+                return false;
+            }
+            AssetKit.Spawn(entry, key, _kitRoot, pos, yaw, collider: true);
+            footprint = AssetKit.Footprint(entry, pos, yaw);
+            refs.TownObstacles.Add(footprint);
+            kits.Add(new KitPlacement { Entry = entry, Pos = pos, Yaw = yaw });
+            return true;
+        }
+
+        /// <summary>Every triangle the bake tagged as glass (vertex alpha 0,
+        /// KitImport.IsGlass) is a pane; copied 3 cm proud of it in Amber it
+        /// is the lit window.</summary>
+        private static void KitGlow(ProcMesh glow, in KitPlacement k)
+        {
+            Matrix4x4 place = Matrix4x4.TRS(k.Pos, Quaternion.Euler(0f, k.Yaw, 0f), Vector3.one);
+            foreach (AssetKit.Part part in k.Entry.Parts)
+            {
+                Mesh m = part.Mesh;
+                if (m == null || !m.isReadable) continue;
+                Matrix4x4 xf = place * Matrix4x4.TRS(part.LocalPosition, part.LocalRotation, part.LocalScale);
+                Vector3[] v = m.vertices;
+                Vector3[] n = m.normals;
+                Color[] c = m.colors;
+                int[] t = m.triangles;
+                if (c.Length != v.Length || n.Length != v.Length) continue;
+                for (int i = 0; i + 2 < t.Length; i += 3)
+                {
+                    int a = t[i], b = t[i + 1], d = t[i + 2];
+                    if (!Glass(c[a]) || !Glass(c[b]) || !Glass(c[d])) continue;
+                    Vector3 nn = xf.MultiplyVector(n[a]).normalized;
+                    Vector3 off = nn * 0.03f;
+                    glow.Triangle(xf.MultiplyPoint3x4(v[a]) + off, xf.MultiplyPoint3x4(v[b]) + off,
+                        xf.MultiplyPoint3x4(v[d]) + off, nn, Palette.Amber);
+                }
+            }
+        }
+
+        private static bool Glass(Color c)
+        {
+            return c.a < 0.5f;
         }
 
         // ------------------------------------------------------------------
@@ -217,14 +311,23 @@ namespace Game.Runtime.World
             pm.Cylinder(new Vector3(x, 3.4f, z), 1.6f, 2.6f, 5, Palette.Foliage, 0.2f);
         }
 
-        /// <summary>A parked car: slate body and ink cabin, long axis along x or z.</summary>
+        /// <summary>A parked car, long axis along x or z: a kit car when the
+        /// packs are in (types rotate), else a slate body with an ink cabin.
+        /// The obstacle is the same 4.2 × 1.8 box either way — it is what the
+        /// lanes and the standing spots keep clear of.</summary>
         private static void Car(ProcMesh pm, SiteRefs refs, float x, float z, bool alongX)
         {
             var body = alongX ? new Vector3(4.2f, 1.4f, 1.8f) : new Vector3(1.8f, 1.4f, 4.2f);
+            Obstacle(refs, new Vector3(x, 0.7f, z), body);
+            if (_kitRoot != null && AssetKit.TryGetCombined(CarKit + CarTypes[_carIndex++ % CarTypes.Length], out Mesh kit))
+            {
+                GameObject go = MatLib.Spawn("ParkedCar", kit, _kitRoot, new Vector3(x, 0f, z));
+                go.transform.localRotation = Quaternion.Euler(0f, alongX ? 90f : 0f, 0f);
+                return;
+            }
             var cabin = alongX ? new Vector3(2.2f, 0.8f, 1.6f) : new Vector3(1.6f, 0.8f, 2.2f);
             pm.Box(new Vector3(x, 0.7f, z), body, Palette.Slate);
             pm.Box(new Vector3(x, 1.6f, z), cabin, Palette.Ink);
-            Obstacle(refs, new Vector3(x, 0.7f, z), body);
         }
 
         // ------------------------------------------------------------------
@@ -232,19 +335,27 @@ namespace Game.Runtime.World
         // ------------------------------------------------------------------
 
         private static void BuildWest(Transform root, SiteRefs refs, List<Facade> facades,
-            System.Random rnd)
+            List<KitPlacement> kits, System.Random rnd)
         {
             var pm = new ProcMesh();
-            // Fourteen houses in four rows; fronts 6.5 m from the outer W
-            // pavement (x -27). The random draw order is z, w, d per house
-            // and must stay so — see the class summary.
+            // Fourteen houses in four rows. The random draw order is z, w, d
+            // per house and must stay so — see the class summary.
             var houses = new Bounds[14];
             for (int i = 0; i < 14; i++)
             {
-                float x = -38f - (i % 4) * 11f;
                 float z = -26f + (i / 4) * 14f + (float)rnd.NextDouble() * 4f;
                 float w = 6f + (float)rnd.NextDouble() * 3f;
                 float d = 5f + (float)rnd.NextDouble() * 3f;
+                // Kit houses stand in four columns 14 m apart, fronts (the
+                // model's -z turned to +x) 4-5 m off the outer W pavement at
+                // x -27; w only picks the type, so the draw order holds.
+                int type = (int)((w - 6f) / 3f * HouseTypes.Length) % HouseTypes.Length;
+                if (KitModel(refs, kits, SuburbanKit + HouseTypes[type],
+                        new Vector3(-36f - (i % 4) * 14f, 0f, z), -90f, out houses[i]))
+                    continue;
+                // Procedural fallback: box houses at the old 11 m pitch, fronts
+                // 6.5 m from the pavement.
+                float x = -38f - (i % 4) * 11f;
                 var centre = new Vector3(x, 1.6f, z);
                 var size = new Vector3(w, 3.2f, d);
                 pm.Box(centre, size, Palette.Render);
@@ -300,14 +411,24 @@ namespace Game.Runtime.World
         // North: offices, the school and the sports hall
         // ------------------------------------------------------------------
 
-        private static void BuildNorth(Transform root, SiteRefs refs, List<Facade> facades)
+        private static void BuildNorth(Transform root, SiteRefs refs, List<Facade> facades, List<KitPlacement> kits)
         {
             var pm = new ProcMesh();
-            // Front row along the outer N pavement (z 65), 4 m back from it.
-            Building(pm, refs, facades, -8f, 76f, 24f, 12f, 14f, Palette.Render);
-            Building(pm, refs, facades, 24f, 76f, 26f, 15f, 14f, Palette.Render);
-            Building(pm, refs, facades, 56f, 76f, 24f, 9f, 14f, Palette.Render);
-            Building(pm, refs, facades, 78f, 76f, 12f, 12f, 14f, Palette.Render);
+            // Front row along the outer N pavement (z 65): eleven kit blocks
+            // (shops below, flats above — this row is the sim's second
+            // residential sector, TOWN2_BEARING_DEG) 9.5 m apart, fronts
+            // (the model's -z) toward the road, 4 m back from the pavement.
+            bool kitRow = true;
+            for (int k = 0; k < 11 && kitRow; k++)
+                kitRow = KitModel(refs, kits, CommercialKit + BlockTypes[(k * 5) % BlockTypes.Length],
+                    new Vector3(-18f + 9.5f * k, 0f, 73f), 0f, out _);
+            if (!kitRow)
+            {
+                Building(pm, refs, facades, -8f, 76f, 24f, 12f, 14f, Palette.Render);
+                Building(pm, refs, facades, 24f, 76f, 26f, 15f, 14f, Palette.Render);
+                Building(pm, refs, facades, 56f, 76f, 24f, 9f, 14f, Palette.Render);
+                Building(pm, refs, facades, 78f, 76f, 12f, 12f, 14f, Palette.Render);
+            }
             // Second row: school and sports hall.
             Building(pm, refs, facades, 10f, 94f, 30f, 12f, 12f, Palette.Render);
             Building(pm, refs, facades, 50f, 94f, 30f, 15f, 12f, Palette.Render);
@@ -377,15 +498,16 @@ namespace Game.Runtime.World
         // South: terraces, the playground, the corner shop
         // ------------------------------------------------------------------
 
-        private static void BuildSouth(Transform root, SiteRefs refs, List<Facade> facades)
+        private static void BuildSouth(Transform root, SiteRefs refs, List<Facade> facades, List<KitPlacement> kits)
         {
             var pm = new ProcMesh();
             // Each terrace is ONE wall box (six unit boxes side by side would
             // stack coplanar plinths and parapets), read as six units by the
-            // party walls on the roof and a door per unit.
-            Terrace(pm, refs, facades, 0f, -41f);
-            Terrace(pm, refs, facades, 44f, -41f);
-            Terrace(pm, refs, facades, 0f, -55f);
+            // party walls on the roof and a door per unit. With the kit in,
+            // a terrace is three detached houses instead.
+            Terrace(pm, refs, facades, kits, 0f, -41f);
+            Terrace(pm, refs, facades, kits, 44f, -41f);
+            Terrace(pm, refs, facades, kits, 0f, -55f);
 
             // The alley between the two front terraces is the playground:
             // a swing frame and a slide.
@@ -405,8 +527,16 @@ namespace Game.Runtime.World
 
         /// <summary>Six 6 m row houses from x0, 7 m high, 6 m deep, doors on
         /// the north (street) face.</summary>
-        private static void Terrace(ProcMesh pm, SiteRefs refs, List<Facade> facades, float x0, float z)
+        private static void Terrace(ProcMesh pm, SiteRefs refs, List<Facade> facades,
+            List<KitPlacement> kits, float x0, float z)
         {
+            // Three kit houses 12 m apart, fronts (the model's -z turned to
+            // +z) toward the street north of them.
+            bool kit = true;
+            for (int k = 0; k < 3 && kit; k++)
+                kit = KitModel(refs, kits, SuburbanKit + HouseTypes[(int)(x0 / 4f + z + 7 * k + 200) % HouseTypes.Length],
+                    new Vector3(x0 + 6f + 12f * k, 0f, z), 180f, out _);
+            if (kit) return;
             Building(pm, refs, facades, x0 + 18f, z, 36f, 7f, 6f, Palette.Render);
             float face = z + 3f;
             for (int k = 0; k < 6; k++)
@@ -527,11 +657,13 @@ namespace Game.Runtime.World
         // meshes the night pass switches on in two waves
         // ------------------------------------------------------------------
 
-        private static void BuildWindows(Transform root, SiteRefs refs, List<Facade> facades)
+        private static void BuildWindows(Transform root, SiteRefs refs, List<Facade> facades, List<KitPlacement> kits)
         {
             var lit = new ProcMesh();
             var early = new ProcMesh();
             var late = new ProcMesh();
+            // Kit houses bring their own glass; three in five go to bed late.
+            for (int i = 0; i < kits.Count; i++) KitGlow(i % 5 < 3 ? early : late, kits[i]);
             int index = 0;
             foreach (Facade f in facades)
             {
@@ -606,15 +738,16 @@ namespace Game.Runtime.World
             // The picket stands at the VEHICLE gate on the dropped kerb
             // (x -17..-14, z 13..25): deliveries are what it turns away. The
             // carriageway itself belongs to the cars — the inner lane runs at
-            // x = -18.5 and the presence layer drops any stander within 1.4 m
-            // of it, so the front row is on the kerb line at x = -17.
+            // x = -18.5 and the presence layer drops any stander within 1.7 m
+            // of it (half a kit car plus clearance), so the front row stands
+            // just inside the kerb line at x = -16.7.
             float y = RoadTop + 0.01f;
             AddSpot(refs.GateProtestSpots, refs, "picket", new Vector3(-15.5f, y, 17f));
             AddSpot(refs.GateProtestSpots, refs, "picket", new Vector3(-15.5f, y, 21f));
             AddSpot(refs.GateProtestSpots, refs, "picket", new Vector3(-16.5f, y, 14.5f));
             AddSpot(refs.GateProtestSpots, refs, "picket", new Vector3(-16.5f, y, 23.5f));
-            AddSpot(refs.GateProtestSpots, refs, "picket", new Vector3(-17f, y, 16f));
-            AddSpot(refs.GateProtestSpots, refs, "picket", new Vector3(-17f, y, 22f));
+            AddSpot(refs.GateProtestSpots, refs, "picket", new Vector3(-16.7f, y, 16f));
+            AddSpot(refs.GateProtestSpots, refs, "picket", new Vector3(-16.7f, y, 22f));
         }
 
         private static void AddSpot(List<Vector3> list, SiteRefs refs, string what, Vector3 p)

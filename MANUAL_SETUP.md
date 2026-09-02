@@ -368,6 +368,25 @@ delete that file. `Temp/` is git-ignored; nothing to commit.
       console (`[Presence] … dropped`) mean a spot or route in `CityBuilder`
       violates the layout rules and was left out — fix the coordinates, not
       the rule.
+- [ ] **7.2g Imported art and sound (`Assets/ThirdParty`).** The houses,
+      the north blocks and every car are Kenney's CC0 city and car kits;
+      the protest chant is a real climate-strike crowd from Freesound
+      (CC0), low-passed at 350 Hz so no word survives; window clicks and
+      control clunks are Kenney's CC0 interface and impact packs. All of it
+      is listed in `Assets/ThirdParty/CREDITS.md`, all of it is in Git LFS
+      (16 MB), and none of it is used as delivered: `KitImport.cs` (Editor)
+      bakes each model's colormap into vertex colours quantised to the
+      palette, scales the kits to metres (city ×8, cars ×1.6) and imports no
+      materials. The game reads the catalogue
+      `Assets/Settings/Resources/AssetKit.asset`; after adding or removing a
+      file under `ThirdParty`, run **GNP > Rebuild Asset Kit** and commit
+      the asset with the new `.meta` files. Every consumer keeps its
+      procedural fallback, so the game still builds a (boxier) town if the
+      folder is missing. Changing the bake means bumping `GetVersion()` in
+      `KitImport.cs`, or other machines keep stale colours in their Library.
+      **Wind, two sectors.** The air channel now charges the west houses
+      (270° ± 45°, ×3.0) and the north flats (0° ± 30°, ×2.0); the HUD says
+      TOWARD TOWN or TOWARD THE FLATS.
 - [ ] **7.3 The 5-player test needs standalone builds** (one project folder
       cannot be opened by five editors, and no third-party clone tool was added
       without asking). Both game shaders (`GNP/VertexColor` and

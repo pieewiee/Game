@@ -125,6 +125,7 @@ namespace Game.Runtime.World
                 }
                 e.Open = true;
                 try { w.OnOpened(); } catch (Exception ex) { Debug.LogError(ex); }
+                SiteAudio.PlayUiClick(true);
             }
             SetFront(e);
             ApplyCursor();
@@ -139,6 +140,7 @@ namespace Game.Runtime.World
             {
                 try { w.OnClosed(); } catch (Exception ex) { Debug.LogError(ex); }
             }
+            SiteAudio.PlayUiClick(false);
             ApplyCursor();
         }
 

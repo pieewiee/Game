@@ -524,7 +524,12 @@ namespace Game.Runtime.World
                     _pendingTime = 0f;
                     _holdLost = 0f;
                 }
-                else { target.Interact(this); _targetFrame = -1; }
+                else
+                {
+                    target.Interact(this);
+                    _targetFrame = -1;
+                    if (target is Component c) SiteAudio.PlayClunk(c.transform.position);
+                }
             }
             if (kb.eKey.isPressed && _pendingHold != null)
             {
