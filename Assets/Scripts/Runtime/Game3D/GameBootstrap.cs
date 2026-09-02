@@ -25,12 +25,8 @@ namespace Game.Runtime.World
         public static FacilityController Facility { get; private set; }
         public static SiteRefs Site { get; private set; }
         public static NetSession Net { get; private set; }
+        public static SaveSystem Saves { get; private set; }
         public static readonly List<string> Ledger = new List<string>();
-
-        /// <summary>The frame on which a modal window consumed Escape to close
-        /// itself — the player rig must not ALSO toggle the cursor that frame
-        /// (script execution order would otherwise decide the outcome).</summary>
-        public static int EscConsumedFrame = -1;
 
         /// <summary>The report every presentation system reads: the replicated
         /// snapshot on a client (whose own sim is paused and stale), the live
@@ -45,19 +41,20 @@ namespace Game.Runtime.World
             }
         }
 
-        /// <summary>True while a modal IMGUI window is open (bulletin editor,
-        /// network panel). Those windows own Escape and the mouse; the player
-        /// rig neither moves nor re-locks the cursor until they close.</summary>
+        /// <summary>True while any IMGUI window is open (console, editors,
+        /// options, network panel, pause menu). Windows own the mouse; the
+        /// player rig neither moves nor aims until they close.</summary>
         public static bool UiWantsCursor
         {
-            get
-            {
-                if (BulletinEditor.Instance != null && BulletinEditor.Instance.IsOpen) return true;
-                if (ContractEditor.Instance != null && ContractEditor.Instance.IsOpen) return true;
-                if (PlayerOptions.Instance != null && PlayerOptions.Instance.IsOpen) return true;
-                if (DebugTools.DebugConsole.IsOpen) return true;
-                return Net != null && Net.PanelOpen;
-            }
+            get { return UiWindows.AnyOpen; }
+        }
+
+        /// <summary>Who the ledger blames for a local act: the host's chosen
+        /// name in a session, the rig's name otherwise.</summary>
+        public static string LocalActorName()
+        {
+            if (Net != null && Net.IsHost) return Net.LocalPlayerName;
+            return LocalPlayer != null ? LocalPlayer.PlayerName : "operator";
         }
 
         private void Awake()
@@ -89,18 +86,26 @@ namespace Game.Runtime.World
             Facility = gameObject.AddComponent<FacilityController>();
             Facility.Init(Site);
 
-            LocalPlayer = PlayerRig.Create(Site.CarParkSpawn, "Operator");
+            LocalPlayer = PlayerRig.Create(Site.StreetSpawn, "Operator");
             RespawnSystem.Init(Site);
 
+            // Weather before the season/VFX pass and the figures: both read
+            // its sky state and the shared IsDark helper the same frame.
+            gameObject.AddComponent<Weather>();
             gameObject.AddComponent<SeasonAndVfx>();
+            gameObject.AddComponent<Presence>();
             gameObject.AddComponent<SiteAudio>();
+            // The window host first: it owns every window's OnGUI, Escape
+            // and the cursor. Windows register themselves from Awake.
+            gameObject.AddComponent<UiWindows>();
             gameObject.AddComponent<NewsTicker>();
             gameObject.AddComponent<BulletinEditor>();
             gameObject.AddComponent<ContractEditor>();
             gameObject.AddComponent<Hud>();
             gameObject.AddComponent<PlayerOptions>();
             Net = gameObject.AddComponent<NetSession>();
-            gameObject.AddComponent<SaveSystem>();
+            Saves = gameObject.AddComponent<SaveSystem>();
+            gameObject.AddComponent<PauseMenu>();
 
             HazardInstaller.Install(Site, Facility);
 
@@ -124,12 +129,7 @@ namespace Game.Runtime.World
             }
             if (Driver == null || Driver.Sim == null) return;
             Driver.EnqueueRecorded(cmd);
-            if (ledgerLine != null)
-            {
-                string actor = Net != null && Net.IsHost ? Net.LocalPlayerName
-                             : LocalPlayer != null ? LocalPlayer.PlayerName : "operator";
-                AddLedger(actor, ledgerLine);
-            }
+            if (ledgerLine != null) AddLedger(LocalActorName(), ledgerLine);
         }
 
         public static void AddLedger(string actor, string line)

@@ -14,10 +14,15 @@ namespace Game.Runtime.World
     public sealed class SiteAudio : MonoBehaviour
     {
         private static SiteAudio _instance;
+        public static SiteAudio Instance { get { return _instance; } }
         private AudioSource _fans;
         private AudioSource _diesel;
+        private AudioSource _chant;
+        // The listening-post perspective: the site's own plant stepped back.
+        private float _outdoorDuck = 1f;
         private static AudioClip _noiseLoop;
         private static AudioClip _dieselLoop;
+        private static AudioClip _chantLoop;
         private static AudioClip _sirenClip;
         private static AudioClip _engineClip;
         private static AudioClip _beepClip;
@@ -68,14 +73,36 @@ namespace Game.Runtime.World
             {
                 // Zero cooling plant is SILENT — the fans-off contrast after an
                 // EPO is half the fun; the floor applies only while running.
-                _fans.volume = fanLoad <= 0.001f ? 0f : Mathf.Clamp01(0.12f + 0.35f * fanLoad);
+                _fans.volume = (fanLoad <= 0.001f ? 0f : Mathf.Clamp01(0.12f + 0.35f * fanLoad)) * _outdoorDuck;
                 _fans.pitch = 0.8f + Mathf.Clamp01(fanLoad) * 0.5f;
             }
             if (_diesel != null)
             {
                 float dieselLoad = (float)(r.DieselKwh / 250.0);
-                _diesel.volume = Mathf.Clamp01(dieselLoad) * 0.8f;
+                _diesel.volume = Mathf.Clamp01(dieselLoad) * 0.8f * _outdoorDuck;
             }
+        }
+
+        /// <summary>The gate crowd: a low murmur, muffled and never intelligible
+        /// (art-bible.md §5). intensity01 scales the volume; 0 stops it.</summary>
+        public void SetProtestChant(Vector3 pos, float intensity01)
+        {
+            if (intensity01 <= 0.001f)
+            {
+                if (_chant != null && _chant.isPlaying) _chant.Stop();
+                return;
+            }
+            if (_chant == null) _chant = MakeSource("ProtestChant", pos, ChantLoop(), 60f);
+            _chant.transform.position = pos;
+            _chant.volume = Mathf.Clamp01(intensity01) * 0.5f;
+            if (!_chant.isPlaying) _chant.Play();
+        }
+
+        /// <summary>The listening post: outdoor plant loops ducked by 30 % so the
+        /// town's side of the fence comes forward. One mixer state, no sim effect.</summary>
+        public void SetFenceMix(bool near)
+        {
+            _outdoorDuck = near ? 0.7f : 1f;
         }
 
         public static void PlaySiren(Vector3 pos, float seconds)
@@ -136,6 +163,37 @@ namespace Game.Runtime.World
             _dieselLoop = AudioClip.Create("diesel", data.Length, 1, rate, false);
             _dieselLoop.SetData(data, 0);
             return _dieselLoop;
+        }
+
+        /// <summary>A crowd heard through a fence: low-passed brown noise that
+        /// swells every 1.5 s under two soft drone tones. No words — the point
+        /// of the murmur is that the operator cannot make them out.</summary>
+        private static AudioClip ChantLoop()
+        {
+            if (_chantLoop != null) return _chantLoop;
+            const int rate = 22050;
+            var data = new float[rate * 3];
+            float brown = 0f, lp = 0f;
+            uint seed = 7331;
+            for (int i = 0; i < data.Length; i++)
+            {
+                seed = seed * 1664525u + 1013904223u;
+                float white = (seed >> 9) / 4194304f - 1f;
+                brown = Mathf.Clamp(brown + white * 0.05f, -1f, 1f) * 0.997f;
+                lp += (brown - lp) * 0.05f;
+                float t = i / (float)rate;
+                float swell = Mathf.Sin(t * Mathf.PI / 1.5f);
+                float env = 0.55f + 0.45f * swell * swell;
+                float drone = Mathf.Sin(t * 2f * Mathf.PI * 98f) * 0.15f
+                            + Mathf.Sin(t * 2f * Mathf.PI * 147f) * 0.10f;
+                data[i] = Mathf.Clamp(lp * env * 3f + drone, -1f, 1f) * 0.6f;
+            }
+            float offset = data[data.Length - 1] - data[0];
+            for (int i = 0; i < data.Length; i++)
+                data[i] -= offset * i / (data.Length - 1);
+            _chantLoop = AudioClip.Create("protestMurmur", data.Length, 1, rate, false);
+            _chantLoop.SetData(data, 0);
+            return _chantLoop;
         }
 
         /// <summary>A small diesel engine at idle: a low pulse train with a

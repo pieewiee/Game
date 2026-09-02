@@ -493,3 +493,29 @@ the bundling derate curve, the 10 °C Arrhenius rule, TRIR's 200,000-hour basis,
 the 25% night-shift premium, the availability-tier definitions and the fibre
 availability figures. The rest are invented, and the co-op and hazard constants
 are invented with no referent at all.
+
+---
+
+## Q27 — Placards are blank
+
+[art-bible.md](art-bible.md) §3 asks for placards that are "readable but held
+by shapes". The presence layer keeps the figures at the distance §3 itself
+demands — 14 m and more for walkers, 9 m for anyone standing at the gate —
+and at that range legible text on a 0.6 m board is either a smear of vertex
+colour or an invitation to walk up and read it, which §3 forbids ("never
+approachable"). The figures also step away when the player closes in, so a
+readable slogan would only ever be read on the run.
+
+The implementation therefore ships **blank boards** (Render on an Earth stick,
+two in three protesters carry one). The joke stays on the operator: whatever
+the placards say, the gate is not going to tell you.
+
+Options if you want the text back:
+
+| Option | Trade-off |
+|---|---|
+| **A. Blank boards** (current) | Reads as protest at any distance; says nothing |
+| **B. Three or four stock slogans as vertex-coloured block glyphs** | Legible only at ~5 m, which the retreat rule never allows; costs a glyph atlas |
+| **C. Slogans surface through the news ticker instead** | Keeps the distance rule; the text arrives through the Program's own channel, which is the tone the bible asks for |
+
+**Decision pending: blank placards for now.** C is the cheapest honest upgrade.
