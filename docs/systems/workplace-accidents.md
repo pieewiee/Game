@@ -12,14 +12,15 @@ bulletins, credibility burn, staff morale, GNI via `G_safety`.
 
 ## 1. Death, respawn, and why the death is not the punishment
 
-A player who dies respawns at the **visitor car park** as a new temp worker.
+A player who dies respawns at the **visitor bays on the street outside the
+pedestrian gate** as a new temp worker.
 
 ```
 on death:
     carried items       -> dropped at the point of death
     key card            -> dropped (physical; anyone can pick it up)
-    respawn location    -> visitor car park, outside the fence
-    respawn delay       -> 20 s walk back through the gate
+    respawn location    -> the visitor bays on the street outside the pedestrian gate
+    respawn delay       -> ~7 s walk back (24 m: pavement, gate, walkway, door)
     Standing            -> unchanged
     recordable_incidents += 1
 ```
@@ -261,7 +262,7 @@ Physical objects. Carried, dropped on death, swappable, confiscatable.
 
 - Lock a colleague **out** of the compartment they need.
 - Lock a colleague **in** — combine with §4.1.
-- Take a dead player's card off the floor before they walk back from the car park.
+- Take a dead player's card off the floor before they walk back from the visitor bays on the street outside the pedestrian gate.
 
 The certification requires that access be controlled. It does not require that it
 be controlled by the right people.
@@ -395,7 +396,7 @@ the floor next to the compartment with the most cable trays in it.
 
 | Failure | Why |
 |---|---|
-| Death becomes free slapstick and stops mattering | The 20 s walk and item drop are cheap. The TRIR and the mandatory bulletin are the real costs — if those are tuned too low, this whole system is a toy. |
+| Death becomes free slapstick and stops mattering | The ~7 s walk and item drop are cheap. The TRIR and the mandatory bulletin are the real costs — if those are tuned too low, this whole system is a toy. |
 | One player is murdered repeatedly | `NAMING_DECAY` does not apply to deaths. See [risks.md](../risks.md) §14. |
 | Suppression-door-holding ends friendships | It is designed to be the loudest, slowest, most attributable act available. Whether that is enough is a prototype question. |
 | The comedy overwhelms the simulation | Eleven of seventeen hazards are latent or property-only, on purpose. If sessions become pure slapstick, the ratio is wrong, not the hazards. |

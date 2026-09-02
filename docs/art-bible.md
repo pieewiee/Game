@@ -158,8 +158,8 @@ one place to spend real effort.
 | 4 | Warning beacon | High | Rotating amber; fault, throttle, delivery arriving |
 | 5 | Heat shimmer | Medium | Over cooling plant, scales with `Q_removed` |
 | 6 | Truck dust | Medium | Arrival on the unmade access road |
-| 7 | Rain / snow | Medium | Climate |
-| 8 | Fog | Medium | Morning, autumn |
+| 7 | Rain / snow | Medium | `TickReport.RainMmH`: streaks above 0.5 °C, flakes below; nothing under a roof. The sky behind it is palette-anchored: horizon `#BFD3E0` Sky by day, Ink at night, a dusk tint (0.93, 0.62, 0.40) toward the sun at the horizon crossing, Amber-shifted in autumn |
+| 8 | Fog | Medium | Fog curve: dawn bump × clear sky × autumn (radiation fog), wet air, cloud, snow; wind thins it. Colour = the sky's horizon so the fogged ground meets the dome. Clouds sink into it; the sun disc (Amber → white) and the moon (Sky tint) fade with a milder haze term |
 | 9 | Searchlight beam | Medium | Cheap cone mesh, not volumetrics. Contributes to the "compound" read. |
 | 10 | **Phone glow at the fence** | High | Tiny. Tells you `CAMERA_PRESENCE` is active. |
 

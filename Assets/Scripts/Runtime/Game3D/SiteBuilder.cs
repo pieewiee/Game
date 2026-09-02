@@ -44,18 +44,59 @@ namespace Game.Runtime.World
         /// and node-count queries iterate these instead of naming one hall.</summary>
         public List<Room> ComputeHalls = new List<Room>();
 
-        public Vector3 CarParkSpawn = new Vector3(-22, 0.1f, -20);
-        public Vector3 GensetPos = new Vector3(58, 0, -11);
-        public Vector3 DieselStackTop = new Vector3(60.2f, 4.6f, -11);
-        public Vector3 TransformerPos = new Vector3(64, 0, -11);
-        public Vector3 TurbinePos = new Vector3(84, 0, 34);
+        /// <summary>Where a body starts and respawns: on the public pavement
+        /// outside the pedestrian gate, facing the site (yaw 0 = +z).</summary>
+        public Vector3 StreetSpawn = new Vector3(55f, 0.3f, -24f);
+        // Genset and transformer stand in the east strip, off the line from
+        // the pedestrian gate to the door; the stack top follows the genset.
+        public Vector3 GensetPos = new Vector3(65, 0, -6);
+        public Vector3 DieselStackTop { get { return GensetPos + new Vector3(2.2f, 4.6f, 0); } }
+        public Vector3 TransformerPos = new Vector3(65, 0, 6);
+        public Vector3 TurbinePos = new Vector3(60, 0, 42);
+
+        // ---- Outside-the-fence anchors ------------------------------------
+        // Filled by SiteBuilder (fence, gates, turbine) and CityBuilder (roads,
+        // blocks, routes); read by the spawn, the NPC presence layer and the
+        // weather pass. Positions are surface heights unless stated.
+        public Vector3 PedestrianGate = new Vector3(55f, 0, -20f);   // gap centre on the fence line
+        public Vector3 VehicleGate = new Vector3(-12f, 0, 19f);       // dock axis, west line
+        public Vector3 SiteCentre = new Vector3(30f, 0, 15f);
+        // Kerb edge of the outer pavement (z -35..-32): the pavement's centre
+        // line is the residents' walking route and a stander keeps 0.8 m off it.
+        public Vector3 BusStopPos = new Vector3(30f, 0.15f, -32.6f);
+        /// <summary>The single perimeter fence rectangle (x0..x1, z0..z1).</summary>
+        public float FenceX0 = -12f, FenceX1 = 70f, FenceZ0 = -20f, FenceZ1 = 50f;
+        /// <summary>No silhouette stands or walks within this of a player rig.</summary>
+        public const float ResidentClearRadius = 6f;
+        /// <summary>Bearings (0 = +z, 90 = +x) of the residential blocks the
+        /// night glow and the wind read; the dense west block is first.</summary>
+        public List<float> TownBearingsDeg = new List<float>();
+        /// <summary>Open polylines on the OUTER pavements (never inside the
+        /// fence, never on the player's pavement) that distant figures ping-pong along.</summary>
+        public List<Vector3[]> ResidentRoutes = new List<Vector3[]>();
+        /// <summary>Standing spots on the verge outside the fence, facing SiteCentre.</summary>
+        public List<Vector3> FenceLineSpots = new List<Vector3>();
+        /// <summary>Picket arc outside the VEHICLE gate (deliveries are turned away there).</summary>
+        public List<Vector3> GateProtestSpots = new List<Vector3>();
+        /// <summary>Footprints of city blocks and furniture, for route validation.</summary>
+        public List<Bounds> TownObstacles = new List<Bounds>();
+        /// <summary>Unlit amber glow meshes; the weather/night pass toggles .enabled.</summary>
+        public Renderer StreetLampHeads;
+        public Renderer TownWindowsEarly, TownWindowsLate;
+        /// <summary>Rotor spins about its LOCAL z; the nacelle (its parent) yaws into the wind.</summary>
+        public Transform TurbineRotor, TurbineNacelle;
+
+        public bool InsideFence(Vector3 p)
+        {
+            return p.x >= FenceX0 && p.x <= FenceX1 && p.z >= FenceZ0 && p.z <= FenceZ1;
+        }
         public Vector3 DockPos = new Vector3(-4.5f, 0, 19f);
         public Vector3 ForkliftSpawn = new Vector3(-4.5f, 0.1f, 13f);   // drops onto the apron
         public Vector3 SkipPos = new Vector3(-4.5f, 0, 26f);
 
         public List<Vector3> RackSlots = new List<Vector3>();      // both halls
         public List<Vector3> PlantSlots = new List<Vector3>();     // outdoor cooling yard
-        public List<Vector3> SolarSlots = new List<Vector3>();     // south field
+        public List<Vector3> SolarSlots = new List<Vector3>();     // north field
 
         // Wall mounts for the physical controls.
         public Mount PullHallA, PullHall2, PullPlant, PullGoodsIn;
@@ -69,10 +110,13 @@ namespace Game.Runtime.World
     /// <summary>
     /// Builds the whole site from code: terrain, a THREE-LEVEL datacentre with
     /// the compartment programme the design documents actually call for, the
-    /// outdoor plant yard, two fence perimeters with gates, the solar field and
-    /// the town to the WEST — bearing 270°, exactly the TOWN_BEARING_DEG the
-    /// wind sector uses, so the plume drifting over the houses is the same
-    /// event the air channel charges for.
+    /// outdoor plant yard, the solar field and the turbine, all inside ONE blue
+    /// perimeter fence with a pedestrian gate on the entrance axis and a
+    /// vehicle gate on the dock axis. The datacentre stands in the MIDDLE of
+    /// town: the ring road and the four city blocks around the fence are
+    /// CityBuilder's, with the dense residential block to the WEST — bearing
+    /// 270°, exactly the TOWN_BEARING_DEG the wind sector uses, so the plume
+    /// drifting over the houses is the same event the air channel charges for.
     ///
     /// The rooms are not set dressing. Each is a suppression and EPO scope
     /// (construction-routing.md §2), and each hazard the docs specify lives
@@ -114,7 +158,7 @@ namespace Game.Runtime.World
             BuildStairs(root, refs);
             BuildYard(root, refs);
             BuildFences(root, refs);
-            BuildTown(root);
+            CityBuilder.Build(root, refs);
             CollectSlots(refs);
             DefineMounts(refs);
             return refs;
@@ -156,20 +200,16 @@ namespace Game.Runtime.World
             // The apron is four strips AROUND the building. One sheet under the
             // whole site sat 4.5 cm above every interior floor and painted over
             // the stair voids.
+            // It stops at the fence line: outside it is the city's verge and
+            // pavement, inside north of z 34 the solar field stands on grass.
             var apron = new ProcMesh();
-            ApronStrip(apron, -22f, X0, -26f, 34f);    // west: dock, forklift bay, car park
-            ApronStrip(apron, X1, 82f, -26f, 34f);     // east: genset and transformer
-            ApronStrip(apron, X0, X1, -26f, Z0);       // south: the cooling yard
+            ApronStrip(apron, -12f, X0, -20f, 34f);    // west: dock, forklift bay
+            ApronStrip(apron, X1, 70f, -20f, 34f);     // east: genset and transformer
+            ApronStrip(apron, X0, X1, -20f, Z0);       // south: the cooling yard
             ApronStrip(apron, X0, X1, Z1, 34f);        // north
-            // Both carry colliders: they stand 4.5 and 7 cm proud of the terrain
-            // datum, and a body walking on the terrain collider sank into them.
+            // It carries a collider: it stands 4.5 cm proud of the terrain
+            // datum, and a body walking on the terrain collider sank into it.
             MatLib.Spawn("Apron", apron.Build("apron"), root, Vector3.zero);
-
-            // The car park sits ON the apron, not IN it: coplanar faces z-fight,
-            // and this is the first surface every new body looks at.
-            var park = new ProcMesh();
-            park.Box(new Vector3(-22, 0.045f, -20), new Vector3(16, 0.05f, 12), Palette.Slate);
-            MatLib.Spawn("CarPark", park.Build("carpark"), root, Vector3.zero);
         }
 
         private static void ApronStrip(ProcMesh pm, float x0, float x1, float z0, float z1)
@@ -509,16 +549,7 @@ namespace Game.Runtime.World
             dm.Cylinder(new Vector3(2.2f, 3.6f, 0), 0.18f, 1.9f, 6, Palette.Ink);
             MatLib.Spawn("Genset", dm.Build("genset"), root, refs.GensetPos);
 
-            var tm = new ProcMesh();
-            tm.Cylinder(new Vector3(0, 12f, 0), 0.7f, 24f, 6, Palette.Render, 0.4f);
-            tm.Box(new Vector3(0, 24.2f, 0), new Vector3(1.2f, 1.0f, 2.2f), Palette.Render);
-            for (int i = 0; i < 3; i++)
-            {
-                float a = i * 120f * Mathf.Deg2Rad;
-                tm.Box(new Vector3(Mathf.Sin(a) * 5f, 24.2f + Mathf.Cos(a) * 5f, 1.4f),
-                    new Vector3(0.5f, 9f, 0.2f), Palette.Render);
-            }
-            MatLib.Spawn("Turbine", tm.Build("turbine"), root, refs.TurbinePos);
+            BuildTurbine(root, refs);
 
             // The loading dock and the skip that the packaging is supposed to
             // end up in (certifications-audits.md: combustible loading, −8).
@@ -536,30 +567,102 @@ namespace Game.Runtime.World
             skip.Box(new Vector3(0, 1.75f, 0), new Vector3(2.0f, 0.1f, 4.6f), Palette.Ink);
             MatLib.Spawn("Skip", skip.Build("skip"), root, refs.SkipPos);
 
-            // Guard post BESIDE the compound gate, window on the gateway. In
-            // the middle of it, it split the 8 m gate into two lanes.
+            // Guard post BESIDE the pedestrian gate, west of it, window on the
+            // gateway. In the middle of it, it split the gate into two lanes;
+            // its east face (52.5) stays clear of the gate post at 53.7.
             var guard = new ProcMesh();
             guard.Box(new Vector3(0, 1.3f, 0), new Vector3(2.4f, 2.6f, 2.4f), Palette.Render);
             guard.Box(new Vector3(0, 2.7f, 0), new Vector3(2.8f, 0.2f, 2.8f), Palette.Ink);
             guard.Box(new Vector3(-1.25f, 1.5f, 0), new Vector3(0.06f, 1.0f, 1.6f), Palette.PaleBlue);
-            MatLib.Spawn("GuardPost", guard.Build("guard"), root, new Vector3(30.2f, 0, -18.3f));
+            var hut = MatLib.Spawn("GuardPost", guard.Build("guard"), root, new Vector3(51.3f, 0, -18.3f));
+            hut.transform.rotation = Quaternion.Euler(0, 180f, 0);   // window (local -x) faces the gate
+
+            BuildGateKit(root, refs);
+        }
+
+        /// <summary>The walk from the pavement to the door, made obvious: a
+        /// painted strip from the pedestrian gate to the main entrance and the
+        /// gate leaf standing open against the east post. Neither collides —
+        /// the strip is paint, and a leaf with a collider is a gate.</summary>
+        private static void BuildGateKit(Transform root, SiteRefs refs)
+        {
+            var kit = new ProcMesh();
+            float x = refs.PedestrianGate.x, z0 = refs.FenceZ0;
+            // Bottom face 5 mm INTO the apron (top 0.045): coplanar it z-fights.
+            kit.Box(new Vector3(x, 0.05f, (z0 + Z0) / 2f), new Vector3(2.6f, 0.02f, Z0 - z0 - 0.3f), Palette.Render);
+            MatLib.Spawn("Walkway", kit.Build("walkway"), root, Vector3.zero, false);
+
+            // The leaf's east face sits 1 cm inside the east gate post (face
+            // 56.24): a leaf with air between it and its post is a loose panel,
+            // and this is the first thing the spawn looks at.
+            var leaf = new ProcMesh();
+            leaf.Box(new Vector3(x + 1.22f, 0.6f, z0 + 0.6f), new Vector3(0.06f, 1.2f, 1.2f), Palette.ProgramBlue);
+            MatLib.Spawn("GateLeaf", leaf.Build("gateleaf"), root, Vector3.zero, false);
+        }
+
+        /// <summary>Tower → Nacelle → Rotor → three Blades, as a transform
+        /// chain: the rotor plane is the rotor's local x-y and it spins about
+        /// its local z, the nacelle yaws about its y. Boxes are axis-aligned, so
+        /// each blade is its own child, rotated by its transform. The blades
+        /// used to be three loose boxes floating beside the tower.</summary>
+        private static void BuildTurbine(Transform root, SiteRefs refs)
+        {
+            var tower = new ProcMesh();
+            tower.Cylinder(new Vector3(0, 12f, 0), 0.7f, 24f, 6, Palette.Render, 0.4f);
+            var turbine = MatLib.Spawn("Turbine", tower.Build("turbine"), root, refs.TurbinePos);
+
+            var nm = new ProcMesh();
+            nm.Box(Vector3.zero, new Vector3(1.2f, 1.0f, 2.2f), Palette.Slate);
+            var nacelle = MatLib.Spawn("Nacelle", nm.Build("nacelle"), turbine.transform, new Vector3(0, 24.2f, 0), false);
+
+            // The hub starts 0.1 m proud of the nacelle face (1.1): coplanar
+            // there, its corners would poke through once it turns. A shaft
+            // bridges the gap, buried 0.1 m in both parts (nacelle-local z
+            // 1.0..1.3); its corners at r 0.35 stay inside the 1.0 m nacelle
+            // section while it spins.
+            var hm = new ProcMesh();
+            hm.Box(new Vector3(0, 0, -0.3f), new Vector3(0.5f, 0.5f, 0.3f), Palette.Slate);
+            hm.Box(new Vector3(0, 0, 0.05f), new Vector3(0.9f, 0.9f, 0.6f), Palette.Render);
+            var rotor = MatLib.Spawn("Rotor", hm.Build("hub"), nacelle.transform, new Vector3(0, 0, 1.45f), false);
+
+            // Blade root at y 0.35 sits inside the hub (half-height 0.45).
+            for (int i = 0; i < 3; i++)
+            {
+                var bm = new ProcMesh();
+                bm.Box(new Vector3(0, 4.675f, 0), new Vector3(0.5f, 8.65f, 0.2f), Palette.Render);
+                var blade = MatLib.Spawn("Blade" + i, bm.Build("blade"), rotor.transform, Vector3.zero, false);
+                blade.transform.localRotation = Quaternion.Euler(0, 0, -120f * i);
+            }
+
+            refs.TurbineRotor = rotor.transform;
+            refs.TurbineNacelle = nacelle.transform;
         }
 
         // ------------------------------------------------------------------
         // Fences
         // ------------------------------------------------------------------
 
+        /// <summary>An opening in one side of a fence: Side 'N','S','E' or 'W',
+        /// A0..A1 along that side's axis (x for N/S, z for E/W).</summary>
+        public struct FenceGate
+        {
+            public char Side;
+            public float A0, A1;
+        }
+
         private static void BuildFences(Transform root, SiteRefs refs)
         {
-            // Outer site boundary: solar field and turbine inside, visitor car
-            // park outside, one gate on the west facing the car park.
-            Fence(root, "Outer", -12f, 92f, -34f, 42f, 2.2f, 'W', -24f, -16f, Palette.Slate);
-            // Inner compound: the datacentre itself, gated from the yard.
-            Fence(root, "Compound", -10f, 68f, -20f, 34f, 2.6f, 'S', 20f, 28f, Palette.ProgramBlue);
+            // One perimeter: the pedestrian gate on the entrance axis (x 55,
+            // the main door), the vehicle gate on the dock axis (z 19). Two
+            // nested fences meant two gates between any outside spawn and the
+            // door, whatever else the plan did.
+            Fence(root, "Perimeter", refs.FenceX0, refs.FenceX1, refs.FenceZ0, refs.FenceZ1, 2.6f, Palette.ProgramBlue,
+                new FenceGate { Side = 'S', A0 = 53.7f, A1 = 56.3f },
+                new FenceGate { Side = 'W', A0 = 14f, A1 = 24f });
         }
 
         private static void Fence(Transform root, string name, float x0, float x1,
-            float z0, float z1, float h, char gateSide, float gate0, float gate1, Color colour)
+            float z0, float z1, float h, Color colour, params FenceGate[] gates)
         {
             var posts = new ProcMesh();
             var mesh = new ProcMesh();
@@ -606,14 +709,20 @@ namespace Game.Runtime.World
                 for (int i = 0; i < n; i++) Panel(alongX, a0 + i * step, a0 + (i + 1) * step, fixedCoord, side);
             }
 
+            // A side breaks into one run per stretch between its gates; each
+            // run ends on a post, so every gate edge gets one and the gap none.
             void Side(bool alongX, float a0, float a1, float fixedCoord, char side)
             {
-                if (gateSide == side)
+                var cuts = new List<FenceGate>();
+                foreach (FenceGate g in gates) if (g.Side == side) cuts.Add(g);
+                cuts.Sort((p, q) => p.A0.CompareTo(q.A0));
+                float a = a0;
+                foreach (FenceGate g in cuts)
                 {
-                    Run(alongX, a0, gate0, fixedCoord, side);
-                    Run(alongX, gate1, a1, fixedCoord, side);
+                    Run(alongX, a, g.A0, fixedCoord, side);
+                    a = g.A1;
                 }
-                else Run(alongX, a0, a1, fixedCoord, side);
+                Run(alongX, a, a1, fixedCoord, side);
             }
 
             Side(true, x0, x1, z0, 'S');
@@ -622,16 +731,19 @@ namespace Game.Runtime.World
             Side(false, z0, z1, x1, 'E');
 
             // Amber caps on the gate posts: this is the way through.
-            Vector3 ga, gb;
-            switch (gateSide)
+            foreach (FenceGate g in gates)
             {
-                case 'W': ga = new Vector3(x0, h + 0.15f, gate0); gb = new Vector3(x0, h + 0.15f, gate1); break;
-                case 'E': ga = new Vector3(x1, h + 0.15f, gate0); gb = new Vector3(x1, h + 0.15f, gate1); break;
-                case 'N': ga = new Vector3(gate0, h + 0.15f, z1); gb = new Vector3(gate1, h + 0.15f, z1); break;
-                default: ga = new Vector3(gate0, h + 0.15f, z0); gb = new Vector3(gate1, h + 0.15f, z0); break;
+                Vector3 ga, gb;
+                switch (g.Side)
+                {
+                    case 'W': ga = new Vector3(x0, h + 0.15f, g.A0); gb = new Vector3(x0, h + 0.15f, g.A1); break;
+                    case 'E': ga = new Vector3(x1, h + 0.15f, g.A0); gb = new Vector3(x1, h + 0.15f, g.A1); break;
+                    case 'N': ga = new Vector3(g.A0, h + 0.15f, z1); gb = new Vector3(g.A1, h + 0.15f, z1); break;
+                    default: ga = new Vector3(g.A0, h + 0.15f, z0); gb = new Vector3(g.A1, h + 0.15f, z0); break;
+                }
+                posts.Box(ga, new Vector3(0.24f, 0.3f, 0.24f), Palette.Amber);
+                posts.Box(gb, new Vector3(0.24f, 0.3f, 0.24f), Palette.Amber);
             }
-            posts.Box(ga, new Vector3(0.24f, 0.3f, 0.24f), Palette.Amber);
-            posts.Box(gb, new Vector3(0.24f, 0.3f, 0.24f), Palette.Amber);
 
             MatLib.Spawn("Fence" + name, posts.Build("fence"), root, Vector3.zero, false);
             MatLib.Spawn("Fence" + name + "Mesh", mesh.Build("fenceMesh"), root, Vector3.zero, false, true);
@@ -647,26 +759,8 @@ namespace Game.Runtime.World
         }
 
         // ------------------------------------------------------------------
-        // Town, slots, mounts
+        // Slots, mounts (the town around the site lives in CityBuilder)
         // ------------------------------------------------------------------
-
-        private static void BuildTown(Transform root)
-        {
-            var pm = new ProcMesh();
-            var rnd = new System.Random(1234);
-            for (int i = 0; i < 14; i++)
-            {
-                float x = -46f - (i % 4) * 11f;
-                float z = -26f + (i / 4) * 14f + (float)rnd.NextDouble() * 4f;
-                float w = 6f + (float)rnd.NextDouble() * 3f;
-                float d = 5f + (float)rnd.NextDouble() * 3f;
-                pm.Box(new Vector3(x, 1.6f, z), new Vector3(w, 3.2f, d), Palette.Render);
-                pm.Box(new Vector3(x, 3.6f, z), new Vector3(w + 0.4f, 0.9f, d + 0.4f), Palette.Earth);
-                pm.Cylinder(new Vector3(x + w, 1.2f, z + d), 0.2f, 2.4f, 5, Palette.Earth);
-                pm.Cylinder(new Vector3(x + w, 3.4f, z + d), 1.6f, 2.6f, 5, Palette.Foliage, 0.2f);
-            }
-            MatLib.Spawn("Town", pm.Build("town"), root, Vector3.zero);
-        }
 
         private static void CollectSlots(SiteRefs refs)
         {
@@ -686,8 +780,10 @@ namespace Game.Runtime.World
             // chillers stand in the yard south of the building, not in a room.
             for (int i = 0; i < 8; i++)
                 refs.PlantSlots.Add(new Vector3(8f + (i % 4) * 7f, 0, -8f - (i / 4) * 7f));
+            // Solar rows on the grass north of the apron, inside the fence:
+            // the north field, clear of the walking line from the gate.
             for (int i = 0; i < 12; i++)
-                refs.SolarSlots.Add(new Vector3(4f + (i % 6) * 9f, 0, -26f - (i / 6) * 6f));
+                refs.SolarSlots.Add(new Vector3(4f + (i % 6) * 9f, 0, 38f + (i / 6) * 6f));
         }
 
         /// <summary>Every control mounted ON a wall, facing into its room.</summary>
@@ -717,8 +813,9 @@ namespace Game.Runtime.World
             refs.Breaker = new Mount(new Vector3(XSpine - T / 2f - d, y + 1.4f, 17.5f), 270f);
             refs.VentFan = new Mount(new Vector3(XSpine - T / 2f - d, y + 1.4f, 22f), 270f);
             refs.Eyewash = new Mount(new Vector3(XSpine - T / 2f - d, y + 1.0f, 26f), 270f);
-            // The start lever on the genset's north face, facing the yard.
-            refs.DieselStart = new Mount(new Vector3(58f, y + 1.2f, -9.4f), 0f);
+            // The start lever on the genset's north face (body half-depth
+            // 1.4, so 0.2 m proud), facing the open apron.
+            refs.DieselStart = new Mount(new Vector3(refs.GensetPos.x, refs.GensetPos.y + 1.2f, refs.GensetPos.z + 1.6f), 0f);
 
             refs.CabinetPos = new Vector3(2.0f, y, 24f);      // goods receiving
             refs.GasBottles = new Vector3(47.7f, y, 26f);     // cylinder room

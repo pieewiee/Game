@@ -12,7 +12,7 @@ and what means the blame ledger can record the name and never the intent.
 
 | Class | Meaning |
 |---|---|
-| **FATAL** | Player respawns at the visitor car park, drops carried items, TRIR +1 |
+| **FATAL** | Player respawns at the visitor bays on the street outside the pedestrian gate, drops carried items, TRIR +1 |
 | **INJ** | 90 s incapacitation, items kept, TRIR +1 |
 | **PROP** | Property damage only, no recordable incident |
 | **LATENT** | No immediate effect. Recordable only if it later hurts someone. |
