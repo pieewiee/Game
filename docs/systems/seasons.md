@@ -48,7 +48,7 @@ exceed dry-bulb; a bug there silently makes evaporative cooling free.
 ### Wind direction
 
 A seasonal rose: south-westerlies dominate in winter, **easterlies markedly more
-common in summer.** The town occupies a fixed 90° sector from the site.
+common in summer.** The houses west of the site occupy a 90° sector (270° ± 45°); the flats north of it a second, 60° sector (0° ± 30°) with its own, smaller multiplier.
 
 This is not decoration. It is the multiplier on the air indicator
 (`WIND_TOWARD_MULT` 3.0 vs `WIND_AWAY_MULT` 0.3) and therefore a factor of ten on

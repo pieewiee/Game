@@ -90,6 +90,7 @@ namespace Game.Sim
             ClimateSample c = Climate.Sample(s.Tick, s.DroughtActive);
             r.TdbC = c.TdbC; r.TwbC = c.TwbC; r.WindSpeedMs = c.WindSpeedMs;
             r.WindTowardDeg = c.WindTowardDeg; r.WindTowardTown = c.WindTowardTown;
+            r.WindTowardSector = c.TownSector;
             r.IrradianceFrac = c.IrradianceFrac; r.WindCf = c.WindCf;
             r.DroughtActive = c.DroughtActive; r.HeatwaveActive = c.HeatwaveActive;
             r.DunkelflauteActive = c.DunkelflauteActive; r.ScarcityMult = c.ScarcityMult;

@@ -10,7 +10,7 @@ namespace Game.Sim
         /// Neighbor Index, the escalation ladder, sabotage exposure and the
         /// referendum. docs/systems/nuisance.md and docs/systems/sentiment.md.
         /// </summary>
-        private void StepCommunity(in ClimateSample c, ref TickReport r)
+        internal void StepCommunity(in ClimateSample c, ref TickReport r)
         {
             var s = State;
             var ci = CultureInfo.InvariantCulture;
@@ -34,7 +34,8 @@ namespace Game.Sim
             nNoise = Clamp01x100(nNoise);
 
             // Air: diesel exhaust, gated by the simulated wind direction.
-            double windMult = c.WindTowardTown ? B.WindTowardMult : B.WindAwayMult;
+            // Two residential sectors: the west town (1) and the smaller, farther north apartments (2).
+            double windMult = c.TownSector == 1 ? B.WindTowardMult : c.TownSector == 2 ? B.Town2WindMult : B.WindAwayMult;
             double nAir = Clamp01x100(B.AirEmissionFactor * (r.DieselKwh / 1000.0) * windMult);
 
             // Water: the site's draw against the town's, sharpened by drought.

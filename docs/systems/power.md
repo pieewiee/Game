@@ -184,7 +184,7 @@ N_air   += diesel_kWh * emission_factor * wind_mult
 N_noise += diesel_noise_points (before NIGHT_NOISE_MULT)
 ```
 
-`wind_mult` is `WIND_TOWARD_MULT` 3.0 or `WIND_AWAY_MULT` 0.3. `HALFLIFE_AIR` is
+`wind_mult` is `WIND_TOWARD_MULT` 3.0 into the west sector, `TOWN2_WIND_MULT` 2.0 into the north flats, else `WIND_AWAY_MULT` 0.3. `HALFLIFE_AIR` is
 90 days — a week of diesel in August still depresses GNI when the T3 permit is
 re-checked in November.
 

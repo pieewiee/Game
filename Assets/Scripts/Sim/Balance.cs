@@ -226,6 +226,7 @@ namespace Game.Sim
         public double NightNoiseMult { get { return S("NIGHT_NOISE_MULT"); } }
         public double WindTowardMult { get { return S("WIND_TOWARD_MULT"); } }
         public double WindAwayMult { get { return S("WIND_AWAY_MULT"); } }
+        public double Town2WindMult { get { return S("TOWN2_WIND_MULT"); } }
         public double PriceSensitivity { get { return S("PRICE_SENSITIVITY"); } }
         public double PriceBaselineAdaptPerDay { get { return S("PRICE_BASELINE_ADAPT_PER_DAY"); } }
         public double NoiseFanRefKw { get { return S("NOISE_FAN_REF_KW"); } }
@@ -272,6 +273,8 @@ namespace Game.Sim
         // Climate
         public double TownBearingDeg { get { return S("TOWN_BEARING_DEG"); } }
         public double TownSectorHalfDeg { get { return S("TOWN_SECTOR_HALF_DEG"); } }
+        public double Town2BearingDeg { get { return S("TOWN2_BEARING_DEG"); } }
+        public double Town2SectorHalfDeg { get { return S("TOWN2_SECTOR_HALF_DEG"); } }
         public double TempSeasonalMeanC { get { return S("TEMP_SEASONAL_MEAN"); } }
         public double TempSeasonalAmpC { get { return S("TEMP_SEASONAL_AMP"); } }
         public double TempDiurnalAmpC { get { return S("TEMP_DIURNAL_AMP"); } }
@@ -324,7 +327,7 @@ namespace Game.Sim
             "INFERENCE_DIURNAL_AMP", "SPOT_DEPTH_MEAN_KW", "SPOT_DEPTH_VOLATILITY",
             "W_NOISE", "W_AIR", "W_WATER", "W_PRICE", "W_VISUAL",
             "HALFLIFE_NOISE", "HALFLIFE_AIR", "HALFLIFE_WATER", "HALFLIFE_PRICE", "HALFLIFE_VISUAL",
-            "NIGHT_NOISE_MULT", "WIND_TOWARD_MULT", "WIND_AWAY_MULT",
+            "NIGHT_NOISE_MULT", "WIND_TOWARD_MULT", "WIND_AWAY_MULT", "TOWN2_WIND_MULT",
             "PRICE_SENSITIVITY", "PRICE_BASELINE_ADAPT_PER_DAY",
             "NOISE_FAN_REF_KW", "NOISE_CHILLER_WEIGHT", "NOISE_DIESEL_WEIGHT",
             "NOISE_TURBINE_WEIGHT", "TURBINE_UNIT_KW", "NOISE_SCALE",
@@ -339,7 +342,7 @@ namespace Game.Sim
             "NAMING_GNI_EFFECT", "NAMING_DECAY",
             "ACCIDENT_GNI_PENALTY", "ACCIDENT_HALFLIFE_DAYS",
             "SUPPRESSION_DRIVE_LOSS", "ROUTE_LOSS_PCT_PER_100M", "EPO_OUTAGE_HOURS",
-            "TOWN_BEARING_DEG", "TOWN_SECTOR_HALF_DEG",
+            "TOWN_BEARING_DEG", "TOWN_SECTOR_HALF_DEG", "TOWN2_BEARING_DEG", "TOWN2_SECTOR_HALF_DEG",
             "TEMP_SEASONAL_MEAN", "TEMP_SEASONAL_AMP", "TEMP_DIURNAL_AMP", "TEMP_NOISE_AMP",
             "WIND_DIR_NOISE_DEG", "HEATWAVE_THRESHOLD",
             "DUNKELFLAUTE_WIND_CF", "DUNKELFLAUTE_IRRADIANCE",

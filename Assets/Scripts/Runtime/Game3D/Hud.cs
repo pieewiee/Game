@@ -182,7 +182,7 @@ namespace Game.Runtime.World
             GUI.Label(new Rect(centre.x - 50, centre.y + 28, 100, 20),
                 "wind " + r.WindSpeedMs.ToString("0.0", CultureInfo.InvariantCulture) + " m/s", _small);
             GUI.Label(new Rect(centre.x - 50, centre.y + 44, 100, 20),
-                r.WindTowardTown ? "TOWARD TOWN" : "away from town", _small);
+                r.WindTowardSector == 2 ? "TOWARD THE FLATS" : r.WindTowardTown ? "TOWARD TOWN" : "away from town", _small);
             GUI.color = Color.white;
         }
     }

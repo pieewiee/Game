@@ -32,7 +32,8 @@ namespace Game.Sim
         public double TwbC;             // wet-bulb °C, never above TdbC
         public double WindSpeedMs;      // m/s
         public double WindTowardDeg;    // bearing the wind blows TOWARD, deg
-        public bool WindTowardTown;     // inside the town sector
+        public bool WindTowardTown;     // inside either residential sector (TownSector != 0)
+        public int TownSector;          // 0 away, 1 west houses, 2 north apartments
         public double WindCf;           // turbine capacity factor 0..1
         public double IrradianceFrac;   // fraction of kWp produced this hour
         public bool WetDay;             // did it rain today
@@ -149,11 +150,29 @@ namespace Game.Sim
             return dir;
         }
 
+        /// <summary>
+        /// Which residential sector the wind blows into: 1 = the west town
+        /// (TOWN_BEARING_DEG ± TOWN_SECTOR_HALF_DEG), 2 = the north apartment
+        /// blocks (TOWN2_*), 0 = neither. Sector 1 wins if both match.
+        /// </summary>
+        public int TownSector(double windTowardDeg)
+        {
+            if (InSector(windTowardDeg, _b.TownBearingDeg, _b.TownSectorHalfDeg)) return 1;
+            if (InSector(windTowardDeg, _b.Town2BearingDeg, _b.Town2SectorHalfDeg)) return 2;
+            return 0;
+        }
+
         public bool IsTowardTown(double windTowardDeg)
         {
-            double diff = Math.Abs(windTowardDeg - _b.TownBearingDeg);
+            return TownSector(windTowardDeg) != 0;
+        }
+
+        private static bool InSector(double deg, double bearingDeg, double halfDeg)
+        {
+            double diff = Math.Abs(deg - bearingDeg);
+            diff = diff % 360.0;
             if (diff > 180.0) diff = 360.0 - diff;
-            return diff <= _b.TownSectorHalfDeg;
+            return diff <= halfDeg;
         }
 
         // --- solar ----------------------------------------------------------
@@ -245,7 +264,8 @@ namespace Game.Sim
             s.TwbC = Twb(tick, s.TdbC);
             s.WindSpeedMs = WindSpeed(tick);
             s.WindTowardDeg = WindTowardDeg(tick);
-            s.WindTowardTown = IsTowardTown(s.WindTowardDeg);
+            s.TownSector = TownSector(s.WindTowardDeg);
+            s.WindTowardTown = s.TownSector != 0;
             s.WindCf = WindCf(tick);
             s.IrradianceFrac = IrradianceFrac(tick);
             s.WetDay = IsWetDay(SimClock.DayIndex(tick));

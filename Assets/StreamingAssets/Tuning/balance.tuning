@@ -101,6 +101,7 @@ HALFLIFE_VISUAL = 30
 NIGHT_NOISE_MULT = 2.5
 WIND_TOWARD_MULT = 3.0
 WIND_AWAY_MULT = 0.3
+TOWN2_WIND_MULT = 2.0              # air channel when the wind blows into the north sector (fewer, farther residents than the west)
 PRICE_SENSITIVITY = 2.5            # channel pts per 1% resident price rise ≈ 2.5
 PRICE_BASELINE_ADAPT_PER_DAY = 0.01
 NOISE_FAN_REF_KW = 60
@@ -131,6 +132,8 @@ LOCAL_HIRE_GNI_PER_FTE = 0.9
 # --- Climate ---------------------------------------------------------------
 TOWN_BEARING_DEG = 270             # the town lies west of the site
 TOWN_SECTOR_HALF_DEG = 45
+TOWN2_BEARING_DEG = 0              # the apartment blocks north of the site
+TOWN2_SECTOR_HALF_DEG = 30
 TEMP_SEASONAL_MEAN = 14            # °C
 TEMP_SEASONAL_AMP = 12             # Jan mean ≈ 2, Jul mean ≈ 26
 TEMP_DIURNAL_AMP = 4
