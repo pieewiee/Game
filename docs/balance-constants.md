@@ -150,7 +150,7 @@ All **U**. No external anchor exists for any of it.
 | `HALFLIFE_PRICE` | 60 | days |
 | `HALFLIFE_VISUAL` | 30 | days |
 | `NIGHT_NOISE_MULT` | 2.5 | × between 22:00–06:00 (that a night penalty exists is standard in noise regulation) |
-| `WIND_TOWARD_MULT` / `WIND_AWAY_MULT` | 3.0 / 0.3 | × on the air channel |
+| `WIND_TOWARD_MULT` / `TOWN2_WIND_MULT` / `WIND_AWAY_MULT` | 3.0 / 2.0 / 0.3 | × on the air channel: wind into the west houses (270° ± 45°), into the north apartments (0° ± 30°), or elsewhere |
 | `FILMED_MULT` | 2.5 | × on any nuisance sampled while residents are filming |
 
 ## 7. Good Neighbor Index (Sentiment)

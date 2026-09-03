@@ -1,0 +1,7 @@
+"Protesting Crowd, Climate Strike, Guildford, 01-01.wav" by InspectorJ (Jonathan Shaw)
+https://freesound.org/people/InspectorJ/sounds/485621/
+Licence: Creative Commons Zero (CC0 1.0), http://creativecommons.org/publicdomain/zero/1.0/
+Vocal chanting from a crowd of several hundred at a climate strike, 1:15, recorded 2019.
+This copy is Freesound's high-quality MP3 preview (128 kbit/s, 44.1 kHz stereo); the
+original is a 24-bit WAV behind a Freesound login. The game plays it low-passed at the
+vehicle gate so the words stay unintelligible (docs/art-bible.md, sound).

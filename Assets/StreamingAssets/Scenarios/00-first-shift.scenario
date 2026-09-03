@@ -1,0 +1,36 @@
+# =============================================================================
+# First shift: the TEACHING start state (M6). This is what the game boots into.
+#
+# A small, honest site with room to grow: two racks humming, one free-cooling
+# unit, one evap tower, a genset by the lever, empty plant and solar slots
+# that invite building, and one modest contract paying the bills. Nothing is
+# scripted after tick 0 — the year belongs to the players. The scripted
+# balance-test year lives in baseline-year.scenario.
+#
+# Teaching intent (player-experience.md): the site itself is the tutorial.
+# The first hour teaches walking and reading the HUD; the first day teaches
+# the debug console; the first accident teaches everything else.
+# =============================================================================
+SEED = 7
+TICKS = 8760
+
+NODES = 20                  # two racks, 200 kW billable ceiling
+GRID_TIER = 1               # 1000 kW cap — tiers are a later ambition
+FREECOOL_KWTH = 250         # one unit on the pad
+EVAP_KWTH = 250             # one tower
+CHILLER_KWTH = 0            # summer will make the case for one
+SOLAR_KWP = 0               # the solar slots start empty on purpose
+WIND_KW = 0
+BATTERY_KWH = 0
+BATTERY_KW = 0
+DIESEL_KW = 250             # one genset, so the lever does something
+DIESEL_POLICY = ProtectSla
+LOCAL_FTE = 4
+VISUAL_POINTS = 10
+CASH = 500000
+REPUTATION = 58             # just under the training gate: the first goal
+SPOT_ENABLED = 1
+
+# One steady floor contract from day one: 100 kW for ~11.5 months.
+# Income without pressure — the pressure is what you build next.
+AT 0 SIGN_INFERENCE 100 350

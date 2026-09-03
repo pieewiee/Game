@@ -13,7 +13,7 @@ someone is always touching something.
 
 ## The first 15 minutes — roughly five in-game days
 
-**Opening state.** A converted agricultural building on the edge of town.
+**Opening state.** A converted agricultural building in the middle of town.
 `CAP` = 250 kW (the farm's existing connection). €800,000 and a small credit
 line. `GNI_START` = 62 — the town is *mildly positive*, because you have not done
 anything yet and someone has finally bought the old barn. `REPUTATION_START` = 50.

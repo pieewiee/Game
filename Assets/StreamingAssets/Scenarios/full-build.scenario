@@ -1,0 +1,34 @@
+# =============================================================================
+# Full build ("Vollausbau"): 00-first-shift with every slot already occupied.
+#
+# The end state of the debug console's "Apply full build-out" button, as a
+# scenario: 32 racks, the 8-slot yard at the target mix (3 free-cooling,
+# 2 evap, 2 chiller, 1 battery pack), all 12 solar rows, a 1000 kW genset
+# line. Useful for looking at the finished site, for stress-testing power and
+# cooling at the ceiling, and for checking that the planner adds NOTHING here
+# (DebugPresetTests.FullBuildScenarioIsAlreadyFullyBuilt). Same seed, same contract
+# and same cash as the teaching start — only the assets differ. The tier is
+# deliberately still T1: a build-out is not a permit.
+# =============================================================================
+SEED = 7
+TICKS = 8760
+
+NODES = 320                 # 32 racks x 10 nodes, 3200 kW billable ceiling
+GRID_TIER = 1               # 1000 kW cap: the full site outgrows its permit
+FREECOOL_KWTH = 750         # three units
+EVAP_KWTH = 500             # two towers
+CHILLER_KWTH = 500          # two chillers: the water-free summer capacity
+SOLAR_KWP = 600             # twelve rows of 50 kWp
+WIND_KW = 0
+BATTERY_KWH = 250           # one pack
+BATTERY_KW = 100
+DIESEL_KW = 1000            # the planner's diesel target
+DIESEL_POLICY = ProtectSla
+LOCAL_FTE = 4
+VISUAL_POINTS = 10
+CASH = 500000
+REPUTATION = 58
+SPOT_ENABLED = 1
+
+# The same steady floor contract as the first shift.
+AT 0 SIGN_INFERENCE 100 350

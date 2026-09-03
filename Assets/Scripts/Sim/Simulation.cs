@@ -90,9 +90,11 @@ namespace Game.Sim
             ClimateSample c = Climate.Sample(s.Tick, s.DroughtActive);
             r.TdbC = c.TdbC; r.TwbC = c.TwbC; r.WindSpeedMs = c.WindSpeedMs;
             r.WindTowardDeg = c.WindTowardDeg; r.WindTowardTown = c.WindTowardTown;
+            r.WindTowardSector = c.TownSector;
             r.IrradianceFrac = c.IrradianceFrac; r.WindCf = c.WindCf;
             r.DroughtActive = c.DroughtActive; r.HeatwaveActive = c.HeatwaveActive;
             r.DunkelflauteActive = c.DunkelflauteActive; r.ScarcityMult = c.ScarcityMult;
+            r.CloudFrac = c.CloudFrac; r.RainMmH = c.RainMmH;
 
             if (s.RunOver)
             {
@@ -228,6 +230,102 @@ namespace Game.Sim
                     break;
                 case CommandKind.SetVisualPoints:
                     s.VisualPoints = cmd.A;
+                    break;
+                case CommandKind.AddVisualPoints:
+                    // Delta, so damage from any machine composes (the forklift
+                    // into the fence, per workplace-accidents.md §4.4).
+                    s.VisualPoints = Math.Max(0.0, s.VisualPoints + cmd.A);
+                    break;
+
+                // --- Milestones 3-5 -----------------------------------------
+                case CommandKind.AddPlant:
+                {
+                    // DELTA, not absolute: concurrent placements from several
+                    // players (or several clicks in one paused tick) must
+                    // compose without anyone reading current state first.
+                    var kind = (PlantKind)(int)cmd.A;
+                    double d = cmd.B;
+                    double v;
+                    switch (kind)
+                    {
+                        case PlantKind.FreecoolKwTh: v = s.FreecoolKwTh = Math.Max(0.0, s.FreecoolKwTh + d); break;
+                        case PlantKind.EvapKwTh: v = s.EvapKwTh = Math.Max(0.0, s.EvapKwTh + d); break;
+                        case PlantKind.ChillerKwTh: v = s.ChillerKwTh = Math.Max(0.0, s.ChillerKwTh + d); break;
+                        case PlantKind.SolarKwp: v = s.SolarKwp = Math.Max(0.0, s.SolarKwp + d); break;
+                        case PlantKind.WindKw: v = s.WindKw = Math.Max(0.0, s.WindKw + d); break;
+                        case PlantKind.BatteryKwh: v = s.BatteryKwhCap = Math.Max(0.0, s.BatteryKwhCap + d); break;
+                        case PlantKind.BatteryKw: v = s.BatteryKw = Math.Max(0.0, s.BatteryKw + d); break;
+                        case PlantKind.DieselKw: v = s.DieselKw = Math.Max(0.0, s.DieselKw + d); break;
+                        default: v = 0; break;
+                    }
+                    s.Log("facility", kind + " now " + v.ToString("0", CultureInfo.InvariantCulture));
+                    break;
+                }
+                case CommandKind.AddRouteLossKw:
+                    // Delta per finished run; the total never goes negative.
+                    s.RouteLossKw = Math.Max(0.0, s.RouteLossKw + cmd.A);
+                    break;
+                case CommandKind.DestroyNodes:
+                {
+                    int destroy = Math.Min((int)cmd.A, s.NodesInstalled);
+                    if (destroy <= 0) break;
+                    s.NodesInstalled -= destroy;
+                    s.Log("facility", destroy + " nodes destroyed, fleet now " + s.NodesInstalled);
+                    break;
+                }
+                case CommandKind.EpoTrip:
+                {
+                    s.OutageFrac = Math.Max(0.0, Math.Min(1.0, cmd.A));
+                    s.OutageUntilTick = s.Tick + Math.Max(1L, (long)cmd.B);
+                    s.Log("facility", "EPO: " + (s.OutageFrac * 100).ToString("0", CultureInfo.InvariantCulture) +
+                        "% of load de-energised for " + Math.Max(1L, (long)cmd.B) + " h");
+                    break;
+                }
+                case CommandKind.SetCoolingDerate:
+                    s.CoolingDerateMult = Math.Max(0.0, Math.Min(1.0, cmd.A));
+                    break;
+                case CommandKind.SetWaterValve:
+                    s.WaterValveFrac = Math.Max(0.0, Math.Min(1.0, cmd.A));
+                    break;
+                case CommandKind.SetSetpoint:
+                    s.SetpointC = cmd.A;
+                    break;
+                case CommandKind.SetDieselManual:
+                    s.DieselManualOn = cmd.A >= 0.5;
+                    s.Log("power", s.DieselManualOn ? "Diesel lever: MANUAL RUN" : "Diesel lever released");
+                    break;
+                case CommandKind.IssueBulletin:
+                {
+                    bool named = cmd.A >= 0.5;
+                    double effect;
+                    if (s.Credibility < B.CredibilityMockeryThreshold)
+                    {
+                        // Below the mockery line, bulletins COST goodwill.
+                        effect = B.BulletinBackfire;
+                    }
+                    else
+                    {
+                        effect = B.BulletinBaseEffect * s.Credibility;
+                        if (named)
+                        {
+                            effect += B.NamingGniEffect * Math.Pow(B.NamingDecay, s.NamingCount);
+                            s.NamingCount++;
+                        }
+                    }
+                    s.Gni = Math.Max(0.0, Math.Min(100.0, s.Gni + effect));
+                    s.Credibility = Math.Max(0.0, s.Credibility - B.CredibilityLossPerUse);
+                    s.BulletinCount++;
+                    s.Log("media", "Program bulletin #" + s.BulletinCount +
+                        (named ? " (responsible employee named)" : "") +
+                        ": GNI " + (effect >= 0 ? "+" : "") + effect.ToString("0.0", CultureInfo.InvariantCulture) +
+                        ", credibility now " + s.Credibility.ToString("0.00", CultureInfo.InvariantCulture));
+                    break;
+                }
+                case CommandKind.ReportAccident:
+                    s.TotalAccidents++;
+                    s.AccidentScore += B.AccidentGniPenalty;
+                    s.Log("media", "Recordable incident #" + s.TotalAccidents +
+                        " — the public accident statistics have been updated");
                     break;
             }
         }

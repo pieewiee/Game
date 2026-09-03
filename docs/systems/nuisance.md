@@ -61,14 +61,17 @@ and everyone does it).
 
 ```
 N_air = diesel_kWh_this_tick * AIR_EMISSION_FACTOR * wind_mult
-wind_mult = in_town_sector(wind_direction) ? WIND_TOWARD_MULT (3.0)
-                                           : WIND_AWAY_MULT   (0.3)
+wind_mult = in_west_sector(wind_direction)  ? WIND_TOWARD_MULT (3.0)   # houses, 270° ± 45°
+          : in_north_sector(wind_direction) ? TOWN2_WIND_MULT  (2.0)   # apartments, 0° ± 30°
+                                            : WIND_AWAY_MULT   (0.3)
 ```
 
 **Wind direction is a real simulated variable**, sampled from a seasonal rose
-([seasons.md](seasons.md)). The town occupies a fixed 90° sector. **A factor of
-ten** between the same generator run on two different afternoons — and up to 25×
-once `FILMED_MULT` is applied.
+([seasons.md](seasons.md)). There are two residential sectors: the town houses
+west of the site (270° ± 45°, ×3.0) and the apartment blocks to the north
+(0° ± 30°, ×2.0 — fewer, farther residents); the west sector wins where they
+would overlap. **A factor of ten** between the same generator run on two
+different afternoons — and up to 25× once `FILMED_MULT` is applied.
 
 This is the design's sharpest mechanic. The wind forecast is on the HUD. Players
 will learn to read it, will start timing generator runs to the wind, and will at

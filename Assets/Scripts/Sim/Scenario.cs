@@ -13,7 +13,20 @@ namespace Game.Sim
         SetDieselPolicy, // A = (int)DieselPolicy
         AddNodes,        // A = node count (a delivery — blocked during Protest)
         SetLocalFte,     // A = FTE count
-        SetVisualPoints  // A = fortification points
+        SetVisualPoints, // A = fortification points
+
+        // --- Milestones 3-5: facility, hazards, media -------------------
+        AddPlant,        // A = (int)PlantKind, B = DELTA in that kind's unit (may be negative)
+        AddRouteLossKw,  // A = DELTA conductor/pump loss of a routed run, kW
+        DestroyNodes,    // A = node count (suppression discharge, forklift...)
+        EpoTrip,         // A = fraction of site load cut, B = hours (>= 1 tick)
+        SetCoolingDerate,// A = multiplier on all cooling capacity (panels/airflow)
+        SetWaterValve,   // A = fraction 0..1 on evaporative capacity
+        SetSetpoint,     // A = supply air degC (informational for the sim)
+        SetDieselManual, // A = 1 lever held on / 0 off
+        IssueBulletin,   // A = 1 if a responsible employee is named, else 0
+        ReportAccident,  // one recordable incident (a player became one)
+        AddVisualPoints  // A = DELTA fortification points (forklift into the fence...)
     }
 
     /// <summary>A scheduled player action. In M2+ these come from the UI/intents.</summary>

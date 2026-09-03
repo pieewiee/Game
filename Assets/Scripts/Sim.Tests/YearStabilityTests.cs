@@ -75,6 +75,44 @@ namespace Game.Sim.Tests
             Assert.That(sbB.ToString(), Is.EqualTo(sbA.ToString()));
         }
 
+        /// <summary>
+        /// Header and row must agree on the column count; nothing else guards
+        /// a meter added to the struct but forgotten in one of the two lists.
+        /// </summary>
+        [Test]
+        public void CsvHeaderAndRowHaveSameColumnCount()
+        {
+            Simulation sim = TestData.NewBaselineSim();
+            string row = sim.Tick().ToCsvRow();
+            int header = TickReport.CsvHeader.Split(',').Length;
+            int cells = row.Split(',').Length;
+            Assert.That(cells, Is.EqualTo(header), "row: " + row);
+        }
+
+        /// <summary>
+        /// The sky meters are pure outputs bounded for the renderer: cloud in
+        /// [0,1], rain never negative and only on days IsWetDay marks wet.
+        /// </summary>
+        [Test]
+        public void CloudAndRainMetersAreBoundedAndConsistent()
+        {
+            Balance bal = TestData.LoadBalance();
+            var climate = new ClimateModel(bal, 42);
+            bool sawRain = false, sawDryGapOnWetDay = false;
+            for (long t = 0; t < SimClock.TicksPerYear; t++)
+            {
+                double cloud = climate.CloudFrac(t);
+                double rain = climate.RainMmH(t);
+                Assert.That(cloud, Is.InRange(0.0, 1.0), "cloud at " + t);
+                Assert.That(rain, Is.GreaterThanOrEqualTo(0.0), "rain at " + t);
+                bool wet = climate.IsWetDay(SimClock.DayIndex(t));
+                if (rain > 0) { Assert.That(wet, Is.True, "rain on a dry day at " + t); sawRain = true; }
+                else if (wet) sawDryGapOnWetDay = true;
+            }
+            Assert.That(sawRain, Is.True, "a year without a single rainy hour");
+            Assert.That(sawDryGapOnWetDay, Is.True, "wet days should contain dry gaps");
+        }
+
         private static string RunToCsv(ulong seed)
         {
             Scenario sc = TestData.LoadBaselineScenario();

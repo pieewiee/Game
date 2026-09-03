@@ -14,6 +14,13 @@ sound of the site at 3 a.m. are the game.
 One material, vertex colours only. No textures, no UV unwrapping, no normal
 maps, no PBR. Every mesh is painted from this list and nothing else.
 
+The rule survives imported art: the CC0 kits under `Assets/ThirdParty`
+(Kenney's city and car kits, see `CREDITS.md` there) arrive with UVs into a
+colormap, and the importer bakes those into vertex colours quantised to this
+table — minus Program Blue, Amber and Alarm Red, which carry meaning and never
+appear on a house or a car — then drops the UVs. They render through the same
+material as everything procedural.
+
 | # | Name | Hex | Used for |
 |---|---|---|---|
 | 1 | Concrete | `#8E8F8A` | Building shells, hardstanding, plinths |
@@ -132,6 +139,18 @@ So residents are represented at **distance only**:
 - Everything else is **text**: the local news ticker, letters, petition counts,
   quoted complaints.
 
+> **Overruled by the owner, 2026-09-02.** "Distance only" is no longer the
+> rule. Residents are bodies you can walk up to (Kenney's CC0 Blocky
+> Characters, baked to the palette like the rest of the town), they are solid,
+> they walk their own errands through the streets, and **E** gets one line out
+> of them. What the tone rule still holds onto, and what the implementation
+> still obeys: the line is the town's own state read back, residents are
+> quoted plainly and never played for laughs, nobody comes inside the wire,
+> and nothing a resident does touches the simulation. The characters carry no
+> faces — the bake keeps flat colour and drops the kit's painted eyes — so the
+> "faceless capsule as a joke about a person" is avoided from the other side.
+> See [open-questions.md](open-questions.md) Q28.
+
 The town has a population of `TOWN_POPULATION` = 4,000 and you never meet one of
 them. That is both the cheapest possible solution and the correct one.
 
@@ -158,8 +177,8 @@ one place to spend real effort.
 | 4 | Warning beacon | High | Rotating amber; fault, throttle, delivery arriving |
 | 5 | Heat shimmer | Medium | Over cooling plant, scales with `Q_removed` |
 | 6 | Truck dust | Medium | Arrival on the unmade access road |
-| 7 | Rain / snow | Medium | Climate |
-| 8 | Fog | Medium | Morning, autumn |
+| 7 | Rain / snow | Medium | `TickReport.RainMmH`: streaks above 0.5 °C, flakes below; nothing under a roof. The sky behind it is palette-anchored: horizon `#BFD3E0` Sky by day, Ink at night, a dusk tint (0.93, 0.62, 0.40) toward the sun at the horizon crossing, Amber-shifted in autumn |
+| 8 | Fog | Medium | Fog curve: dawn bump × clear sky × autumn (radiation fog), wet air, cloud, snow; wind thins it. Colour = the sky's horizon so the fogged ground meets the dome. Clouds sink into it; the sun disc (Amber → white) and the moon (Sky tint) fade with a milder haze term |
 | 9 | Searchlight beam | Medium | Cheap cone mesh, not volumetrics. Contributes to the "compound" read. |
 | 10 | **Phone glow at the fence** | High | Tiny. Tells you `CAMERA_PRESENCE` is active. |
 

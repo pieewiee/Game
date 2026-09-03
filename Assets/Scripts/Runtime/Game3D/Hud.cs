@@ -1,0 +1,189 @@
+using System;
+using System.Globalization;
+using Game.Sim;
+using UnityEngine;
+
+namespace Game.Runtime.World
+{
+    /// <summary>
+    /// The gameplay HUD (M6): clock, GNI + stage, cash, reputation, the wind
+    /// arrow (the single most important instrument in the game — it decides who
+    /// gets the smoke), interact prompt, placement hints, freeze vignette.
+    /// The debug console stays on F1 above all of this.
+    /// </summary>
+    public sealed class Hud : MonoBehaviour
+    {
+        private GUIStyle _big;
+        private GUIStyle _centre;
+        private GUIStyle _arrow;
+        private GUIStyle _small;
+
+        private void OnGUI()
+        {
+            var driver = GameBootstrap.Driver;
+            var player = GameBootstrap.LocalPlayer;
+            var ci = CultureInfo.InvariantCulture;
+            if (driver == null) return;
+            // The console is a workbench, not an overlay: while it is open the
+            // site HUD gets out of the way instead of fighting it for pixels.
+            if (!PlayerOptions.HudVisible || DebugTools.DebugConsole.IsOpen || PauseMenu.IsOpen) return;
+            // Behind the windows (UiWindows draws at depth 0).
+            GUI.depth = 10;
+            UiScaler.Begin();
+            try { DrawHud(driver, player, ci); } finally { UiScaler.End(); }
+        }
+
+        private void DrawHud(DebugTools.SimDriver driver, PlayerRig player, CultureInfo ci)
+        {
+            TickReport r;
+            long tick;
+            if (GameBootstrap.Net != null && GameBootstrap.Net.IsClient)
+            {
+                r = GameBootstrap.Net.RemoteReport;
+                tick = GameBootstrap.Net.RemoteTick;
+            }
+            else
+            {
+                if (driver.Sim == null) return;
+                r = driver.Latest;
+                tick = driver.Sim.State.Tick;
+            }
+
+            if (_big == null)
+            {
+                _big = new GUIStyle(GUI.skin.label) { fontSize = 15, wordWrap = false };
+                _centre = new GUIStyle(GUI.skin.label) { fontSize = 15, alignment = TextAnchor.MiddleCenter, wordWrap = false };
+                _arrow = new GUIStyle(GUI.skin.label) { fontSize = 34, alignment = TextAnchor.MiddleCenter };
+                _small = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter };
+            }
+
+            // --- top-left block --------------------------------------------
+            GUI.Box(new Rect(8, 8, 330, 130), "");
+            GUI.Label(new Rect(16, 12, 320, 22),
+                "Day " + SimClock.DayIndex(tick).ToString("0", ci) +
+                "  " + SimClock.HourOfDay(tick).ToString("00", ci) + ":00" +
+                "  (month " + SimClock.Month(tick) + ")", _big);
+            GUI.Label(new Rect(16, 34, 320, 22),
+                "GNI " + r.Gni.ToString("0.0", ci) + "  [" + r.Stage + "]" +
+                "   Rep " + r.Reputation.ToString("0.0", ci), _big);
+            GUI.Label(new Rect(16, 56, 320, 22),
+                "Cash € " + r.CashEur.ToString("N0", ci) +
+                "   Water " + (r.WaterLPerH * 24.0 / 1000.0).ToString("0.0", ci) + " m³/d", _big);
+            bool isClient = GameBootstrap.Net != null && GameBootstrap.Net.IsClient;
+            GUI.Label(new Rect(16, 76, 322, 20), isClient
+                ? "F1 console · F2 net · F3 options · Esc menu"
+                : "F1 console · F2 net · F3 options · F5/F9 save · Esc menu");
+            GUI.Label(new Rect(16, 94, 322, 20),
+                "E use · Q drop · Space jump · Ctrl duck · 1-7 build · 8-0 route");
+            GUI.Label(new Rect(16, 112, 322, 20), Weather.Instance != null ? Weather.Instance.HudLine : "");
+
+            // --- wind arrow -------------------------------------------------
+            DrawWindArrow(new Vector2(UiScaler.W - 70, 70), r);
+
+            // --- driving ----------------------------------------------------
+            if (player != null && player.Driving != null)
+            {
+                DrawDriving(player.Driving, ci);
+            }
+
+            // --- interact prompt -------------------------------------------
+            // While a modal window owns the mouse there is nothing to aim at:
+            // promising E in that state is a lie the player will act on.
+            bool inWorld = Cursor.lockState == CursorLockMode.Locked && !GameBootstrap.UiWantsCursor;
+            if (player != null && !player.IsDead && inWorld && player.Driving == null)
+            {
+                player.CurrentTarget(out string prompt);
+                // Amber means "E does something here". A prompt that merely
+                // explains why you cannot must not look like an offer.
+                bool aimed = !string.IsNullOrEmpty(prompt) &&
+                             prompt.StartsWith("E", System.StringComparison.Ordinal);
+                if (aimed)
+                    GUI.Label(new Rect(UiScaler.W / 2f - 300, UiScaler.H * 0.62f, 600, 26), prompt, _centre);
+                var fac = GameBootstrap.Facility;
+                if (fac != null && fac.PlacementHint.Length > 0)
+                    GUI.Label(new Rect(UiScaler.W / 2f - 300, UiScaler.H * 0.66f, 600, 26),
+                        fac.PlacementHint, _centre);
+                DrawCrosshair(aimed);
+
+                if (player.Exposure > 0.05f)
+                {
+                    GUI.color = new Color(0.5f, 0.75f, 1f, player.Exposure * 0.55f);
+                    GUI.DrawTexture(new Rect(0, 0, UiScaler.W, UiScaler.H), Texture2D.whiteTexture);
+                    GUI.color = Color.white;
+                    GUI.Label(new Rect(UiScaler.W / 2f - 200, UiScaler.H * 0.3f, 400, 26),
+                        "IT IS VERY COLD IN HERE", _centre);
+                }
+            }
+        }
+
+        /// <summary>The cab instruments: speed, mast height, load, and the two
+        /// numbers that decide whether the next corner tips you over.</summary>
+        private void DrawDriving(Forklift f, CultureInfo ci)
+        {
+            float w = 470f, h = 116f;
+            var box = new Rect(UiScaler.W / 2f - w / 2f, UiScaler.H - h - 44f, w, h);
+            GUI.Box(box, "");
+            float kmh = Mathf.Abs(f.Speed) * 3.6f;
+            string gear = f.Speed < -0.2f ? "REVERSE" : f.Speed > 0.2f ? "FORWARD" : "IDLE";
+            GUI.Label(new Rect(box.x + 12, box.y + 6, w - 24, 20),
+                gear + "   " + kmh.ToString("0.0", ci) + " km/h" +
+                (f.HeadlightsOn ? "   lights on" : ""), _big);
+            GUI.Label(new Rect(box.x + 12, box.y + 26, w - 24, 20),
+                "mast " + f.ForkHeight.ToString("0.00", ci) + " m" +
+                (f.Load != null ? "   LOADED" : "   empty"), _big);
+
+            // The tip-over warning is the whole safety briefing.
+            bool risky = f.ForkHeight > Forklift.TipForkH && Mathf.Abs(f.Speed) > 1.2f;
+            if (risky)
+            {
+                GUI.color = new Color(1f, 0.5f, 0.3f);
+                GUI.Label(new Rect(box.x + 12, box.y + 46, w - 24, 20),
+                    "LOAD RAISED — DO NOT TURN AT SPEED", _big);
+                GUI.color = Color.white;
+            }
+            // The door line: what E does from the seat right now.
+            string cab = f.CabPrompt;
+            if (!string.IsNullOrEmpty(cab))
+            {
+                GUI.color = cab.StartsWith("E", System.StringComparison.Ordinal)
+                    ? new Color(1f, 0.85f, 0.4f) : new Color(1f, 0.5f, 0.3f);
+                GUI.Label(new Rect(box.x + 12, box.y + 68, w - 24, 20), cab, _big);
+                GUI.color = Color.white;
+            }
+            GUI.Label(new Rect(box.x + 12, box.y + 90, w - 24, 20),
+                "WASD drive · Space/Ctrl mast · L lights · H horn · hold E: climb out");
+        }
+
+        /// <summary>Four ticks around a gap, opening up and turning amber when
+        /// something under the cursor can be operated. A text dot told you
+        /// where the centre was; this tells you whether it matters.</summary>
+        private static void DrawCrosshair(bool aimed)
+        {
+            float cx = UiScaler.W / 2f, cy = UiScaler.H / 2f;
+            float gap = aimed ? 7f : 4f, len = aimed ? 7f : 5f, w = 2f;
+            GUI.color = aimed ? new Color(1f, 0.72f, 0.2f, 0.95f) : new Color(1f, 1f, 1f, 0.55f);
+            GUI.DrawTexture(new Rect(cx - w / 2, cy - gap - len, w, len), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(cx - w / 2, cy + gap, w, len), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(cx - gap - len, cy - w / 2, len, w), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(cx + gap, cy - w / 2, len, w), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+        }
+
+        private void DrawWindArrow(Vector2 centre, TickReport r)
+        {
+            // The wind blows TOWARD WindTowardDeg; 0° = +z (north). Screen up =
+            // north, so the arrow rotation is simply the bearing.
+            GUI.Box(new Rect(centre.x - 52, centre.y - 52, 104, 118), "");
+            Matrix4x4 prev = GUI.matrix;
+            GUIUtility.RotateAroundPivot((float)r.WindTowardDeg, centre);
+            GUI.color = r.WindTowardTown ? new Color(1f, 0.45f, 0.35f) : Color.white;
+            GUI.Label(new Rect(centre.x - 20, centre.y - 24, 40, 48), "↑", _arrow);
+            GUI.matrix = prev;
+            GUI.Label(new Rect(centre.x - 50, centre.y + 28, 100, 20),
+                "wind " + r.WindSpeedMs.ToString("0.0", CultureInfo.InvariantCulture) + " m/s", _small);
+            GUI.Label(new Rect(centre.x - 50, centre.y + 44, 100, 20),
+                r.WindTowardSector == 2 ? "TOWARD THE FLATS" : r.WindTowardTown ? "TOWARD TOWN" : "away from town", _small);
+            GUI.color = Color.white;
+        }
+    }
+}

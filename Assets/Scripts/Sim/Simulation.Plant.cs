@@ -44,6 +44,10 @@ namespace Game.Sim
 
             bool fibreCut = s.FibreCutUntilTick > s.Tick;
             if (fibreCut) requested = 0.0;
+            // EPO (M5): a fraction of the site is de-energised until the
+            // restart completes; delivery scales down, idle draw remains.
+            double outageKeep = s.OutageUntilTick > s.Tick ? 1.0 - s.OutageFrac : 1.0;
+            requested *= outageKeep;
 
             // ---- 4. Cooling pass A: capacity against requested heat --------
             double uReq = capacityKw > 0 ? requested / capacityKw : 0.0;
@@ -55,8 +59,9 @@ namespace Game.Sim
             double chillerCop = B.ChillerCop.Evaluate(c.TdbC);
             double wue = B.EvapWue.Evaluate(c.TwbC);   // L per kWh_IT-equivalent of heat
 
-            // Water-limited evaporative capacity during a drought.
-            double evapCap = s.EvapKwTh;
+            // Water-limited evaporative capacity: the physical inlet valve
+            // (M5) scales it before any drought restriction does.
+            double evapCap = s.EvapKwTh * s.WaterValveFrac;
             if (c.DroughtActive && wue > 0.0)
             {
                 double allowanceLh = B.TownWaterDemandM3Day * 1000.0 * B.DroughtAllowanceFrac / 24.0;
@@ -67,7 +72,11 @@ namespace Game.Sim
                 if (evapByWater < evapCap) evapCap = evapByWater;
             }
 
-            double qCap = freecoolCap + evapCap + s.ChillerKwTh;
+            // Airflow quality (blanking panels, M5) derates every plant.
+            freecoolCap *= s.CoolingDerateMult;
+            evapCap *= s.CoolingDerateMult;
+            double chillerCapDerated = s.ChillerKwTh * s.CoolingDerateMult;
+            double qCap = freecoolCap + evapCap + chillerCapDerated;
             double thetaCool = qReq > 1e-9 ? Math.Min(1.0, qCap / qReq) : 1.0;
             // θ scales *utilisation*; idle draw and its heat remain. If even idle
             // heat exceeds capacity, utilisation floors at 0 and hardware damage
@@ -79,7 +88,7 @@ namespace Game.Sim
             double pIt1 = n * (idleKw + (peak - idleKw) * u1);
             double q1 = pIt1 * B.HeatFraction;
             double pCool1 = CoolingPower(q1, freecoolCap, evapCap, evapCop, chillerCop, out _, out _, out _, out _);
-            double pAux = B.AuxBaseKw + B.AuxFracOfIt * pIt1;
+            double pAux = B.AuxBaseKw + B.AuxFracOfIt * pIt1 + s.RouteLossKw;
 
             double solarPotential = s.SolarKwp * c.IrradianceFrac;
             double windPotential = s.WindKw * c.WindCf;
@@ -132,7 +141,7 @@ namespace Game.Sim
             double qFree, qEvap, qChill, qUnremoved;
             double pCool = CoolingPower(qIt, freecoolCap, evapCap, evapCop, chillerCop,
                                         out qFree, out qEvap, out qChill, out qUnremoved);
-            pAux = B.AuxBaseKw + B.AuxFracOfIt * pIt;
+            pAux = B.AuxBaseKw + B.AuxFracOfIt * pIt + s.RouteLossKw; // routed-run losses (M3)
             double demand = pIt + pCool + pAux;
 
             r.PItKw = pIt; r.PCoolKw = pCool; r.PAuxKw = pAux;
@@ -187,7 +196,7 @@ namespace Game.Sim
             double remaining = qIt;
             qFree = Math.Min(remaining, freecoolCap); remaining -= qFree;
             qEvap = Math.Min(remaining, evapCap); remaining -= qEvap;
-            qChill = Math.Min(remaining, State.ChillerKwTh); remaining -= qChill;
+            qChill = Math.Min(remaining, State.ChillerKwTh * State.CoolingDerateMult); remaining -= qChill;
             qUnremoved = remaining < 1e-9 ? 0.0 : remaining;
 
             return qFree / Math.Max(B.FreecoolCop, 1e-6)
@@ -247,6 +256,17 @@ namespace Game.Sim
                 remaining -= discharge;
             }
 
+            // 2b. Manual diesel (the lever, M5): when held, the generator
+            // displaces grid power ahead of it in the merit order — the site
+            // pays diesel prices and makes diesel smoke for load the grid
+            // would have covered silently.
+            double dieselManual = 0.0;
+            if (s.DieselManualOn && s.DieselKw > 0)
+            {
+                dieselManual = Math.Min(remaining, s.DieselKw);
+                remaining -= dieselManual;
+            }
+
             // 3. Grid.
             double grid = Math.Min(remaining, gridCap); remaining -= grid;
             // Cheap-hour battery charging from the grid, within the cap.
@@ -258,11 +278,12 @@ namespace Game.Sim
             }
 
             // 4. Diesel — covers what the grid cannot, if policy allows.
-            double diesel = 0.0;
+            double diesel = dieselManual;
             if (remaining > 0 && dieselMax > 0)
             {
-                diesel = Math.Min(remaining, dieselMax);
-                remaining -= diesel;
+                double auto = Math.Min(remaining, Math.Max(0.0, dieselMax - dieselManual));
+                diesel += auto;
+                remaining -= auto;
             }
 
             double shed = remaining > 1e-9 ? remaining : 0.0;

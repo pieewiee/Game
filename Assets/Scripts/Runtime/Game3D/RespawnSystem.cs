@@ -1,0 +1,39 @@
+using Game.Runtime.Media;
+using Game.Sim;
+using UnityEngine;
+
+namespace Game.Runtime.World
+{
+    /// <summary>
+    /// Players do not die; they become incidents (workplace-accidents.md §1).
+    /// Death drops everything carried, respawns the rig on the street outside
+    /// the pedestrian gate as a fresh temp worker, and adds one line to the public accident
+    /// statistics — which feed the Good Neighbor Index through the sim's
+    /// decaying accident score. The punishment is not the walk back; it is the
+    /// press release about it.
+    /// </summary>
+    public static class RespawnSystem
+    {
+        private static SiteRefs _site;
+
+        public static void Init(SiteRefs site) { _site = site; }
+
+        public static void OnPlayerDied(PlayerRig rig, string cause)
+        {
+            GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.ReportAccident, A = 1 },
+                rig.PlayerName + " " + cause);
+
+            // The MANDATORY Program bulletin (workplace-accidents.md §70-88):
+            // automatic, burns credibility like any other bulletin, and names
+            // a responsible employee by default — the deceased.
+            GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.IssueBulletin, A = 1 }, null);
+            if (GameBootstrap.Net != null && GameBootstrap.Net.Active)
+                GameBootstrap.Net.ApplyNamingPenalty(rig.PlayerName);
+
+            NewsFeed.Post(rig.PlayerName + " " + cause + ". A mandatory Program bulletin identifies " +
+                rig.PlayerName + " as the responsible employee; safety culture remains a cornerstone.");
+
+            if (_site != null) rig.FinishRespawn(_site.StreetSpawn);
+        }
+    }
+}

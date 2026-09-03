@@ -98,3 +98,6 @@ Tools/**/[Bb]in/
 
 # Test Runner exports (Unity writes these into the project root)
 /TestResults_*.xml
+
+# Local standalone builds (multi-client testing, MANUAL_SETUP 7.3)
+/Builds/

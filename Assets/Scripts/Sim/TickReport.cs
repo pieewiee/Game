@@ -17,7 +17,9 @@ namespace Game.Sim
         // climate
         public double TdbC, TwbC, WindSpeedMs, WindTowardDeg;
         public bool WindTowardTown, DroughtActive, HeatwaveActive, DunkelflauteActive;
+        public int WindTowardSector;         // 0 away, 1 west town, 2 north apartments
         public double IrradianceFrac, WindCf, ScarcityMult;
+        public double CloudFrac, RainMmH;    // presentation meters (sky, precipitation)
 
         // load
         public double RequestedBillableKw;   // what contracts asked for
@@ -46,6 +48,12 @@ namespace Game.Sim
         public double NNoise, NAir, NWater, NPrice, NVisual;
         public double MNoise, MAir, MWater, MPrice, MVisual;
 
+        // media & facility (M3-M5)
+        public double Credibility, AccidentScore, RouteLossKw, OutageFrac, CoolingDerateMult;
+        public double SetpointC, WaterValveFrac;
+        public int NodesInstalled, GridTier;
+        public double EvapKwTh, ChillerKwTh, FreecoolKwTh, SolarKwp, BatteryKwhCap, DieselKw;
+
         // community
         public double GniTarget, Gni;
         public EscalationStage Stage;
@@ -62,8 +70,8 @@ namespace Game.Sim
 
         public const string CsvHeader =
             "tick,day,hour,month," +
-            "tdb_c,twb_c,wind_ms,wind_toward_deg,wind_toward_town,irradiance_frac,wind_cf," +
-            "drought,heatwave,dunkelflaute,scarcity_mult," +
+            "tdb_c,twb_c,wind_ms,wind_toward_deg,wind_toward_town,wind_toward_sector,irradiance_frac,wind_cf," +
+            "drought,heatwave,dunkelflaute,scarcity_mult,cloud_frac,rain_mm_h," +
             "requested_kw,delivered_kw,theta_cool,theta_power,utilisation," +
             "p_it_kw,p_cool_kw,p_aux_kw," +
             "q_it_kwth,q_freecool_kwth,q_evap_kwth,q_chiller_kwth,q_unremoved_kwth,water_l_per_h," +
@@ -72,6 +80,9 @@ namespace Game.Sim
             "p_base_eur,p_grid_eur,p_resident_eur,p_baseline_eur,load_ratio,congestion_mult," +
             "n_noise,n_air,n_water,n_price,n_visual," +
             "m_noise,m_air,m_water,m_price,m_visual," +
+            "credibility,accident_score,route_loss_kw,outage_frac,cooling_derate," +
+            "setpoint_c,water_valve_frac,nodes_installed,grid_tier," +
+            "evap_kwth,chiller_kwth,freecool_kwth,solar_kwp,battery_kwh_cap,diesel_kw," +
             "gni_target,gni,stage,petition_signatures,reputation," +
             "revenue_eur,energy_cost_eur,water_cost_eur,penalty_eur,capex_eur,cash_eur," +
             "active_contracts,training_progress_frac";
@@ -85,8 +96,8 @@ namespace Game.Sim
             void B(bool v) { sb.Append(v ? '1' : '0'); sb.Append(','); }
 
             I(Tick); I(SimClock.DayIndex(Tick)); I(SimClock.HourOfDay(Tick)); I(SimClock.Month(Tick));
-            D(TdbC); D(TwbC); D(WindSpeedMs); D(WindTowardDeg); B(WindTowardTown); D(IrradianceFrac); D(WindCf);
-            B(DroughtActive); B(HeatwaveActive); B(DunkelflauteActive); D(ScarcityMult);
+            D(TdbC); D(TwbC); D(WindSpeedMs); D(WindTowardDeg); B(WindTowardTown); I(WindTowardSector); D(IrradianceFrac); D(WindCf);
+            B(DroughtActive); B(HeatwaveActive); B(DunkelflauteActive); D(ScarcityMult); D(CloudFrac); D(RainMmH);
             D(RequestedBillableKw); D(DeliveredBillableKw); D(ThetaCool); D(ThetaPower); D(Utilisation);
             D(PItKw); D(PCoolKw); D(PAuxKw);
             D(QItKwTh); D(QFreecoolKwTh); D(QEvapKwTh); D(QChillerKwTh); D(QUnremovedKwTh); D(WaterLPerH);
@@ -95,6 +106,9 @@ namespace Game.Sim
             D(PBaseEurKwh); D(PGridEurKwh); D(PResidentEurKwh); D(PBaselineEurKwh); D(LoadRatio); D(CongestionMult);
             D(NNoise); D(NAir); D(NWater); D(NPrice); D(NVisual);
             D(MNoise); D(MAir); D(MWater); D(MPrice); D(MVisual);
+            D(Credibility); D(AccidentScore); D(RouteLossKw); D(OutageFrac); D(CoolingDerateMult);
+            D(SetpointC); D(WaterValveFrac); I(NodesInstalled); I(GridTier);
+            D(EvapKwTh); D(ChillerKwTh); D(FreecoolKwTh); D(SolarKwp); D(BatteryKwhCap); D(DieselKw);
             D(GniTarget); D(Gni);
             sb.Append(Stage.ToString()); sb.Append(',');
             D(PetitionSignatures); D(Reputation);

@@ -195,9 +195,10 @@ N_visual = Σ fortification_points - Σ screening_points
 any indicator sampled while residents are filming is × FILMED_MULT (2.5)
 ```
 
-`wind_mult` is `WIND_TOWARD_MULT` = 3.0 or `WIND_AWAY_MULT` = 0.3. **Wind
-direction is a real simulated variable.** So is whether anyone is at the fence
-with a phone.
+`wind_mult` is `WIND_TOWARD_MULT` = 3.0 when the wind blows into the west town
+(270° ± 45°), `TOWN2_WIND_MULT` = 2.0 into the north apartment blocks (0° ± 30°),
+else `WIND_AWAY_MULT` = 0.3. **Wind direction is a real simulated variable.** So
+is whether anyone is at the fence with a phone.
 
 ### 5.6 Good Neighbor Index
 

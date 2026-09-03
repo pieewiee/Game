@@ -10,7 +10,7 @@ namespace Game.Sim
         /// Neighbor Index, the escalation ladder, sabotage exposure and the
         /// referendum. docs/systems/nuisance.md and docs/systems/sentiment.md.
         /// </summary>
-        private void StepCommunity(in ClimateSample c, ref TickReport r)
+        internal void StepCommunity(in ClimateSample c, ref TickReport r)
         {
             var s = State;
             var ci = CultureInfo.InvariantCulture;
@@ -34,7 +34,8 @@ namespace Game.Sim
             nNoise = Clamp01x100(nNoise);
 
             // Air: diesel exhaust, gated by the simulated wind direction.
-            double windMult = c.WindTowardTown ? B.WindTowardMult : B.WindAwayMult;
+            // Two residential sectors: the west town (1) and the smaller, farther north apartments (2).
+            double windMult = c.TownSector == 1 ? B.WindTowardMult : c.TownSector == 2 ? B.Town2WindMult : B.WindAwayMult;
             double nAir = Clamp01x100(B.AirEmissionFactor * (r.DieselKwh / 1000.0) * windMult);
 
             // Water: the site's draw against the town's, sharpened by drought.
@@ -70,8 +71,14 @@ namespace Game.Sim
             r.MWater = s.ChannelMemory[2]; r.MPrice = s.ChannelMemory[3];
             r.MVisual = s.ChannelMemory[4];
 
+            // Credibility recovers slowly (sentiment.md §5); accidents decay
+            // out of the public memory with their own half-life.
+            s.Credibility = Math.Min(1.0, s.Credibility + B.CredibilityRecoveryPerWeek / (7.0 * SimClock.TicksPerDay));
+            double accLambda = 1.0 - Math.Pow(0.5, 1.0 / (B.AccidentHalflifeDays * SimClock.TicksPerDay));
+            s.AccidentScore *= 1.0 - accLambda;
+
             // ---- 8. GNI ----------------------------------------------------
-            double goodwill = B.LocalHireGniPerFte * s.LocalFte;
+            double goodwill = B.LocalHireGniPerFte * s.LocalFte - s.AccidentScore;
             double target = 100.0
                 - (B.WNoise * s.ChannelMemory[0] + B.WAir * s.ChannelMemory[1]
                  + B.WWater * s.ChannelMemory[2] + B.WPrice * s.ChannelMemory[3]
@@ -81,6 +88,17 @@ namespace Game.Sim
             if (target < 0.0) target = 0.0;
             s.Gni += B.GniAdjustRate * (target - s.Gni);
             r.GniTarget = target; r.Gni = s.Gni;
+            r.Credibility = s.Credibility;
+            r.AccidentScore = s.AccidentScore;
+            r.RouteLossKw = s.RouteLossKw;
+            r.OutageFrac = s.OutageUntilTick > s.Tick ? s.OutageFrac : 0.0;
+            r.CoolingDerateMult = s.CoolingDerateMult;
+            r.SetpointC = s.SetpointC;
+            r.WaterValveFrac = s.WaterValveFrac;
+            r.NodesInstalled = s.NodesInstalled;
+            r.GridTier = s.GridTier;
+            r.EvapKwTh = s.EvapKwTh; r.ChillerKwTh = s.ChillerKwTh; r.FreecoolKwTh = s.FreecoolKwTh;
+            r.SolarKwp = s.SolarKwp; r.BatteryKwhCap = s.BatteryKwhCap; r.DieselKw = s.DieselKw;
 
             // ---- Escalation ladder with hysteresis -------------------------
             EscalationStage before = s.Stage;
