@@ -150,6 +150,11 @@ So residents are represented at **distance only**:
 > faces — the bake keeps flat colour and drops the kit's painted eyes — so the
 > "faceless capsule as a joke about a person" is avoided from the other side.
 > See [open-questions.md](open-questions.md) Q28.
+>
+> **Extended, 2026-09-04.** One resident at a time may cross the wire after
+> all — a scheduled, telegraphed incursion against sustained neglect
+> (docs/systems/incidents.md §3.9), never a surprise and never more than one
+> actor. Quoted plainly still applies to them too. Q29.
 
 The town has a population of `TOWN_POPULATION` = 4,000 and you never meet one of
 them. That is both the cheapest possible solution and the correct one.

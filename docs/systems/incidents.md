@@ -265,6 +265,26 @@ almost nobody's first instinct.
 | **Cost of ignoring** | Grid connection lost until replaced. **60 days on diesel.** |
 | **Sentiment** | See §2.4. This is the worst chain in the game. |
 
+### 3.9 Incursion (fence breach)
+
+The one entry in the catalogue driven by the *community* accumulator (GNI)
+rather than a physical one, and the one the town causes rather than suffers —
+docs/open-questions.md Q28's overrule made residents solid and approachable,
+Q29 extends that to this. Same rule as everywhere else in this file: nothing
+about **whether** is random. What **is** rolled, once the threshold is
+crossed, is which asset — the same stated exception hardware-lifecycle.md §3
+takes for which node fails.
+
+| | |
+|---|---|
+| **Accumulator** | Cumulative hours in the Sabotage band (`INCURSION_TRIGGER_HOURS`, own counter, independent of the fibre cut's) |
+| **Neglected variable** | GNI, same as every Sabotage-stage effect — this is what staying that unpopular for that long earns |
+| **Stages** | Scheduled (telegraph, `INCURSION_TELEGRAPH_HOURS` — the cast resident's routine visibly bends toward the target fence segment) → breached (`INCURSION_BREACH_HOURS` — the resident is at the real rack or solar row, in person, taser-interruptible) → resolved |
+| **Detection** | A camera reveals the specific asset and resident from the moment it is scheduled; without one, only the vague ticker line runs until the breach itself |
+| **Response** | A floodlight is the only *passive* defense — it deterministically aborts every other attempt, not a percentage roll, so it stays inevitable-in-hindsight rather than a visible dice roll (§1's rule again); an alarm adds a HUD/audio cue with no auto-resolve; a taser lets a player in person end it with zero loss. Camera/floodlight/alarm are sited hardware and each adds a small, fixed `VisualPoints` cost on purchase — the same fence trap §3 of sentiment.md already runs, on a shorter lever; the carried taser is exempt |
+| **Cost of ignoring** | One rack (`INCURSION_RACK_NODES` nodes) or one solar row (`INCURSION_SOLAR_KWP` kWp), whichever the die picked — the same asset Facility.cs was already about to render as the newest one, so it goes dark exactly where it stood |
+| **Sentiment** | None extra — GNI caused this, GNI does not also charge for it. The Program's own aftermath line ("the Program regrets nothing it is required to disclose") is the whole cost on that side of the ledger |
+
 ---
 
 ## 4. Failure modes of this system itself
@@ -311,6 +331,6 @@ event, and that is exactly why it is the best griefing vector in the game.
 | [network.md](network.md) | Fibre cut, DDoS saturation | Gbps, ms |
 | [compute-contracts.md](compute-contracts.md) | Delivery loss, checkpoint loss, SLA breach | kWh_IT |
 | [nuisance.md](nuisance.md) | Fan noise, diesel air, fire brigade visual, town outage | points |
-| [sentiment.md](sentiment.md) | Mandatory bulletins, credibility burn | GNI |
+| [sentiment.md](sentiment.md) | Mandatory bulletins, credibility burn, incursions (§3.9) | GNI |
 | [staff-shifts.md](staff-shifts.md) | Detection coverage, repair job cards | hours |
 | [workplace-accidents.md](workplace-accidents.md) | Ice blocks, forklift damage, suppression discharge | — |

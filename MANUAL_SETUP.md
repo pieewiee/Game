@@ -398,6 +398,27 @@ delete that file. `Temp/` is git-ignored; nothing to commit.
       **Wind, two sectors.** The air channel now charges the west houses
       (270° ± 45°, ×3.0) and the north flats (0° ± 30°, ×2.0); the HUD says
       TOWARD TOWN or TOWARD THE FLATS.
+- [ ] **7.2h Incursions and security (`docs/systems/incidents.md` §3.9,
+      `open-questions.md` Q29).** Let GNI collapse and stay in the Sabotage
+      band long enough and one resident — never more than one — is scheduled
+      against one real rack or solar row, 2.5 in-game days ahead of the
+      breach; their ordinary wandering visibly bends toward the fence
+      segment they will cross, and the news ticker and gate intercom say so
+      first. If nobody stops them, the asset goes dark at the end of a
+      5-hour breach window exactly like a forklift or fire-suppression loss
+      would. **E** at the small board beside the guard post opens **Security**:
+      a camera (earlier, specific warning; stops nothing alone), a floodlight
+      (the only passive deterrent — every other attempt is aborted outright,
+      and it draws real site power), an alarm (a cue while one is active, no
+      auto-resolve) and a taser (pick it up once bought; **E** on the
+      resident while the incident is active ends it with zero loss — no
+      ammunition, no cooldown, the fence line is a straight walk away). The
+      first three are sited hardware and each nudges `N_visual` on purchase
+      the moment you buy it — sentiment.md §3's fence-fortification trap
+      again, on a shorter lever; the carried taser does not. Nothing about
+      *whether* an incursion happens is random, and it needs hundreds of
+      sim-hours of sustained neglect before the first one is even scheduled
+      — a competently run site never sees one.
 - [ ] **7.3 The 5-player test needs standalone builds** (one project folder
       cannot be opened by five editors, and no third-party clone tool was added
       without asking). Both game shaders (`GNP/VertexColor` and

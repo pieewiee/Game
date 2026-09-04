@@ -552,3 +552,64 @@ What did **not** change, and should not without another decision:
 - Residents are quoted plainly. The joke is on the operator, never on them.
 - The bake drops the kit's painted faces, so the figures stay faceless.
 - Placards stay blank (Q27).
+
+---
+
+## Q29 — Residents can sabotage the site, and can be stopped (owner overrule)
+
+Q28 kept two things off the table even after residents went solid and
+approachable: *"No resident ever comes inside the wire"* and *"Nothing a
+resident does touches the simulation."* The owner overruled both on
+2026-09-04: *"die npcs sollen wirklich auf die umstände reagieren und auf das
+datacenter los gehen sollten die zufriedenheit der bürger sinken. die machen
+dann die server kaputt und solar etc. geb mir aber auch waffen die ich kaufen
+kann um die abzuwehren, taser, security etc."* — with an explicit balance
+condition attached: it must not crowd out the time it takes to build the
+datacenter in the first place.
+
+A short internal market-analysis pass (RimWorld/Frostpunk-style telegraphed
+raids, Frostpunk/Democracy 4/Papers Please's "opposition stays a person, not
+a mob", Cities: Skylines/ONI's "spectacle without cruelty", tower-defense
+economy pacing) produced the brief this was built against: schedule the
+incident days ahead and telegraph it through channels the player already
+reads (not a popup), never let the resident stop being quoted plainly, keep
+the interrupt tools non-lethal and in-person, and keep every purchase a
+physical object with a footprint rather than a stat slider.
+
+What it is: `Simulation.Community.StepIncursion` (docs/systems/incidents.md
+§3.9). Nothing about *whether* is random — the same cumulative-hours-in-
+Sabotage-band accumulator as the fibre cut, its own counter. Once earned, a
+resident is scheduled 2.5 days ahead (`INCURSION_TELEGRAPH_HOURS`) against
+one real rack or one real solar row — whichever Facility.cs was about to
+render as the newest one — and that resident's ordinary wandering visibly
+bends toward the fence segment they will breach. At the breach they cross
+the wire, stand at the real asset, and five hours later (`INCURSION_BREACH_
+HOURS`) it goes dark, unless a player reaches them first.
+
+Four purchases answer it, each a real object at the guard post, priced and
+bought exactly like a grid-tier application (`CommandKind.BuySecurity`):
+a **camera** (reveals the specific target from the moment it is scheduled,
+stops nothing by itself), a **floodlight** (the only passive deterrent — a
+fixed alternation, not a percentage, aborts every other attempt, and draws
+real site power), an **alarm** (a HUD/audio cue while one is active, no
+auto-resolve), and a **taser** (carried, no ammunition, no cooldown — E on
+the resident while it is active ends the incident with zero loss). The
+first three are sited hardware and each costs a sliver of `N_visual` on
+purchase — the taser is carried and exempt. That charge is deliberate:
+sentiment.md §3 already documents fence fortification as a trap (buy fences
+to stop sabotage, fences raise `N_visual`, `N_visual` lowers the GNI that
+produced the sabotage); these purchases sit on the same spiral, on a shorter
+lever, except the taser.
+
+The balance condition: `INCURSION_TRIGGER_HOURS = 48` only starts counting
+once the town has already been sitting in the Sabotage band (GNI < 15) —
+several escalation stages and, per `GNI_ADJUST_RATE`'s ~250-tick time
+constant, hundreds of sim-hours of sustained neglect before the first one is
+even scheduled, then 2.5 more days of visible telegraph. A group building
+the datacenter competently never sees one; a group that lets GNI collapse
+and stays there earns exactly as many as they can stand.
+
+What still holds from Q28 for every OTHER resident: nobody but the one
+scheduled actor ever crosses the wire, nobody appears or disappears within
+25 m of a player, residents are quoted plainly, the bake stays faceless, and
+nothing else a resident does touches the simulation.

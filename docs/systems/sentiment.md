@@ -70,17 +70,22 @@ Hysteresis of 5 points on each boundary, so states do not flicker.
 | Petition | "community signature initiative" | 40–55 | Signatures accumulate at a rate ∝ `(55 − GNI)`, are visible, and **persist when GNI recovers.** Feeds the referendum trigger. |
 | Protest | "unscheduled gate activity" | 25–40 | **Deliveries blocked. Hiring frozen.** Operations continue. |
 | Injunction | "administrative pause" | 15–25 | **All expansion permits frozen**, including in-flight — clock paused, capex still spent. |
-| Sabotage | "unauthorised third-party interference" | 5–15 | Fibre cut (4–18 h total delivery loss), substation interference, coolant damage. |
+| Sabotage | "unauthorised third-party interference" | 5–15 | Fibre cut (4–18 h total delivery loss). A resident may also breach the fence for one rack or one solar row in person (incidents.md §3.9) — the only incident in the catalogue the town itself carries out. |
 | Referendum | "community consultation event" | via petition | Binding vote. §6. |
 
 **The ladder attacks growth before operations.** A group can sit at 30
 indefinitely, profitable, permanently unable to expand. That is a legitimate
 ending and the game should present it as one.
 
-**Sabotage is the only stage suppression addresses.** This is the trap: you buy
-fences to stop fibre cuts, fences raise `N_visual`, `N_visual` lowers GNI, and
-lower GNI is what produced the sabotage. Suppression is locally rational and
-globally a spiral.
+**Sabotage is the only stage suppression addresses, and now there are two ways
+to fall into the same trap.** You buy fences to stop fibre cuts, fences raise
+`N_visual`, `N_visual` lowers GNI, and lower GNI is what produced the sabotage
+in the first place. A camera, floodlight or alarm against an incursion is the
+identical shape on a shorter lever: each is sited, visible hardware and each
+costs a sliver of `N_visual` the moment it is bought (incidents.md §3.9).
+Suppression is locally rational and globally a spiral either way. The one
+purchase that is not a lever on this spiral is the taser — it is carried, not
+sited, and ending an incursion in person costs nothing but the walk there.
 
 ---
 
