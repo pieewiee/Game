@@ -93,6 +93,7 @@ namespace Game.Runtime.World
         public Vector3 DockPos = new Vector3(-4.5f, 0, 19f);
         public Vector3 ForkliftSpawn = new Vector3(-4.5f, 0.1f, 13f);   // drops onto the apron
         public Vector3 SkipPos = new Vector3(-4.5f, 0, 26f);
+        public Vector3 GuardPostPos = new Vector3(51.3f, 0, -18.3f);
 
         public List<Vector3> RackSlots = new List<Vector3>();      // both halls
         public List<Vector3> PlantSlots = new List<Vector3>();     // outdoor cooling yard
@@ -574,7 +575,7 @@ namespace Game.Runtime.World
             guard.Box(new Vector3(0, 1.3f, 0), new Vector3(2.4f, 2.6f, 2.4f), Palette.Render);
             guard.Box(new Vector3(0, 2.7f, 0), new Vector3(2.8f, 0.2f, 2.8f), Palette.Ink);
             guard.Box(new Vector3(-1.25f, 1.5f, 0), new Vector3(0.06f, 1.0f, 1.6f), Palette.PaleBlue);
-            var hut = MatLib.Spawn("GuardPost", guard.Build("guard"), root, new Vector3(51.3f, 0, -18.3f));
+            var hut = MatLib.Spawn("GuardPost", guard.Build("guard"), root, refs.GuardPostPos);
             hut.transform.rotation = Quaternion.Euler(0, 180f, 0);   // window (local -x) faces the gate
 
             BuildGateKit(root, refs);

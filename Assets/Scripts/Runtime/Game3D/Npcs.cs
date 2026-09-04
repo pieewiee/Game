@@ -15,9 +15,16 @@ namespace Game.Runtime.World
     /// now solid (a capsule you cannot walk through), free to roam the whole
     /// town lattice rather than a fixed polyline, and they answer E with one
     /// line about the state the sim has actually reached. What survives of
-    /// the old rule: nobody comes inside the wire, nobody appears or vanishes
-    /// within 25 m of a player, and none of them changes the simulation —
-    /// this whole file is presentation.
+    /// the old rule: nobody appears or vanishes within 25 m of a player, and
+    /// none of them changes the simulation directly — this whole file is
+    /// presentation, reading and never writing the replicated report.
+    ///
+    /// One exception, added 2026-09-04 (open-questions.md Q29): the ONE
+    /// resident an active incursion has cast does cross the wire, for the
+    /// one asset Game.Sim.Simulation.Community.StepIncursion has scheduled
+    /// against sustained neglect — see UpdateSaboteurActive. The sim alone
+    /// decides whether, when and what; this file only walks a figure there
+    /// and lets a carried taser (Security.cs) end it in person.
     ///
     /// Same inputs, evaluated on a local cadence — not lockstep: how many
     /// figures are out and what they are doing is read from the replicated
@@ -153,6 +160,8 @@ namespace Game.Runtime.World
         private bool _windowsEarly, _windowsLate, _windowsInit;
         private bool _wasEnabled = true;
         private int _protestersShown;
+        private bool _wasIncursionActive;
+        private int _lastCastSlot = -1;
         private Vector3 _protestCentroid;
 
         // ---- deterministic hashing (murmur3 fmix) --------------------------
@@ -580,6 +589,27 @@ namespace Game.Runtime.World
             Vector3 pp = player.transform.position;
             bool rain = r.RainMmH > 0;
             float dt = Time.deltaTime;
+
+            // The moment an incursion resolves (either way), its actor may be
+            // standing inside the fence, where the town lattice has no
+            // walkable node at all. Snap it back to the kerb it breached from
+            // before ordinary errand-picking ever sees that position, or a
+            // TryPath from inside the blocked zone spends a few seconds
+            // failing and re-failing right at the wire.
+            if (_wasIncursionActive && !r.IncursionActive && _lastCastSlot >= 0 && _lastCastSlot < _figs.Length)
+            {
+                ref Figure cf = ref _figs[_lastCastSlot];
+                Vector3 outside = BreachPointFor(IncursionTargetWorldPos(r));
+                cf.Pos = new Vector3(outside.x, GroundY(outside), outside.z);
+                cf.Path.Clear();
+                cf.PathIdx = 0;
+                if (cf.Talk != null) cf.Talk.IsActiveSaboteur = false;
+            }
+            _wasIncursionActive = r.IncursionActive;
+            int incursionCastSlot = (r.IncursionPending || r.IncursionActive)
+                ? (int)(r.IncursionCastHash % (uint)Walkers) : -1;
+            if (r.IncursionActive) _lastCastSlot = incursionCastSlot;
+
             _protestersShown = 0;
             _protestCentroid = Vector3.zero;
             for (int i = 0; i < _figs.Length; i++)
@@ -587,7 +617,7 @@ namespace Game.Runtime.World
                 ref Figure f = ref _figs[i];
                 switch (f.Kind)
                 {
-                    case FigureKind.Walker: UpdateWalker(ref f, pp, rain, now, dt); break;
+                    case FigureKind.Walker: UpdateWalker(ref f, pp, in r, incursionCastSlot, rain, now, dt); break;
                     case FigureKind.Car: UpdateCar(ref f, pp, dark, now, dt); break;
                     default: UpdateStander(ref f, pp, dark, now, dt); break;
                 }
@@ -734,20 +764,33 @@ namespace Game.Runtime.World
         /// <summary>A resident going somewhere: a walk across the town lattice
         /// to a hashed destination, a stop, then another errand. Nobody
         /// reacts to the player beyond stepping around them.</summary>
-        private void UpdateWalker(ref Figure f, Vector3 pp, bool rain, float now, float dt)
+        private void UpdateWalker(ref Figure f, Vector3 pp, in TickReport r, int castSlot, bool rain, float now, float dt)
         {
+            bool isCast = f.Slot == castSlot;
+            if (f.Talk != null) f.Talk.IsActiveSaboteur = isCast && r.IncursionActive;
+
             if (!f.Shown)
             {
                 if (f.Wanted) Place(ref f, pp, now);
                 return;
             }
+            if (isCast && r.IncursionActive) { UpdateSaboteurActive(ref f, pp, in r, now, dt); return; }
             if (!f.Wanted && !f.Leaving && now - f.ShownSince >= MinDwell
                 && Dist2(f.Pos, pp) > PopClearDist * PopClearDist) f.Leaving = true;
 
             bool moving = false;
             if (now >= f.PausedUntil)
             {
-                if (f.PathIdx >= f.Path.Count) NewErrand(ref f, now);
+                if (f.PathIdx >= f.Path.Count)
+                {
+                    // Telegraph: the resident who will do this keeps drifting
+                    // back toward the fence segment they will breach, rather
+                    // than picking a random errand — the "spatial countdown"
+                    // the market brief asked for.
+                    int overrideGoal = (isCast && r.IncursionPending)
+                        ? _nav.Nearest(BreachPointFor(IncursionTargetWorldPos(r))) : -1;
+                    NewErrand(ref f, now, overrideGoal);
+                }
                 if (f.PathIdx < f.Path.Count)
                 {
                     Vector3 target = f.Path[f.PathIdx];
@@ -804,21 +847,76 @@ namespace Game.Runtime.World
             }
         }
 
-        private void NewErrand(ref Figure f, float now)
+        private void NewErrand(ref Figure f, float now, int overrideGoal = -1)
         {
             for (int attempt = 0; attempt < 3; attempt++)
             {
                 f.Errand++;
-                int goal = _nav.NodeFrom(H(PresenceSeed + 11u, (uint)f.Slot, (uint)f.Errand));
+                int goal = overrideGoal >= 0
+                    ? overrideGoal : _nav.NodeFrom(H(PresenceSeed + 11u, (uint)f.Slot, (uint)f.Errand));
                 if (_nav.TryPath(f.Pos, goal, f.Path) && f.Path.Count > 1)
                 {
                     f.PathIdx = 1;      // [0] is the ground it already stands on
                     return;
                 }
+                if (overrideGoal >= 0) break;   // a fixed goal will not improve by retrying
             }
             f.Path.Clear();
             f.PathIdx = 0;
             f.PausedUntil = now + Pause(ref f);
+        }
+
+        /// <summary>World position of whatever an incursion is scheduled
+        /// against — the same slot Facility.cs renders as the last real rack
+        /// or solar row, so the figure stands exactly where it goes dark.</summary>
+        private Vector3 IncursionTargetWorldPos(in TickReport r)
+        {
+            List<Vector3> slots = r.IncursionTargetKind == (int)IncursionKind.Rack ? _site.RackSlots : _site.SolarSlots;
+            if (slots == null || slots.Count == 0) return _site.SiteCentre;
+            int slot = Mathf.Clamp(r.IncursionTargetSlot, 0, slots.Count - 1);
+            return _site.Root.TransformPoint(slots[slot]);
+        }
+
+        /// <summary>The nearest point on the fence LINE to a world position,
+        /// pushed 3 m outward — where a figure waits before breaching, and
+        /// where it lands back outside once the incident is over.</summary>
+        private Vector3 BreachPointFor(Vector3 worldXZ)
+        {
+            float x = Mathf.Clamp(worldXZ.x, _site.FenceX0, _site.FenceX1);
+            float z = Mathf.Clamp(worldXZ.z, _site.FenceZ0, _site.FenceZ1);
+            float dW = x - _site.FenceX0, dE = _site.FenceX1 - x;
+            float dS = z - _site.FenceZ0, dN = _site.FenceZ1 - z;
+            float m = Mathf.Min(Mathf.Min(dW, dE), Mathf.Min(dS, dN));
+            Vector3 outward;
+            if (m == dW) { x = _site.FenceX0; outward = Vector3.left; }
+            else if (m == dE) { x = _site.FenceX1; outward = Vector3.right; }
+            else if (m == dS) { z = _site.FenceZ0; outward = Vector3.back; }
+            else { z = _site.FenceZ1; outward = Vector3.forward; }
+            return new Vector3(x, 0f, z) + outward * 3f;
+        }
+
+        /// <summary>The breach itself: straight for the real target, ignoring
+        /// the town lattice entirely (it is crossing the fence, not walking
+        /// the pavement), then a loop of "working on it" once arrived. No
+        /// spectacle grammar (market brief §2) — the same restrained take a
+        /// resident uses for any physical task, just held longer.</summary>
+        private void UpdateSaboteurActive(ref Figure f, Vector3 pp, in TickReport r, float now, float dt)
+        {
+            Vector3 target = IncursionTargetWorldPos(r);
+            var to = new Vector3(target.x - f.Pos.x, 0f, target.z - f.Pos.z);
+            float d = to.magnitude;
+            bool moving = d > ArriveDist;
+            if (moving)
+            {
+                Vector3 dir = to / d;
+                f.Yaw = Mathf.MoveTowardsAngle(f.Yaw, Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg, TurnRate * dt);
+                f.Pos += Quaternion.Euler(0f, f.Yaw, 0f) * Vector3.forward * (f.Speed * 1.3f * dt);
+            }
+            f.Path.Clear();
+            f.PathIdx = 0;
+            f.Pos.y = GroundY(f.Pos);
+            PlayClip(ref f, moving ? "walk" : "interact-right");
+            Apply(ref f, pp, dt, false);
         }
 
         /// <summary>The pavement, kerb or road under a figure. The figures'
@@ -1015,15 +1113,30 @@ namespace Game.Runtime.World
         public Presence.FigureKind Kind;
         private float _lastUse = -Cooldown;
 
+        /// <summary>Set by Presence.UpdateWalker only while this figure is
+        /// the currently active incursion actor, cleared the moment it
+        /// resolves. While true, ordinary conversation is replaced by the
+        /// one thing that matters: can this player stop them.</summary>
+        public bool IsActiveSaboteur;
+
         /// <summary>Hud draws only E-prefixed prompts as offers, so while
         /// they have nothing more to say they do not offer to say it.</summary>
         public string Prompt(PlayerRig player)
         {
+            if (IsActiveSaboteur) return player.Carried is TaserTool ? "E: taser them" : "";
             return Time.unscaledTime - _lastUse < Cooldown ? "" : "E: speak to the resident";
         }
 
         public void Interact(PlayerRig player)
         {
+            if (IsActiveSaboteur)
+            {
+                if (!(player.Carried is TaserTool)) return;
+                GameBootstrap.SendCommand(new SimCommand { Kind = CommandKind.InterruptIncursion },
+                    "used the taser at the fence");
+                NewsFeed.PostLocal("A resident: “I've said what I came to say.”");
+                return;
+            }
             if (Time.unscaledTime - _lastUse < Cooldown) return;
             _lastUse = Time.unscaledTime;
             NewsFeed.PostLocal("A resident: “" + Line(GameBootstrap.CurrentReport, Kind) + "”");

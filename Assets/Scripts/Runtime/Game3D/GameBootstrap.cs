@@ -101,6 +101,7 @@ namespace Game.Runtime.World
             gameObject.AddComponent<NewsTicker>();
             gameObject.AddComponent<BulletinEditor>();
             gameObject.AddComponent<ContractEditor>();
+            gameObject.AddComponent<SecurityWindow>();
             gameObject.AddComponent<Hud>();
             gameObject.AddComponent<PlayerOptions>();
             Net = gameObject.AddComponent<NetSession>();
