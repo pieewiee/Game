@@ -55,6 +55,25 @@ namespace Game.Sim
         public int ReferendumsWon;
         public double SabotageExposureTicks;  // cumulative ticks spent in the Sabotage band
         public long FibreCutUntilTick = -1;   // sabotage effect: no delivery until this tick
+
+        // --- Incursion: a resident breaches the fence for a specific asset ---
+        // (docs/systems/incidents.md's "nothing is random below threshold" rule
+        // applies here too: exposure is the only thing that decides WHETHER;
+        // a hash decides WHICH kind, same stated exception as hardware failure.)
+        public double IncursionExposureTicks; // cumulative ticks toward the next incursion
+        public bool IncursionPending;         // scheduled: the telegraph window is running
+        public bool IncursionActive;          // breached: the target is exposed right now
+        public long IncursionBreachTick;      // Pending -> Active
+        public long IncursionEndsTick;        // Active -> resolved unless interrupted first
+        public int IncursionTargetKind;       // IncursionKind: 0 Rack, 1 Solar
+        public int IncursionTargetSlot;       // which installed unit, counting from the newest
+        public uint IncursionCastHash;        // a shared token only presentation reads (which figure plays the part) — never fed back into sim outcomes
+        public int TotalIncursions;
+        public int TotalIncursionsStopped;    // ended by CommandKind.InterruptIncursion
+        public int TotalIncursionsAborted;    // ended by the floodlight (deterministic alternation)
+        public bool HasCamera, HasFloodlight, HasAlarm, HasTaser;
+        public double SecurityAuxKw;          // continuous draw from purchased security hardware
+
         public double LocalFte;               // goodwill source (scenario-set in M1)
         public double VisualPoints;           // fortification total (scenario-set in M1)
         public double PriceBaselineEurKwh;    // the town's remembered resident price

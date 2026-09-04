@@ -140,6 +140,8 @@ namespace Game.Sim
                 }
             }
 
+            StepIncursion(ref r, ci);
+
             // Referendum resolution.
             if (s.ReferendumVoteTick >= 0 && s.Tick >= s.ReferendumVoteTick)
             {
@@ -164,6 +166,110 @@ namespace Game.Sim
                     s.Log("referendum", "Community consultation event: operation REFUSED. The run is over.");
                 }
             }
+        }
+
+        /// <summary>
+        /// A resident breaches the fence for one specific rack or solar row.
+        /// Same "nothing is random below threshold" rule as the fibre cut
+        /// above, and the same stated exception as hardware failure
+        /// (docs/systems/incidents.md §1, §3): exposure alone decides
+        /// WHETHER an incident is scheduled; a die, drawn only once that
+        /// threshold is crossed, decides WHICH asset kind.
+        ///
+        /// Three states, mirrored to the report every tick regardless of
+        /// whether anything changed: idle (both flags false), Pending (the
+        /// telegraph window — presentation may show the cast figure lingering
+        /// near the fence, but nothing here is exposed), Active (the breach
+        /// itself — presentation puts the figure at the real target and the
+        /// player can interrupt it). A player's InterruptIncursion command
+        /// and a floodlight's deterministic abort are the only ways out of
+        /// Active that are not the scheduled damage.
+        /// </summary>
+        private void StepIncursion(ref TickReport r, CultureInfo ci)
+        {
+            var s = State;
+
+            if (s.Stage == EscalationStage.Sabotage && !s.IncursionPending && !s.IncursionActive)
+            {
+                s.IncursionExposureTicks += 1.0;
+                bool canRack = s.NodesInstalled >= B.IncursionRackNodes;
+                bool canSolar = s.SolarKwp >= B.IncursionSolarKwp;
+                if (s.IncursionExposureTicks >= B.IncursionTriggerHours && (canRack || canSolar))
+                {
+                    IncursionKind kind = canRack && canSolar
+                        ? (s.Rng.NextDouble() < 0.5 ? IncursionKind.Rack : IncursionKind.Solar)
+                        : (canRack ? IncursionKind.Rack : IncursionKind.Solar);
+                    int slot = kind == IncursionKind.Rack
+                        ? (int)Math.Ceiling(s.NodesInstalled / B.IncursionRackNodes) - 1
+                        : (int)Math.Ceiling(s.SolarKwp / B.IncursionSolarKwp) - 1;
+
+                    s.IncursionPending = true;
+                    s.IncursionTargetKind = (int)kind;
+                    s.IncursionTargetSlot = Math.Max(0, slot);
+                    s.IncursionBreachTick = s.Tick + (long)B.IncursionTelegraphHours;
+                    s.IncursionEndsTick = s.IncursionBreachTick + (long)B.IncursionBreachHours;
+                    s.IncursionCastHash = (uint)(s.Rng.NextDouble() * 4294967295.0);
+                    s.IncursionExposureTicks = 0.0;
+                    s.Log("escalation", "Perimeter foot traffic is up. The fence thanks you for your patience.");
+                }
+            }
+
+            if (s.IncursionPending && !s.IncursionActive && s.Tick >= s.IncursionBreachTick)
+            {
+                s.IncursionActive = true;
+                s.Log("escalation", "Fenceline breach, sector " + (s.IncursionTargetSlot + 1) +
+                    ". Asset exposure logged.");
+            }
+
+            if (s.IncursionActive && s.Tick >= s.IncursionEndsTick)
+            {
+                // Every other attempt fizzles while the floodlight is on — a
+                // fixed alternation, not a percentage, so it stays inevitable-
+                // in-hindsight rather than a visible dice roll (incidents.md §1).
+                bool aborted = s.HasFloodlight && (s.TotalIncursions % 2 == 1);
+                string tag = (s.IncursionTargetKind == (int)IncursionKind.Rack ? "RCK-" : "SLR-") +
+                    (s.IncursionTargetSlot + 1);
+                if (aborted)
+                {
+                    s.TotalIncursionsAborted++;
+                    s.Log("escalation", "Perimeter incident did not proceed.");
+                }
+                else if (s.IncursionTargetKind == (int)IncursionKind.Rack)
+                {
+                    int destroy = (int)Math.Min((double)s.NodesInstalled, B.IncursionRackNodes);
+                    s.NodesInstalled -= destroy;
+                    s.Log("escalation", "Asset " + tag + " unavailable pending review; " + destroy +
+                        " nodes lost. The Program regrets nothing it is required to disclose.");
+                }
+                else
+                {
+                    double lost = Math.Min(s.SolarKwp, B.IncursionSolarKwp);
+                    s.SolarKwp -= lost;
+                    s.Log("escalation", "Asset " + tag + " unavailable pending review; " +
+                        lost.ToString("0", ci) +
+                        " kWp lost. The Program regrets nothing it is required to disclose.");
+                }
+                s.TotalIncursions++;
+                s.IncursionPending = false;
+                s.IncursionActive = false;
+            }
+
+            r.IncursionPending = s.IncursionPending;
+            r.IncursionActive = s.IncursionActive;
+            r.IncursionBreachTick = s.IncursionBreachTick;
+            r.IncursionEndsTick = s.IncursionEndsTick;
+            r.IncursionTargetKind = s.IncursionTargetKind;
+            r.IncursionTargetSlot = s.IncursionTargetSlot;
+            r.IncursionCastHash = s.IncursionCastHash;
+            r.TotalIncursions = s.TotalIncursions;
+            r.TotalIncursionsStopped = s.TotalIncursionsStopped;
+            r.TotalIncursionsAborted = s.TotalIncursionsAborted;
+            r.HasCamera = s.HasCamera;
+            r.HasFloodlight = s.HasFloodlight;
+            r.HasAlarm = s.HasAlarm;
+            r.HasTaser = s.HasTaser;
+            r.NodesInstalled = s.NodesInstalled;
+            r.SolarKwp = s.SolarKwp;
         }
 
         private void UpdateMemory(int channel, double instant, double halflifeDays)

@@ -256,6 +256,19 @@ namespace Game.Sim
         public double FibreCutDurationH { get { return S("FIBRE_CUT_DURATION_H"); } }
         public double LocalHireGniPerFte { get { return S("LOCAL_HIRE_GNI_PER_FTE"); } }
 
+        // Incursion: a resident breaches the fence for a specific asset.
+        public double IncursionTriggerHours { get { return S("INCURSION_TRIGGER_HOURS"); } }
+        public double IncursionTelegraphHours { get { return S("INCURSION_TELEGRAPH_HOURS"); } }
+        public double IncursionBreachHours { get { return S("INCURSION_BREACH_HOURS"); } }
+        public double IncursionRackNodes { get { return S("INCURSION_RACK_NODES"); } }
+        public double IncursionSolarKwp { get { return S("INCURSION_SOLAR_KWP"); } }
+        public double CameraCostEur { get { return S("CAMERA_COST_EUR"); } }
+        public double FloodlightCostEur { get { return S("FLOODLIGHT_COST_EUR"); } }
+        public double FloodlightAuxKw { get { return S("FLOODLIGHT_AUX_KW"); } }
+        public double AlarmCostEur { get { return S("ALARM_COST_EUR"); } }
+        public double TaserCostEur { get { return S("TASER_COST_EUR"); } }
+        public double SecurityVisualPoints { get { return S("SECURITY_VISUAL_POINTS"); } }
+
         // Media & hazards (M5)
         public double BulletinBaseEffect { get { return S("BULLETIN_BASE_EFFECT"); } }
         public double BulletinBackfire { get { return S("BULLETIN_BACKFIRE"); } }
@@ -337,6 +350,10 @@ namespace Game.Sim
             "PETITION_RATE_PER_TICK", "PETITION_THRESHOLD",
             "REFERENDUM_DELAY_DAYS", "REFERENDUM_KEEP_THRESHOLD", "REFERENDUM_DELTA_WEIGHT",
             "SABOTAGE_TRIGGER_HOURS", "FIBRE_CUT_DURATION_H", "LOCAL_HIRE_GNI_PER_FTE",
+            "INCURSION_TRIGGER_HOURS", "INCURSION_TELEGRAPH_HOURS", "INCURSION_BREACH_HOURS",
+            "INCURSION_RACK_NODES", "INCURSION_SOLAR_KWP",
+            "CAMERA_COST_EUR", "FLOODLIGHT_COST_EUR", "FLOODLIGHT_AUX_KW", "ALARM_COST_EUR", "TASER_COST_EUR",
+            "SECURITY_VISUAL_POINTS",
             "BULLETIN_BASE_EFFECT", "BULLETIN_BACKFIRE", "CREDIBILITY_LOSS_PER_USE",
             "CREDIBILITY_RECOVERY_PER_WEEK", "CREDIBILITY_MOCKERY_THRESHOLD",
             "NAMING_GNI_EFFECT", "NAMING_DECAY",

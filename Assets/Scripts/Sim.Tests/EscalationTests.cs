@@ -165,8 +165,15 @@ namespace Game.Sim.Tests
             }
             Assert.That(sim.State.Stage, Is.GreaterThanOrEqualTo(EscalationStage.Protest),
                 "test premise: the site must be at Protest or worse by tick 6000");
-            Assert.That(sim.State.NodesInstalled, Is.EqualTo(10),
-                "the delivery must have been turned away at the gate");
+            // Raw NodesInstalled is no longer a clean proxy for "the gate
+            // rejected it": 6500 forced-angry hours also reaches Sabotage
+            // long enough to earn an incursion (IncursionTests), which can
+            // change the same counter for an unrelated reason. Check the
+            // gate's own rejection log instead.
+            bool turnedAway = false;
+            foreach (SimEvent e in sim.State.Events)
+                if (e.Category == "escalation" && e.Message.Contains("turned away at the gate")) turnedAway = true;
+            Assert.That(turnedAway, "the delivery must have been turned away at the gate");
         }
     }
 }

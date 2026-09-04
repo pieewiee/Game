@@ -24,6 +24,15 @@ namespace Game.Sim
     /// <summary>Escalation ladder stages. docs/systems/sentiment.md §3.</summary>
     public enum EscalationStage { Content, Complaints, Petition, Protest, Injunction, Sabotage }
 
+    /// <summary>What an incursion goes after. docs/systems/incidents.md §3.</summary>
+    public enum IncursionKind { Rack, Solar }
+
+    /// <summary>Purchasable defenses against an incursion. Camera and Alarm
+    /// change what the operator learns and when; Floodlight is the only one
+    /// that can make a scheduled incursion not happen at all; Taser is a
+    /// carried tool, bought once, used in person. docs/systems/incidents.md §3.</summary>
+    public enum SecurityKind { Camera, Floodlight, Alarm, Taser }
+
     /// <summary>
     /// One customer contract. Rates are EUR per kWh_IT of *billable* load:
     /// a node at utilisation u bills u × P_peak while drawing

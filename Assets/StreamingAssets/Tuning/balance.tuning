@@ -129,6 +129,21 @@ SABOTAGE_TRIGGER_HOURS = 72        # cumulative hours in the Sabotage band
 FIBRE_CUT_DURATION_H = 8
 LOCAL_HIRE_GNI_PER_FTE = 0.9
 
+# Incursion: a resident breaches the fence for one specific rack or solar
+# row. Own exposure counter, independent of the fibre cut above — both are
+# "cumulative hours in the Sabotage band", reset on firing, not random.
+INCURSION_TRIGGER_HOURS = 48       # Sabotage-band hours before the next one is scheduled
+INCURSION_TELEGRAPH_HOURS = 60     # lead time from scheduling to the breach (2.5 days)
+INCURSION_BREACH_HOURS = 5         # once breached, hours until damage lands if not stopped
+INCURSION_RACK_NODES = 10          # nodes lost per rack incident (Facility.NodesPerRack)
+INCURSION_SOLAR_KWP = 50           # kWp lost per solar incident (Facility.SolarRowKwp)
+CAMERA_COST_EUR = 3000             # earlier, specific telegraph; stops nothing by itself
+FLOODLIGHT_COST_EUR = 12000        # the only passive deterrent: some incidents just abort
+FLOODLIGHT_AUX_KW = 4              # continuous draw once bought, same pool as everything else
+ALARM_COST_EUR = 25000             # a HUD/audio cue while an incursion is active; no auto-resolve
+TASER_COST_EUR = 5000              # a carried tool: aim in person, no ammo, no cooldown
+SECURITY_VISUAL_POINTS = 2         # camera/floodlight/alarm are visible hardware, so N_visual (sentiment.md §3's trap) charges a little for each one; the carried taser is not sited, and is exempt
+
 # --- Climate ---------------------------------------------------------------
 TOWN_BEARING_DEG = 270             # the town lies west of the site
 TOWN_SECTOR_HALF_DEG = 45

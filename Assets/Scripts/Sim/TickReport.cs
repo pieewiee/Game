@@ -60,6 +60,17 @@ namespace Game.Sim
         public double PetitionSignatures;
         public double Reputation;
 
+        // incursion (docs/systems/incidents.md §3): presentation-facing state
+        // for a resident's scheduled fence breach. IncursionCastHash decides
+        // WHICH figure plays the part; it is read, never written, by the
+        // presentation layer and never feeds back into sim outcomes.
+        public bool IncursionPending, IncursionActive;
+        public long IncursionBreachTick, IncursionEndsTick;
+        public int IncursionTargetKind, IncursionTargetSlot;
+        public uint IncursionCastHash;
+        public int TotalIncursions, TotalIncursionsStopped, TotalIncursionsAborted;
+        public bool HasCamera, HasFloodlight, HasAlarm, HasTaser;
+
         // money (EUR this tick)
         public double RevenueEur, EnergyCostEur, WaterCostEur, PenaltyEur, CapexEur;
         public double CashEur;
@@ -84,6 +95,10 @@ namespace Game.Sim
             "setpoint_c,water_valve_frac,nodes_installed,grid_tier," +
             "evap_kwth,chiller_kwth,freecool_kwth,solar_kwp,battery_kwh_cap,diesel_kw," +
             "gni_target,gni,stage,petition_signatures,reputation," +
+            "incursion_pending,incursion_active,incursion_breach_tick,incursion_ends_tick," +
+            "incursion_target_kind,incursion_target_slot,incursion_cast_hash," +
+            "total_incursions,total_incursions_stopped,total_incursions_aborted," +
+            "has_camera,has_floodlight,has_alarm,has_taser," +
             "revenue_eur,energy_cost_eur,water_cost_eur,penalty_eur,capex_eur,cash_eur," +
             "active_contracts,training_progress_frac";
 
@@ -112,6 +127,10 @@ namespace Game.Sim
             D(GniTarget); D(Gni);
             sb.Append(Stage.ToString()); sb.Append(',');
             D(PetitionSignatures); D(Reputation);
+            B(IncursionPending); B(IncursionActive); I(IncursionBreachTick); I(IncursionEndsTick);
+            I(IncursionTargetKind); I(IncursionTargetSlot); I((long)IncursionCastHash);
+            I(TotalIncursions); I(TotalIncursionsStopped); I(TotalIncursionsAborted);
+            B(HasCamera); B(HasFloodlight); B(HasAlarm); B(HasTaser);
             D(RevenueEur); D(EnergyCostEur); D(WaterCostEur); D(PenaltyEur); D(CapexEur); D(CashEur);
             I(ActiveContracts);
             sb.Append(TrainingProgressFrac.ToString("0.####", ci));

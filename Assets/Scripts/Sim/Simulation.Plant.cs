@@ -88,7 +88,7 @@ namespace Game.Sim
             double pIt1 = n * (idleKw + (peak - idleKw) * u1);
             double q1 = pIt1 * B.HeatFraction;
             double pCool1 = CoolingPower(q1, freecoolCap, evapCap, evapCop, chillerCop, out _, out _, out _, out _);
-            double pAux = B.AuxBaseKw + B.AuxFracOfIt * pIt1 + s.RouteLossKw;
+            double pAux = B.AuxBaseKw + B.AuxFracOfIt * pIt1 + s.RouteLossKw + s.SecurityAuxKw;
 
             double solarPotential = s.SolarKwp * c.IrradianceFrac;
             double windPotential = s.WindKw * c.WindCf;
@@ -111,7 +111,7 @@ namespace Game.Sim
                 double pCoolContracted = CoolingPower(qContracted, freecoolCap, evapCap, evapCop, chillerCop,
                                                       out _, out _, out _, out _);
                 double demandContracted = pItContracted + pCoolContracted
-                                        + B.AuxBaseKw + B.AuxFracOfIt * pItContracted;
+                                        + B.AuxBaseKw + B.AuxFracOfIt * pItContracted + s.SecurityAuxKw;
                 double supplyNoDiesel = solarPotential + windPotential + gridCap + battDischargeMax;
                 dieselMax = Math.Max(0.0, Math.Min(s.DieselKw, demandContracted - supplyNoDiesel));
             }
@@ -126,7 +126,7 @@ namespace Game.Sim
                 // Scale utilisation so demand fits. Fixed load = idle draw + aux
                 // base; cooling is approximated as scaling with u (documented
                 // single-pass simplification, docs/open-questions.md Q6).
-                double fixedLoad = n * idleKw + B.AuxBaseKw;
+                double fixedLoad = n * idleKw + B.AuxBaseKw + s.SecurityAuxKw;
                 double variable = demand1 - fixedLoad;
                 double room = supplyMax - fixedLoad;
                 thetaPower = variable > 1e-9 ? Math.Max(0.0, Math.Min(1.0, room / variable)) : 0.0;
@@ -141,7 +141,7 @@ namespace Game.Sim
             double qFree, qEvap, qChill, qUnremoved;
             double pCool = CoolingPower(qIt, freecoolCap, evapCap, evapCop, chillerCop,
                                         out qFree, out qEvap, out qChill, out qUnremoved);
-            pAux = B.AuxBaseKw + B.AuxFracOfIt * pIt + s.RouteLossKw; // routed-run losses (M3)
+            pAux = B.AuxBaseKw + B.AuxFracOfIt * pIt + s.RouteLossKw + s.SecurityAuxKw; // routed-run losses (M3), security hardware
             double demand = pIt + pCool + pAux;
 
             r.PItKw = pIt; r.PCoolKw = pCool; r.PAuxKw = pAux;

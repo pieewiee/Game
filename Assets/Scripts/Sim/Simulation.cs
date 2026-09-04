@@ -327,6 +327,50 @@ namespace Game.Sim
                     s.Log("media", "Recordable incident #" + s.TotalAccidents +
                         " — the public accident statistics have been updated");
                     break;
+                case CommandKind.BuySecurity:
+                {
+                    var kind = (SecurityKind)(int)cmd.A;
+                    double cost;
+                    bool already;
+                    switch (kind)
+                    {
+                        case SecurityKind.Camera: cost = B.CameraCostEur; already = s.HasCamera; break;
+                        case SecurityKind.Floodlight: cost = B.FloodlightCostEur; already = s.HasFloodlight; break;
+                        case SecurityKind.Alarm: cost = B.AlarmCostEur; already = s.HasAlarm; break;
+                        default: cost = B.TaserCostEur; already = s.HasTaser; break;
+                    }
+                    if (already) { s.Log("facility", kind + " purchase rejected: already installed"); break; }
+                    if (s.CashEur < cost)
+                    {
+                        s.Log("facility", kind + " purchase rejected: needs EUR " +
+                            cost.ToString("0", CultureInfo.InvariantCulture));
+                        break;
+                    }
+                    s.CashEur -= cost;
+                    _capexThisTick += cost;
+                    switch (kind)
+                    {
+                        case SecurityKind.Camera: s.HasCamera = true; break;
+                        case SecurityKind.Floodlight: s.HasFloodlight = true; s.SecurityAuxKw += B.FloodlightAuxKw; break;
+                        case SecurityKind.Alarm: s.HasAlarm = true; break;
+                        default: s.HasTaser = true; break;
+                    }
+                    // Sited hardware is visible hardware: sentiment.md §3's
+                    // fence trap again, on a shorter lever. The carried taser
+                    // has no footprint of its own and is exempt.
+                    if (kind != SecurityKind.Taser)
+                        s.VisualPoints = Math.Max(0.0, s.VisualPoints + B.SecurityVisualPoints);
+                    s.Log("facility", kind + " installed for EUR " + cost.ToString("0", CultureInfo.InvariantCulture));
+                    break;
+                }
+                case CommandKind.InterruptIncursion:
+                    if (!s.IncursionActive) break;
+                    s.IncursionActive = false;
+                    s.IncursionPending = false;
+                    s.TotalIncursions++;          // still an attempt, just not a successful or aborted one
+                    s.TotalIncursionsStopped++;
+                    s.Log("escalation", "The perimeter has been adjusted. Please proceed as if it hadn't.");
+                    break;
             }
         }
 
